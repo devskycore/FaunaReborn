@@ -1,0 +1,26 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Gradle
+.gradle/
+build/
+
+# IntelliJ
+.idea/
+*.iml
+out/
+
+# Logs
+logs/
+*.log
+
+# JVM crash logs
+hs_err_pid*
+
+# Temporary files
+*.tmp
+*.swp
+
+# Paper run directory (server files)
+run/

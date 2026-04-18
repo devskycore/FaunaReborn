@@ -1,0 +1,10 @@
+name: FaunaReborn
+description: $description
+version: '${version}'
+
+main: io.github.devskycore.faunareborn.FaunaRebornPlugin
+api-version: '26.1.2'
+load: POSTWORLD
+
+authors: [ DevSkyCore ]
+website: https://github.com/devskycore
