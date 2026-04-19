@@ -1,6 +1,6 @@
 [versions]
-paper-api = "26.1.2.build.+"
-minecraft = "26.1.2"
+paper-api = "1.21.11-R0.1-SNAPSHOT"
+minecraft = "1.21.11"
 
 run-task = "3.0.2"
 
