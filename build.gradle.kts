@@ -9,6 +9,7 @@ repositories {
 
 dependencies {
     compileOnly(libs.paper.api)
+    compileOnly(libs.fastutil)
 }
 
 java {

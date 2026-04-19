@@ -1,9 +1,7 @@
 package io.github.devskycore.faunareborn.system.startup;
 
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
+import io.github.devskycore.faunareborn.feature.chicken.hostile.ChickenHostilityModule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,28 +9,20 @@ import java.util.List;
 public final class StartupOrchestrator {
 
     private final FaunaRebornPlugin plugin;
-    private final List<Runnable> startupSteps = new ArrayList<>();
+    private final List<Runnable> steps = new ArrayList<>();
 
-    public StartupOrchestrator(final FaunaRebornPlugin plugin) {
+    public StartupOrchestrator(FaunaRebornPlugin plugin) {
         this.plugin = plugin;
-        registerDefaultSteps();
+        register();
     }
 
     public void run() {
-        for (Runnable step : startupSteps) {
-            step.run();
-        }
+        steps.forEach(Runnable::run);
     }
 
-    private void registerDefaultSteps() {
-        startupSteps.add(() -> plugin.getServer().getConsoleSender().sendMessage(
-                Component.text("[Startup] ", NamedTextColor.DARK_GRAY)
-                        .append(Component.text("Boot sequence initialized.", NamedTextColor.AQUA))
-        ));
-        startupSteps.add(() -> plugin.getServer().getConsoleSender().sendMessage(
-                Component.text("[Startup] ", NamedTextColor.DARK_GRAY)
-                        .append(Component.text("Server version: ", NamedTextColor.GREEN))
-                        .append(Component.text(Bukkit.getVersion(), NamedTextColor.YELLOW))
-        ));
+    private void register() {
+        ChickenHostilityModule module = new ChickenHostilityModule(plugin);
+        plugin.setChickenHostilityHooks(module::enable, module::disable);
+        steps.add(plugin::enableChickenHostility);
     }
 }

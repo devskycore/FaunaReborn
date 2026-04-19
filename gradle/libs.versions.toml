@@ -3,9 +3,11 @@ paper-api = "1.21.11-R0.1-SNAPSHOT"
 minecraft = "1.21.11"
 
 run-task = "3.0.2"
+fastutil = "8.5.14"
 
 [libraries]
 paper-api = { module = "io.papermc.paper:paper-api", version.ref = "paper-api" }
+fastutil = { module = "it.unimi.dsi:fastutil", version.ref = "fastutil" }
 
 [plugins]
 run-paper = { id = "xyz.jpenilla.run-paper", version.ref = "run-task" }
