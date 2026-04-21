@@ -1,0 +1,37 @@
+chicken-hostility:
+  enabled: true
+
+  # Damage dealt to the player by each hostile chicken hit.
+  attack-damage: 2.0
+
+  # Max number of chickens attacking the same player at the same time.
+  max-simultaneous-attackers-per-player: 3
+
+  # Seconds between consecutive hits from the same chicken.
+  attack-cooldown: 0.9
+
+  activation:
+    chance: 1.0
+    only-natural-chickens: true
+    ignore-named: true
+
+  # Chicken hostility only activates when players are nearby.
+  # This behavior is always enforced internally for performance and consistency.
+
+  # Radius used to detect and evaluate players as potential targets.
+  detection-radius: 8.0
+
+  # Distance at which a chicken can land a hit on a target.
+  attack-range: 1.5
+
+  # Chase speed multiplier for the hostility movement controller.
+  # 1.0 = calibrated base chase speed, 1.25 = 25% faster, 0.8 = 20% slower.
+  movement-speed-multiplier: 1.0
+
+  # World filter for chicken hostility.
+  # ALL: enabled in every world.
+  # WHITELIST: enabled only in listed worlds.
+  # BLACKLIST: enabled in every world except listed worlds.
+  world-filter:
+    mode: ALL # ALL | WHITELIST | BLACKLIST
+    worlds: []
