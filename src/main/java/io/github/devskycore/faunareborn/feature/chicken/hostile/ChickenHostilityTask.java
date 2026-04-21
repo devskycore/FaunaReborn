@@ -1,9 +1,12 @@
 package io.github.devskycore.faunareborn.feature.chicken.hostile;
 
+import io.github.devskycore.faunareborn.config.ChickenHostilitySettings;
+import io.github.devskycore.faunareborn.config.WorldFilter;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.bukkit.GameMode;
+import org.bukkit.World;
 import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
@@ -21,11 +24,9 @@ import org.bukkit.util.Vector;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 final class ChickenHostilityTask implements Listener {
-
-    private static final double DETECTION_RADIUS = 8.0D;
-    private static final double DETECTION_RADIUS_SQ = DETECTION_RADIUS * DETECTION_RADIUS;
 
     private static final double BABY_RADIUS = 7.0D;
     private static final double BABY_RADIUS_SQ = BABY_RADIUS * BABY_RADIUS;
@@ -33,12 +34,6 @@ final class ChickenHostilityTask implements Listener {
     private static final double CHASE_BREAK_RADIUS = 18.0D;
     private static final double CHASE_BREAK_RADIUS_SQ = CHASE_BREAK_RADIUS * CHASE_BREAK_RADIUS;
 
-    private static final double ATTACK_RANGE = 1.5D;
-    private static final double ATTACK_RANGE_SQ = ATTACK_RANGE * ATTACK_RANGE;
-
-    private static final double SPEED = 0.25D;
-
-    private static final long COOLDOWN_TICKS = 18L;
     private static final long TICK_RATE = 1L;
 
     private static final long ALERT_DURATION_TICKS = 1L;
@@ -46,8 +41,6 @@ final class ChickenHostilityTask implements Listener {
 
     private static final long TARGET_SEARCH_IDLE_INTERVAL_TICKS = 4L;
     private static final long TARGET_SEARCH_CHASE_INTERVAL_TICKS = 2L;
-    private static final int MAX_SIMULTANEOUS_ATTACKERS_PER_TARGET = 3;
-
     private static final int IDLE_BUCKETS = 20;
     private static final long ACTIVE_TICK_INTERVAL = 2L;
 
@@ -55,18 +48,53 @@ final class ChickenHostilityTask implements Listener {
     private static final int NO_PROGRESS_RESET_TICKS = 30;
     private static final double MIN_PROGRESS_DELTA_SQ = 0.0001D;
     private static final double NO_PROGRESS_MIN_DISTANCE_SQ_2D = 9.0D;
+    private static final double BASE_CHASE_SPEED_PER_TICK = 0.10D;
+    private static final double MIN_CHASE_SPEED_PER_TICK = 0.02D;
+    private static final double MAX_CHASE_SPEED_PER_TICK = 0.35D;
+    private static final double PLAYER_PROXIMITY_RADIUS = 16.0D;
 
     private final FaunaRebornPlugin plugin;
+    private final double attackDamage;
+    private final int maxSimultaneousAttackersPerTarget;
+    private final int attackCooldownTicks;
+    private final double detectionRadius;
+    private final double detectionRadiusSq;
+    private final double attackRange;
+    private final double attackRangeSq;
+    private final double chaseSpeedPerTick;
+    private final double activationChance;
+    private final boolean onlyNaturalChickens;
+    private final boolean ignoreNamed;
+    private final WorldFilter worldFilter;
+    private final double processingRadius;
 
     private final Int2ObjectOpenHashMap<ChickenHostilityBrain> brains = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectOpenHashMap<Chicken> trackedChickens = new Int2ObjectOpenHashMap<>();
+    private final Int2ObjectOpenHashMap<ActivationState> activationStates = new Int2ObjectOpenHashMap<>();
     private final Vector scratchVelocity = new Vector();
 
     private BukkitTask task;
     private long currentTick;
 
-    ChickenHostilityTask(FaunaRebornPlugin plugin) {
+    ChickenHostilityTask(FaunaRebornPlugin plugin, ChickenHostilitySettings settings) {
         this.plugin = plugin;
+        this.attackDamage = settings.attackDamage();
+        this.maxSimultaneousAttackersPerTarget = settings.maxSimultaneousAttackersPerPlayer();
+        this.attackCooldownTicks = settings.attackCooldownTicks();
+        this.detectionRadius = settings.detectionRadius();
+        this.detectionRadiusSq = this.detectionRadius * this.detectionRadius;
+        this.attackRange = settings.attackRange();
+        this.attackRangeSq = this.attackRange * this.attackRange;
+        this.activationChance = settings.activation().chance();
+        this.onlyNaturalChickens = settings.activation().onlyNaturalChickens();
+        this.ignoreNamed = settings.activation().ignoreNamed();
+        this.chaseSpeedPerTick = clamp(
+                BASE_CHASE_SPEED_PER_TICK * settings.movementSpeedMultiplier(),
+                MIN_CHASE_SPEED_PER_TICK,
+                MAX_CHASE_SPEED_PER_TICK
+        );
+        this.worldFilter = settings.worldFilter();
+        this.processingRadius = Math.max(this.detectionRadius, PLAYER_PROXIMITY_RADIUS);
     }
 
     void start() {
@@ -84,6 +112,7 @@ final class ChickenHostilityTask implements Listener {
 
         trackedChickens.clear();
         brains.clear();
+        activationStates.clear();
     }
 
     private void tick() {
@@ -119,11 +148,21 @@ final class ChickenHostilityTask implements Listener {
             return;
         }
 
-        List<Entity> nearby = chicken.getNearbyEntities(DETECTION_RADIUS, DETECTION_RADIUS, DETECTION_RADIUS);
-
         if (brain == null) {
             brain = new ChickenHostilityBrain(currentTick);
             brains.put(chickenId, brain);
+        }
+
+        if (!isWorldAllowed(chicken.getWorld())) {
+            clearTargetAndIdle(brain);
+            return;
+        }
+
+        List<Entity> nearby = chicken.getNearbyEntities(processingRadius, processingRadius, processingRadius);
+
+        if (!shouldActivateChicken(chicken, nearby)) {
+            clearTargetAndIdle(brain);
+            return;
         }
 
         if (!isEligible(chicken, brain, nearby)) {
@@ -211,7 +250,7 @@ final class ChickenHostilityTask implements Listener {
         }
 
         move(chicken, target);
-        if (distSq <= ATTACK_RANGE_SQ) {
+        if (distSq <= attackRangeSq) {
             transition(brain, ChickenHostilityState.ATTACK);
             attack(chicken, target, brain);
         }
@@ -230,14 +269,14 @@ final class ChickenHostilityTask implements Listener {
             return;
         }
 
-        if (failsSimplePathing(chicken, target, brain, distSq > ATTACK_RANGE_SQ)) {
+        if (failsSimplePathing(chicken, target, brain, distSq > attackRangeSq)) {
             clearTargetAndIdle(brain);
             return;
         }
 
         move(chicken, target);
 
-        if (distSq > ATTACK_RANGE_SQ) {
+        if (distSq > attackRangeSq) {
             transition(brain, ChickenHostilityState.CHASE);
             return;
         }
@@ -289,12 +328,12 @@ final class ChickenHostilityTask implements Listener {
             if (!hasAggressorSlot(player.getUniqueId(), chickenId)) continue;
 
             double distSq = distanceSq(chicken, player);
-            if (distSq > DETECTION_RADIUS_SQ || distSq >= bestDist) continue;
+            if (distSq > detectionRadiusSq || distSq >= bestDist) continue;
 
             best = player;
             bestDist = distSq;
 
-            if (distSq <= ATTACK_RANGE_SQ) break;
+            if (distSq <= attackRangeSq) break;
         }
 
         return best;
@@ -317,13 +356,14 @@ final class ChickenHostilityTask implements Listener {
             }
         }
 
-        return selfAlreadyAssigned || attackers < MAX_SIMULTANEOUS_ATTACKERS_PER_TARGET;
+        return selfAlreadyAssigned || attackers < maxSimultaneousAttackersPerTarget;
     }
 
     private boolean isValidTarget(Chicken chicken, Player player) {
         if (player == null) return false;
         if (!player.isOnline() || player.isDead()) return false;
         if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) return false;
+        if (!isWorldAllowed(chicken.getWorld())) return false;
         return chicken.getWorld() == player.getWorld();
     }
 
@@ -336,6 +376,86 @@ final class ChickenHostilityTask implements Listener {
         return false;
     }
 
+    private boolean shouldActivateChicken(Chicken chicken) {
+        List<Entity> nearby = chicken.getNearbyEntities(processingRadius, processingRadius, processingRadius);
+        return shouldActivateChicken(chicken, nearby);
+    }
+
+    private boolean shouldActivateChicken(Chicken chicken, List<Entity> nearbyEntities) {
+        if (!isPlayerNearby(chicken, nearbyEntities)) {
+            return false;
+        }
+
+        if (ignoreNamed && hasCustomName(chicken)) {
+            return false;
+        }
+
+        ActivationState activationState = activationStates.get(chicken.getEntityId());
+        if (activationState == null) {
+            activationState = new ActivationState(null);
+            activationStates.put(chicken.getEntityId(), activationState);
+        }
+
+        if (onlyNaturalChickens && !isNaturalChicken(activationState.spawnReason)) {
+            return false;
+        }
+
+        if (!activationState.chanceRolled) {
+            activationState.chanceRolled = true;
+            activationState.chancePassed = rollActivationChance();
+        }
+
+        return activationState.chancePassed;
+    }
+
+    private boolean isPlayerNearby(Entity entity) {
+        List<Entity> nearbyEntities = entity.getNearbyEntities(
+                PLAYER_PROXIMITY_RADIUS,
+                PLAYER_PROXIMITY_RADIUS,
+                PLAYER_PROXIMITY_RADIUS
+        );
+        return isPlayerNearby(entity, nearbyEntities);
+    }
+
+    private boolean isPlayerNearby(Entity entity, List<Entity> nearbyEntities) {
+        for (Entity nearbyEntity : nearbyEntities) {
+            if (!(nearbyEntity instanceof Player player)) continue;
+            if (!player.isOnline() || player.isDead()) continue;
+            if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) continue;
+            if (player.getWorld() != entity.getWorld()) continue;
+            if (distanceSq(entity, player) <= PLAYER_PROXIMITY_RADIUS * PLAYER_PROXIMITY_RADIUS) return true;
+        }
+        return false;
+    }
+
+    private boolean hasCustomName(Chicken chicken) {
+        String customName = chicken.getCustomName();
+        return customName != null && !customName.trim().isEmpty();
+    }
+
+    private boolean isNaturalChicken(CreatureSpawnEvent.SpawnReason spawnReason) {
+        if (spawnReason == null) {
+            return true;
+        }
+
+        String reasonName = spawnReason.name();
+        return !reasonName.equals("SPAWNER")
+                && !reasonName.equals("SPAWNER_EGG")
+                && !reasonName.equals("DISPENSE_EGG")
+                && !reasonName.equals("EGG")
+                && !reasonName.equals("BREEDING");
+    }
+
+    private boolean rollActivationChance() {
+        if (activationChance <= 0.0D) {
+            return false;
+        }
+        if (activationChance >= 1.0D) {
+            return true;
+        }
+        return ThreadLocalRandom.current().nextDouble() < activationChance;
+    }
+
     private void move(Chicken chicken, Player player) {
         double dx = player.getX() - chicken.getX();
         double dz = player.getZ() - chicken.getZ();
@@ -343,7 +463,7 @@ final class ChickenHostilityTask implements Listener {
 
         if (lenSq < 0.0001D) return;
 
-        double invLen = SPEED / Math.sqrt(lenSq);
+        double invLen = chaseSpeedPerTick / Math.sqrt(lenSq);
 
         scratchVelocity.setX(dx * invLen);
         scratchVelocity.setY(chicken.getVelocity().getY());
@@ -352,11 +472,19 @@ final class ChickenHostilityTask implements Listener {
         chicken.setVelocity(scratchVelocity);
     }
 
-    private void attack(Chicken chicken, Player player, ChickenHostilityBrain brain) {
-        if (brain.lastAttackTick != Long.MIN_VALUE && currentTick - brain.lastAttackTick < COOLDOWN_TICKS) return;
+    private double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
 
-        player.damage(2.0D, chicken);
+    private void attack(Chicken chicken, Player player, ChickenHostilityBrain brain) {
+        if (brain.lastAttackTick != Long.MIN_VALUE && currentTick - brain.lastAttackTick < attackCooldownTicks) return;
+
+        player.damage(attackDamage, chicken);
         brain.lastAttackTick = currentTick;
+    }
+
+    private boolean isWorldAllowed(World world) {
+        return worldFilter.isWorldAllowed(world.getName());
     }
 
     private boolean failsSimplePathing(Chicken chicken, Player target, ChickenHostilityBrain brain, boolean requireProgress) {
@@ -395,6 +523,7 @@ final class ChickenHostilityTask implements Listener {
 
     private void removeBrain(int chickenId, Chicken chicken) {
         brains.remove(chickenId);
+        activationStates.remove(chickenId);
     }
 
     private double distanceSq(Entity a, Entity b) {
@@ -413,7 +542,9 @@ final class ChickenHostilityTask implements Listener {
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     private void onCreatureSpawn(CreatureSpawnEvent event) {
         if (event.getEntity() instanceof Chicken chicken) {
-            trackedChickens.put(chicken.getEntityId(), chicken);
+            int chickenId = chicken.getEntityId();
+            trackedChickens.put(chickenId, chicken);
+            activationStates.put(chickenId, new ActivationState(event.getSpawnReason()));
         }
     }
 
@@ -421,7 +552,11 @@ final class ChickenHostilityTask implements Listener {
     private void onChunkLoad(ChunkLoadEvent event) {
         for (Entity entity : event.getChunk().getEntities()) {
             if (entity instanceof Chicken chicken) {
-                trackedChickens.put(chicken.getEntityId(), chicken);
+                int chickenId = chicken.getEntityId();
+                trackedChickens.put(chickenId, chicken);
+                if (!activationStates.containsKey(chickenId)) {
+                    activationStates.put(chickenId, new ActivationState(null));
+                }
             }
         }
     }
@@ -455,6 +590,18 @@ final class ChickenHostilityTask implements Listener {
 
             removeBrain(entry.getIntKey(), chicken);
             iterator.remove();
+        }
+    }
+
+    private static final class ActivationState {
+        private final CreatureSpawnEvent.SpawnReason spawnReason;
+        private boolean chanceRolled;
+        private boolean chancePassed;
+
+        private ActivationState(CreatureSpawnEvent.SpawnReason spawnReason) {
+            this.spawnReason = spawnReason;
+            this.chanceRolled = false;
+            this.chancePassed = false;
         }
     }
 }

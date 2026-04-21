@@ -1,5 +1,7 @@
 package io.github.devskycore.faunareborn.system.startup;
 
+import io.github.devskycore.faunareborn.config.PluginConfigManager;
+import io.github.devskycore.faunareborn.config.PluginSettings;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
 import io.github.devskycore.faunareborn.feature.chicken.hostile.ChickenHostilityModule;
 
@@ -21,7 +23,13 @@ public final class StartupOrchestrator {
     }
 
     private void register() {
-        ChickenHostilityModule module = new ChickenHostilityModule(plugin);
+        PluginSettings settings = new PluginConfigManager(plugin).load();
+        if (!settings.chickenHostility().enabled()) {
+            plugin.getLogger().info("Chicken hostility system is disabled by config.");
+            return;
+        }
+
+        ChickenHostilityModule module = new ChickenHostilityModule(plugin, settings.chickenHostility());
         plugin.setChickenHostilityHooks(module::enable, module::disable);
         steps.add(plugin::enableChickenHostility);
     }

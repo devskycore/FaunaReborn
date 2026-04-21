@@ -1,13 +1,14 @@
 package io.github.devskycore.faunareborn.feature.chicken.hostile;
 
+import io.github.devskycore.faunareborn.config.ChickenHostilitySettings;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
 
 public final class ChickenHostilityModule {
 
     private final ChickenHostilityTask task;
 
-    public ChickenHostilityModule(FaunaRebornPlugin plugin) {
-        this.task = new ChickenHostilityTask(plugin);
+    public ChickenHostilityModule(FaunaRebornPlugin plugin, ChickenHostilitySettings settings) {
+        this.task = new ChickenHostilityTask(plugin, settings);
     }
 
     public void enable() {

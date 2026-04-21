@@ -24,3 +24,6 @@ hs_err_pid*
 
 # Paper run directory (server files)
 run/
+
+#Symbol Graph
+symbol_graph.json
