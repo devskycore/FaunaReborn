@@ -90,14 +90,14 @@ public final class ChickenHostilitySettingsLoader {
                 ),
                 numbers.finiteRange(
                         config.getDouble(
-                                "chicken-hostility.visual-effects.particles.volume",
+                                "chicken-hostility.visual-effects.particles.intensity",
                                 PluginConfigDefaults.VISUAL_PARTICLES_VOLUME
                         ),
                         0.0D,
                         PluginConfigDefaults.VISUAL_PARTICLES_VOLUME_LIMIT,
                         PluginConfigDefaults.VISUAL_PARTICLES_VOLUME,
-                        "Invalid chicken-hostility.visual-effects.particles.volume in config.yml. Falling back to 1.0",
-                        "chicken-hostility.visual-effects.particles.volume is too high. Clamped to 5.0"
+                        "Invalid chicken-hostility.visual-effects.particles.intensity in config.yml. Falling back to 1.0",
+                        "chicken-hostility.visual-effects.particles.intensity is too high. Clamped to 5.0"
                 ),
                 config.getBoolean("chicken-hostility.visual-effects.sound.enabled", PluginConfigDefaults.VISUAL_SOUND_ENABLED),
                 numbers.intRange(

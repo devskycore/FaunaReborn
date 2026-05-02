@@ -44,14 +44,16 @@ public final class ThreatAndCooldownConfigReader {
                 "Invalid chicken-hostility.retarget-grace in config.yml. Falling back to 3.0 seconds",
                 "chicken-hostility.retarget-grace is too high. Clamped to 86400 seconds"
         );
-        int noLineOfSightResetTicks = numbers.minInt(
-                config.getInt(
-                        "chicken-hostility.no-line-of-sight-reset-ticks",
-                        PluginConfigDefaults.NO_LINE_OF_SIGHT_RESET_TICKS
+        double noLineOfSightResetSeconds = numbers.finiteRange(
+                config.getDouble(
+                        "chicken-hostility.no-line-of-sight-reset-seconds",
+                        PluginConfigDefaults.NO_LINE_OF_SIGHT_RESET_TICKS / 20.0D
                 ),
-                1,
-                PluginConfigDefaults.NO_LINE_OF_SIGHT_RESET_TICKS,
-                "Invalid chicken-hostility.no-line-of-sight-reset-ticks in config.yml. Falling back to 40"
+                0.01D,
+                PluginConfigDefaults.MAX_TIMER_SECONDS,
+                PluginConfigDefaults.NO_LINE_OF_SIGHT_RESET_TICKS / 20.0D,
+                "Invalid chicken-hostility.no-line-of-sight-reset-seconds in config.yml. Falling back to 2.0 seconds",
+                "chicken-hostility.no-line-of-sight-reset-seconds is too high. Clamped to 86400 seconds"
         );
         double socialAlertRadius = numbers.finiteRange(
                 config.getDouble("chicken-hostility.social-alert.radius", PluginConfigDefaults.SOCIAL_ALERT_RADIUS),
@@ -94,15 +96,15 @@ public final class ThreatAndCooldownConfigReader {
                 numbers.toTicks(attackCooldownSeconds),
                 numbers.toNonNegativeTicks(threatTimeoutSeconds),
                 numbers.toNonNegativeTicks(retargetGraceSeconds),
-                noLineOfSightResetTicks,
+                numbers.toTicks(noLineOfSightResetSeconds),
                 config.getBoolean("chicken-hostility.social-alert.enabled", PluginConfigDefaults.SOCIAL_ALERT_ENABLED),
                 config.getBoolean(
                         "chicken-hostility.social-alert.triggers.by-damage-to-chicken",
-                        config.getBoolean("chicken-hostility.social-alert.on-damage", PluginConfigDefaults.SOCIAL_ALERT_ON_DAMAGE)
+                        PluginConfigDefaults.SOCIAL_ALERT_ON_DAMAGE
                 ),
                 config.getBoolean(
                         "chicken-hostility.social-alert.triggers.by-nearby-chicken-death",
-                        config.getBoolean("chicken-hostility.social-alert.on-nearby-death", PluginConfigDefaults.SOCIAL_ALERT_ON_NEARBY_DEATH)
+                        PluginConfigDefaults.SOCIAL_ALERT_ON_NEARBY_DEATH
                 ),
                 config.getBoolean(
                         "chicken-hostility.social-alert.responders.adults-only",

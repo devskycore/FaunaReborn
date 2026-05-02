@@ -58,14 +58,16 @@ public final class MovementConfigReader {
                 PluginConfigDefaults.MOVEMENT_TERRAIN_JUMP_VERTICAL_BOOST,
                 "Invalid chicken-hostility.movement.terrain-jump.vertical-boost in config.yml. Falling back to 0.42"
         );
-        int terrainJumpCooldownTicks = numbers.minInt(
-                config.getInt(
-                        "chicken-hostility.movement.terrain-jump.cooldown-ticks",
-                        PluginConfigDefaults.MOVEMENT_TERRAIN_JUMP_COOLDOWN_TICKS
+        double terrainJumpCooldownSeconds = numbers.finiteRange(
+                config.getDouble(
+                        "chicken-hostility.movement.terrain-jump.cooldown",
+                        PluginConfigDefaults.MOVEMENT_TERRAIN_JUMP_COOLDOWN_TICKS / 20.0D
                 ),
-                1,
-                PluginConfigDefaults.MOVEMENT_TERRAIN_JUMP_COOLDOWN_TICKS,
-                "Invalid chicken-hostility.movement.terrain-jump.cooldown-ticks in config.yml. Falling back to 8"
+                0.01D,
+                PluginConfigDefaults.MAX_TIMER_SECONDS,
+                PluginConfigDefaults.MOVEMENT_TERRAIN_JUMP_COOLDOWN_TICKS / 20.0D,
+                "Invalid chicken-hostility.movement.terrain-jump.cooldown in config.yml. Falling back to 0.4 seconds",
+                "chicken-hostility.movement.terrain-jump.cooldown is too high. Clamped to 86400 seconds"
         );
         double terrainJumpTriggerHeightDelta = numbers.finiteAndMin(
                 config.getDouble(
@@ -84,7 +86,7 @@ public final class MovementConfigReader {
                 maxBoostMultiplier,
                 terrainJumpEnabled,
                 terrainJumpVerticalBoost,
-                terrainJumpCooldownTicks,
+                numbers.toTicks(terrainJumpCooldownSeconds),
                 terrainJumpTriggerHeightDelta
         );
     }

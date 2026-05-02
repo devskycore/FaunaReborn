@@ -3,22 +3,22 @@ package io.github.devskycore.faunareborn.command;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
 import io.github.devskycore.faunareborn.system.shutdown.ShutdownOrchestrator;
 import io.github.devskycore.faunareborn.system.startup.StartupOrchestrator;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
+import io.papermc.paper.command.brigadier.BasicCommand;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.logging.Level;
 
-public final class FaunaCommand implements CommandExecutor, TabCompleter {
+public final class FaunaCommand implements BasicCommand {
 
     private static final String SUBCOMMAND_RELOAD = "reload";
     private static final String RELOAD_PERMISSION = "faunareborn.command.reload";
@@ -30,15 +30,17 @@ public final class FaunaCommand implements CommandExecutor, TabCompleter {
     }
 
     @Override
-    public boolean onCommand(@NonNull CommandSender sender, @NonNull Command command, @NonNull String label, String[] args) {
+    public void execute(@NonNull CommandSourceStack source, String[] args) {
+        final CommandSender sender = source.getSender();
+
         if (args.length != 1 || !SUBCOMMAND_RELOAD.equalsIgnoreCase(args[0])) {
-            sender.sendMessage("Usage: /" + label + " reload");
-            return true;
+            sender.sendMessage("Usage: /fauna reload");
+            return;
         }
 
         if (!sender.hasPermission(RELOAD_PERMISSION)) {
             sender.sendMessage("You do not have permission to use this command.");
-            return true;
+            return;
         }
 
         long startedAt = System.nanoTime();
@@ -50,12 +52,12 @@ public final class FaunaCommand implements CommandExecutor, TabCompleter {
         } catch (Throwable throwable) {
             plugin.getLogger().log(Level.SEVERE, "Failed to stop current runtime before reload.", throwable);
             sender.sendMessage("FaunaReborn reload failed. Check console for details.");
-            return true;
+            return;
         }
 
         if (new StartupOrchestrator(plugin, false).run()) {
             sender.sendMessage("FaunaReborn reloaded successfully in " + elapsedMillis(startedAt) + " ms.");
-            return true;
+            return;
         }
 
         plugin.getLogger().severe("Reload startup failed. Trying to restore previous config snapshot.");
@@ -70,11 +72,11 @@ public final class FaunaCommand implements CommandExecutor, TabCompleter {
         }
 
         sender.sendMessage("FaunaReborn reload failed. Check console for details.");
-        return true;
     }
 
     @Override
-    public List<String> onTabComplete(@NonNull CommandSender sender, @NonNull Command command, @NonNull String alias, String[] args) {
+    public @NonNull Collection<String> suggest(@NonNull CommandSourceStack source, String[] args) {
+        final CommandSender sender = source.getSender();
         if (args.length != 1) {
             return Collections.emptyList();
         }
@@ -86,6 +88,11 @@ public final class FaunaCommand implements CommandExecutor, TabCompleter {
             return List.of(SUBCOMMAND_RELOAD);
         }
         return Collections.emptyList();
+    }
+
+    @Override
+    public @NonNull String permission() {
+        return RELOAD_PERMISSION;
     }
 
     private String readConfigSnapshot(Path configPath) {

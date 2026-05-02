@@ -292,13 +292,13 @@ final class ChickenHostilityTask implements Listener {
 
         List<Entity> nearby = chicken.getNearbyEntities(processingRadius, processingRadius, processingRadius);
 
-        if (!shouldActivateChicken(chicken, nearby)) {
+        if (isActivationBlocked(chicken, nearby)) {
             clearTargetAndIdle(brain);
             return;
         }
 
         boolean requireBabyNearby = !brain.socialAlertOverrideEligibility;
-        if (!isEligible(chicken, brain, nearby, requireBabyNearby, true)) {
+        if (isIneligible(chicken, brain, nearby, requireBabyNearby, true)) {
             clearTargetAndIdle(brain);
             return;
         }
@@ -311,11 +311,7 @@ final class ChickenHostilityTask implements Listener {
         }
     }
 
-    private boolean isEligible(Chicken chicken, ChickenHostilityBrain brain, List<Entity> nearby) {
-        return isEligible(chicken, brain, nearby, true, true);
-    }
-
-    private boolean isEligible(
+    private boolean isIneligible(
             Chicken chicken,
             ChickenHostilityBrain brain,
             List<Entity> nearby,
@@ -323,22 +319,18 @@ final class ChickenHostilityTask implements Listener {
             boolean requireAdult
     ) {
         if (requireBabyNearby && requireAdult && currentTick < brain.nextEligibilityRefreshTick) {
-            return brain.eligible;
+            return !brain.eligible;
         }
 
         boolean hasBabyNearby = hasBabyNearby(chicken, nearby);
         boolean isAdult = chicken.isAdult();
-        boolean eligibleNow = isAdult && hasBabyNearby;
-        brain.eligible = eligibleNow;
+        brain.eligible = isAdult && hasBabyNearby;
         brain.nextEligibilityRefreshTick = currentTick + ELIGIBILITY_CACHE_TICKS;
 
         if (requireAdult && !isAdult) {
-            return false;
+            return true;
         }
-        if (requireBabyNearby && !hasBabyNearby) {
-            return false;
-        }
-        return true;
+        return requireBabyNearby && !hasBabyNearby;
     }
 
     private void handleIdle(Chicken chicken, ChickenHostilityBrain brain, List<Entity> nearby) {
@@ -512,7 +504,7 @@ final class ChickenHostilityTask implements Listener {
     }
 
     private Player findTarget(Chicken chicken, ChickenHostilityBrain brain, List<Entity> nearby, int chickenId) {
-        if (!canBecomeActiveInArea(chicken, chickenId)) {
+        if (isAreaActivationBlocked(chicken, chickenId)) {
             return null;
         }
 
@@ -524,7 +516,7 @@ final class ChickenHostilityTask implements Listener {
             if (isInvalidTarget(chicken, player)) continue;
             if (isRetargetBlocked(brain, player.getUniqueId())) continue;
             if (isOnGlobalTargetCooldown(player.getUniqueId(), chickenId)) continue;
-            if (!hasAggressorSlot(player.getUniqueId(), chickenId)) continue;
+            if (isAggressorSlotUnavailable(player.getUniqueId(), chickenId)) continue;
 
             double distSq = distanceSq(chicken, player);
             if (distSq > detectionRadiusSq || distSq >= bestDist) continue;
@@ -538,7 +530,7 @@ final class ChickenHostilityTask implements Listener {
         return best;
     }
 
-    private boolean hasAggressorSlot(UUID targetUuid, int selfChickenId) {
+    private boolean isAggressorSlotUnavailable(UUID targetUuid, int selfChickenId) {
         int attackers = 0;
         boolean selfAlreadyAssigned = false;
 
@@ -555,10 +547,10 @@ final class ChickenHostilityTask implements Listener {
             }
         }
 
-        return selfAlreadyAssigned || attackers < maxSimultaneousAttackersPerTarget;
+        return !(selfAlreadyAssigned || attackers < maxSimultaneousAttackersPerTarget);
     }
 
-    private boolean canBecomeActiveInArea(Chicken chicken, int selfChickenId) {
+    private boolean isAreaActivationBlocked(Chicken chicken, int selfChickenId) {
         int worldActives = 0;
         int chunkActives = 0;
         Chunk chunk = chicken.getChunk();
@@ -584,8 +576,8 @@ final class ChickenHostilityTask implements Listener {
             }
         }
 
-        return worldActives < maxActiveHostileChickensPerWorld
-                && chunkActives < maxActiveHostileChickensPerChunk;
+        return worldActives >= maxActiveHostileChickensPerWorld
+                || chunkActives >= maxActiveHostileChickensPerChunk;
     }
 
     private boolean hasThreatTimedOut(ChickenHostilityBrain brain) {
@@ -625,13 +617,13 @@ final class ChickenHostilityTask implements Listener {
         return false;
     }
 
-    private boolean shouldActivateChicken(Chicken chicken, List<Entity> nearbyEntities) {
+    private boolean isActivationBlocked(Chicken chicken, List<Entity> nearbyEntities) {
         if (!isPlayerNearby(chicken, nearbyEntities)) {
-            return false;
+            return true;
         }
 
         if (ignoreNamed && hasCustomName(chicken)) {
-            return false;
+            return true;
         }
 
         ActivationState activationState = activationStates.get(chicken.getEntityId());
@@ -641,7 +633,7 @@ final class ChickenHostilityTask implements Listener {
         }
 
         if (onlyNaturalChickens && !isNaturalChicken(chicken, activationState.spawnReason)) {
-            return false;
+            return true;
         }
 
         if (!activationState.chanceRolled) {
@@ -649,7 +641,7 @@ final class ChickenHostilityTask implements Listener {
             activationState.chancePassed = rollActivationChance();
         }
 
-        return activationState.chancePassed;
+        return !activationState.chancePassed;
     }
 
     private boolean isPlayerNearby(Entity entity) {
@@ -732,16 +724,9 @@ final class ChickenHostilityTask implements Listener {
         if (lenSq < 0.0001D) return;
         faceTarget(chicken, dx, dz);
 
-        double effectiveSpeedPerTick = chaseSpeedPerTick;
-        if (lenSq > movementDistanceBoostStartDistanceSq) {
-            double farDistanceMultiplier = Math.min(
-                    movementDistanceBoostMaxMultiplier,
-                    1.0D + ((Math.sqrt(lenSq) - Math.sqrt(movementDistanceBoostStartDistanceSq)) * movementDistanceBoostExtraSpeedPerBlock)
-            );
-            effectiveSpeedPerTick = Math.min(chaseSpeedPerTick * farDistanceMultiplier, MAX_CHASE_SPEED_PER_TICK);
-        }
+        double effectiveSpeedPerTick = resolveEffectiveSpeedPerTick(lenSq);
 
-        double invLen = effectiveSpeedPerTick / Math.sqrt(lenSq);
+        double invLen = normalizedSpeed(lenSq, effectiveSpeedPerTick);
 
         scratchVelocity.setX(dx * invLen);
         scratchVelocity.setY(chicken.getVelocity().getY());
@@ -754,6 +739,22 @@ final class ChickenHostilityTask implements Listener {
     private void faceTarget(Chicken chicken, double dx, double dz) {
         float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
         chicken.setRotation(yaw, chicken.getLocation().getPitch());
+    }
+
+    private static double normalizedSpeed(double lenSq, double speedPerTick) {
+        return speedPerTick / Math.sqrt(lenSq);
+    }
+
+    private double resolveEffectiveSpeedPerTick(double lenSq) {
+        if (lenSq <= movementDistanceBoostStartDistanceSq) {
+            return chaseSpeedPerTick;
+        }
+
+        double farDistanceMultiplier = Math.min(
+                movementDistanceBoostMaxMultiplier,
+                1.0D + ((Math.sqrt(lenSq) - Math.sqrt(movementDistanceBoostStartDistanceSq)) * movementDistanceBoostExtraSpeedPerBlock)
+        );
+        return Math.min(chaseSpeedPerTick * farDistanceMultiplier, MAX_CHASE_SPEED_PER_TICK);
     }
 
     private void maybeApplyTerrainJump(
@@ -985,8 +986,7 @@ final class ChickenHostilityTask implements Listener {
                 brains.put(allyId, allyBrain);
             }
 
-            if (allyBrain.socialAlertBlockedUntilTick != Long.MIN_VALUE
-                    && currentTick < allyBrain.socialAlertBlockedUntilTick) {
+            if (currentTick < allyBrain.socialAlertBlockedUntilTick) {
                 continue;
             }
             if (isInvalidTarget(ally, aggressor)) {
@@ -994,10 +994,10 @@ final class ChickenHostilityTask implements Listener {
             }
 
             List<Entity> allyNearby = ally.getNearbyEntities(processingRadius, processingRadius, processingRadius);
-            if (!shouldActivateChicken(ally, allyNearby)) {
+            if (isActivationBlocked(ally, allyNearby)) {
                 continue;
             }
-            if (!isEligible(
+            if (isIneligible(
                     ally,
                     allyBrain,
                     allyNearby,
@@ -1006,7 +1006,7 @@ final class ChickenHostilityTask implements Listener {
             )) {
                 continue;
             }
-            if (!canBecomeActiveInArea(ally, allyId)) {
+            if (isAreaActivationBlocked(ally, allyId)) {
                 continue;
             }
             UUID aggressorUuid = aggressor.getUniqueId();
@@ -1016,7 +1016,7 @@ final class ChickenHostilityTask implements Listener {
             if (isOnGlobalTargetCooldown(aggressorUuid, allyId)) {
                 continue;
             }
-            if (!hasAggressorSlot(aggressorUuid, allyId)) {
+            if (isAggressorSlotUnavailable(aggressorUuid, allyId)) {
                 continue;
             }
 

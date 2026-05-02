@@ -24,8 +24,8 @@ chicken-hostility:
   # After calming down by threat-timeout, the chicken ignores that same target for this
   # many seconds to avoid immediate retarget loops.
   retarget-grace: 4.0
-  # If a target stays out of line-of-sight for this many ticks, chase is canceled.
-  no-line-of-sight-reset-ticks: 35
+  # If a target stays out of line-of-sight for this many seconds, chase is canceled.
+  no-line-of-sight-reset-seconds: 1.75
 
   social-alert:
     enabled: true
@@ -44,6 +44,7 @@ chicken-hostility:
     # Cooldown (seconds) per recruited chicken to avoid re-alert loops.
     join-cooldown: 2.0
     # Hard limit of chickens recruited by a single alert emission.
+    # Keep this higher than max-simultaneous-attackers-per-player to allow rotation/reinforcement.
     max-responders: 4
 
   visual-effects:
@@ -52,7 +53,8 @@ chicken-hostility:
     particles:
       enabled: true
       interval-ticks: 8
-      volume: 1.0
+      # Relative particle amount/intensity.
+      intensity: 1.0
     sound:
       enabled: true
       interval-ticks: 160
@@ -91,8 +93,8 @@ chicken-hostility:
       enabled: true
       # Upward velocity applied when jump trigger conditions are met.
       vertical-boost: 0.42
-      # Minimum ticks between automatic jump attempts.
-      cooldown-ticks: 10
+      # Minimum seconds between automatic jump attempts.
+      cooldown: 0.5
       # Jump triggers when target is at least this many blocks higher.
       trigger-height-delta: 0.6
 

@@ -9,13 +9,6 @@ load: POSTWORLD
 authors: [ DevSkyCore ]
 website: https://github.com/devskycore
 
-commands:
-  fauna:
-    description: Main command for FaunaReborn.
-    usage: /<command> reload
-    aliases: [ faunareborn ]
-    permission: faunareborn.command.reload
-
 permissions:
   faunareborn.command.reload:
     description: Allows using /fauna reload.

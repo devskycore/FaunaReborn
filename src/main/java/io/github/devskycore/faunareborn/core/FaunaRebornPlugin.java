@@ -2,9 +2,9 @@ package io.github.devskycore.faunareborn.core;
 
 import io.github.devskycore.faunareborn.command.FaunaCommand;
 import io.github.devskycore.faunareborn.system.lifecycle.PluginBanner;
+import io.github.devskycore.faunareborn.system.lifecycle.PluginLifecycleLogger;
 import io.github.devskycore.faunareborn.system.shutdown.ShutdownOrchestrator;
 import io.github.devskycore.faunareborn.system.startup.StartupOrchestrator;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class FaunaRebornPlugin extends JavaPlugin {
@@ -23,6 +23,7 @@ public final class FaunaRebornPlugin extends JavaPlugin {
 
         registerCommands();
         PluginBanner.printEnable(this, startedAt);
+        PluginLifecycleLogger.onEnable(this, startedAt);
     }
 
     @Override
@@ -32,6 +33,7 @@ public final class FaunaRebornPlugin extends JavaPlugin {
         new ShutdownOrchestrator(this).run();
 
         PluginBanner.printDisable(this, startedAt);
+        PluginLifecycleLogger.onDisable(this, startedAt);
     }
 
     public void setChickenHostilityHooks(Runnable onEnable, Runnable onDisable) {
@@ -57,14 +59,11 @@ public final class FaunaRebornPlugin extends JavaPlugin {
     }
 
     private void registerCommands() {
-        PluginCommand faunaCommand = getCommand("fauna");
-        if (faunaCommand == null) {
-            getLogger().severe("Command 'fauna' is not defined in paper-plugin.yml.");
-            return;
-        }
-
-        FaunaCommand executor = new FaunaCommand(this);
-        faunaCommand.setExecutor(executor);
-        faunaCommand.setTabCompleter(executor);
+        registerCommand(
+                "fauna",
+                "Main command for FaunaReborn.",
+                java.util.List.of("faunareborn"),
+                new FaunaCommand(this)
+        );
     }
 }

@@ -45,14 +45,6 @@ public final class ConfigNumbers {
         return value;
     }
 
-    public int minInt(int value, int minInclusive, int fallback, String invalidMessage) {
-        if (value < minInclusive) {
-            plugin.getLogger().warning(invalidMessage);
-            return fallback;
-        }
-        return value;
-    }
-
     public int intRange(
             int value,
             int minInclusive,
