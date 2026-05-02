@@ -27,3 +27,6 @@ run/
 
 #Symbol Graph
 symbol_graph.json
+.gradle-home/
+.gradle/
+build/
