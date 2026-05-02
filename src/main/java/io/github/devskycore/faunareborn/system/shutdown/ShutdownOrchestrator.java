@@ -21,5 +21,6 @@ public final class ShutdownOrchestrator {
 
     private void register() {
         steps.add(plugin::disableChickenHostility);
+        steps.add(plugin::clearChickenHostilityHooks);
     }
 }

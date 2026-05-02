@@ -13,6 +13,7 @@ public final class PluginBanner {
     private static final TextColor PRIMARY = NamedTextColor.AQUA;
     private static final TextColor SECONDARY = NamedTextColor.GRAY;
     private static final TextColor ACCENT = NamedTextColor.GREEN;
+    private static final String SEPARATOR = "==============================";
 
     private PluginBanner() {}
 
@@ -24,13 +25,13 @@ public final class PluginBanner {
 
         List<Component> lines = new ArrayList<>();
 
-        lines.add(center("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", SECONDARY));
-        lines.add(center("⚡ FaunaReborn", PRIMARY));
-        lines.add(center("Version: " + version, SECONDARY));
-        lines.add(center("MC: " + mcVersion, SECONDARY));
-        lines.add(center("State: ENABLED", ACCENT));
-        lines.add(center("Time: " + ms + " ms", ACCENT));
-        lines.add(center("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", SECONDARY));
+        lines.add(center(SEPARATOR, SECONDARY));
+        lines.add(center("FAUNAREBORN", PRIMARY));
+        lines.add(center("Version > " + version, SECONDARY));
+        lines.add(center("MC > " + mcVersion, SECONDARY));
+        lines.add(center("Status > ENABLED", ACCENT));
+        lines.add(center("Load Time > " + ms + " ms", ACCENT));
+        lines.add(center(SEPARATOR, SECONDARY));
 
         send(lines, plugin);
     }
@@ -42,12 +43,12 @@ public final class PluginBanner {
 
         List<Component> lines = new ArrayList<>();
 
-        lines.add(center("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", SECONDARY));
-        lines.add(center("⚡ FaunaReborn", PRIMARY));
-        lines.add(center("Version: " + version, SECONDARY));
-        lines.add(center("State: DISABLED", NamedTextColor.RED));
-        lines.add(center("Time: " + ms + " ms", NamedTextColor.RED));
-        lines.add(center("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━", SECONDARY));
+        lines.add(center(SEPARATOR, SECONDARY));
+        lines.add(center("FAUNAREBORN", PRIMARY));
+        lines.add(center("Version > " + version, SECONDARY));
+        lines.add(center("Status > DISABLED", NamedTextColor.RED));
+        lines.add(center("Time > " + ms + " ms", NamedTextColor.RED));
+        lines.add(center(SEPARATOR, SECONDARY));
 
         send(lines, plugin);
     }

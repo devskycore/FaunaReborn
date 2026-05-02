@@ -1,4 +1,4 @@
-package io.github.devskycore.faunareborn.config;
+package io.github.devskycore.faunareborn.config.core;
 
 public record ActivationConfig(
         double chance,
@@ -6,3 +6,4 @@ public record ActivationConfig(
         boolean ignoreNamed
 ) {
 }
+

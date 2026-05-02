@@ -2,16 +2,64 @@ chicken-hostility:
   enabled: true
 
   # Damage dealt to the player by each hostile chicken hit.
-  attack-damage: 2.0
+  attack-damage: 3.2
+  # Global cooldown (seconds) before a player can become a new focus target again.
+  global-target-cooldown: 1.0
 
   # Max number of chickens attacking the same player at the same time.
   max-simultaneous-attackers-per-player: 3
+  # Hard caps for active hostile chickens (non-IDLE) to protect server performance.
+  max-active-hostile-chickens-per-chunk: 8
+  max-active-hostile-chickens-per-world: 200
+  # Hard cap of chickens processed each tick (global) to prevent lag spikes.
+  max-processed-chickens-per-tick: 240
 
   # Seconds between consecutive hits from the same chicken.
   attack-cooldown: 0.9
 
+  # If a chicken cannot deal real damage to its current target for this long (seconds),
+  # it calms down and drops that target.
+  threat-timeout: 12.0
+
+  # After calming down by threat-timeout, the chicken ignores that same target for this
+  # many seconds to avoid immediate retarget loops.
+  retarget-grace: 4.0
+  # If a target stays out of line-of-sight for this many ticks, chase is canceled.
+  no-line-of-sight-reset-ticks: 35
+
+  social-alert:
+    enabled: true
+    triggers:
+      # Trigger alarm when a chicken is damaged by a player (or player projectile).
+      by-damage-to-chicken: true
+      # Trigger alarm when a nearby chicken dies with a player as killer.
+      by-nearby-chicken-death: true
+    responders:
+      # If true, only adult chickens can be recruited as responders.
+      adults-only: true
+    # Search radius for nearby chickens that can join the attack.
+    radius: 10.0
+    # Cooldown (seconds) per emitter chicken between social alerts.
+    cooldown: 1.0
+    # Cooldown (seconds) per recruited chicken to avoid re-alert loops.
+    join-cooldown: 2.0
+    # Hard limit of chickens recruited by a single alert emission.
+    max-responders: 4
+
+  visual-effects:
+    glow:
+      enabled: true
+    particles:
+      enabled: true
+      interval-ticks: 8
+      volume: 1.0
+    sound:
+      enabled: true
+      interval-ticks: 160
+      volume: 0.18
+
   activation:
-    chance: 1.0
+    chance: 1.0 # 1.0 = 100%
     only-natural-chickens: true
     ignore-named: true
 
@@ -19,14 +67,51 @@ chicken-hostility:
   # This behavior is always enforced internally for performance and consistency.
 
   # Radius used to detect and evaluate players as potential targets.
-  detection-radius: 8.0
+  detection-radius: 9.5
 
   # Distance at which a chicken can land a hit on a target.
-  attack-range: 1.5
+  attack-range: 1.4
 
   # Chase speed multiplier for the hostility movement controller.
+  # Base chase speed is 0.12 blocks/tick before multiplier.
   # 1.0 = calibrated base chase speed, 1.25 = 25% faster, 0.8 = 20% slower.
-  movement-speed-multiplier: 1.0
+  movement-speed-multiplier: 1.2
+
+  movement:
+    distance-boost:
+      # Extra chase speed starts after this distance (in blocks).
+      start-distance: 5.0
+      # Extra multiplier added per block beyond start-distance.
+      extra-speed-per-block: 0.05
+      # Hard cap for distance-based speed multiplier.
+      max-multiplier: 1.25
+
+    terrain-jump:
+      # If enabled, hostile chickens do short jumps to avoid getting stuck.
+      enabled: true
+      # Upward velocity applied when jump trigger conditions are met.
+      vertical-boost: 0.42
+      # Minimum ticks between automatic jump attempts.
+      cooldown-ticks: 10
+      # Jump triggers when target is at least this many blocks higher.
+      trigger-height-delta: 0.6
+
+  damage-scaling:
+    difficulty-multipliers:
+      peaceful: 0.0
+      easy: 0.95
+      normal: 1.0
+      hard: 1.15
+    # Per-world extra multipliers (world name -> multiplier).
+    # Example:
+    # world_nether: 1.15
+    world-multipliers: {}
+
+  night-behavior:
+    enabled: true
+    damage:
+      enabled: true
+      multiplier: 1.2
 
   # World filter for chicken hostility.
   # ALL: enabled in every world.

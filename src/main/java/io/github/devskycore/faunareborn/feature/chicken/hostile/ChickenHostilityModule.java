@@ -1,6 +1,6 @@
 package io.github.devskycore.faunareborn.feature.chicken.hostile;
 
-import io.github.devskycore.faunareborn.config.ChickenHostilitySettings;
+import io.github.devskycore.faunareborn.config.core.ChickenHostilitySettings;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
 
 public final class ChickenHostilityModule {
