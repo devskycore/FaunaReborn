@@ -19,7 +19,7 @@ final class ActivationConfigReader {
                 globalConfig.getDouble(root + ".chance", PluginConfigDefaults.ACTIVATION_CHANCE)
         );
         boolean onlyNaturalChickens = globalConfig.getBoolean(
-                root + ".only-natural-chickens",
+                root + ".only-natural",
                 PluginConfigDefaults.ONLY_NATURAL_CHICKENS
         );
         boolean ignoreNamed = globalConfig.getBoolean(

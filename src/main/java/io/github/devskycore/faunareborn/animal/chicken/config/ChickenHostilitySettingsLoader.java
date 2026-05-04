@@ -61,18 +61,23 @@ public final class ChickenHostilitySettingsLoader {
         double hardDamageMultiplier = damageScalingReader.readDifficultyDamageMultiplier(config, Difficulty.HARD, 1.2D);
         Map<String, Double> worldDamageMultipliers = damageScalingReader.readWorldDamageMultipliers(config);
 
-        return new ChickenHostilitySettings(
-                config.getBoolean("chicken-hostility.enabled", true),
+        ChickenHostilitySettings.Combat combatSettings = new ChickenHostilitySettings.Combat(
                 combat.attackDamage(),
                 threatAndCooldown.globalTargetCooldownTicks(),
                 combat.maxSimultaneousAttackers(),
-                processingLimits.maxActiveHostileChickensPerChunk(),
-                processingLimits.maxActiveHostileChickensPerWorld(),
-                processingLimits.maxProcessedChickensPerTick(),
                 threatAndCooldown.attackCooldownTicks(),
                 threatAndCooldown.threatTimeoutTicks(),
                 threatAndCooldown.retargetGraceTicks(),
                 threatAndCooldown.noLineOfSightResetTicks(),
+                combat.detectionRadius(),
+                combat.attackRange()
+        );
+        ChickenHostilitySettings.Limits limits = new ChickenHostilitySettings.Limits(
+                processingLimits.maxActiveHostileChickensPerChunk(),
+                processingLimits.maxActiveHostileChickensPerWorld(),
+                processingLimits.maxProcessedChickensPerTick()
+        );
+        ChickenHostilitySettings.SocialAlert socialAlert = new ChickenHostilitySettings.SocialAlert(
                 threatAndCooldown.socialAlertEnabled(),
                 threatAndCooldown.socialAlertOnDamage(),
                 threatAndCooldown.socialAlertOnNearbyDeath(),
@@ -80,7 +85,9 @@ public final class ChickenHostilitySettingsLoader {
                 threatAndCooldown.socialAlertRadius(),
                 threatAndCooldown.socialAlertCooldownTicks(),
                 threatAndCooldown.socialAlertJoinCooldownTicks(),
-                threatAndCooldown.socialAlertMaxResponders(),
+                threatAndCooldown.socialAlertMaxResponders()
+        );
+        ChickenHostilitySettings.Visuals visuals = new ChickenHostilitySettings.Visuals(
                 globalConfig.getBoolean(visualRoot + ".glow.enabled", PluginConfigDefaults.VISUAL_GLOW_ENABLED),
                 globalConfig.getBoolean(visualRoot + ".particles.enabled", PluginConfigDefaults.VISUAL_PARTICLES_ENABLED),
                 numbers.intRange(
@@ -127,10 +134,9 @@ public final class ChickenHostilitySettingsLoader {
                         PluginConfigDefaults.VISUAL_SOUND_VOLUME,
                         "Invalid visual-effects.sound.volume in config.yml. Falling back to 0.18",
                         "visual-effects.sound.volume is too high. Clamped to 5.0"
-                ),
-                activation,
-                combat.detectionRadius(),
-                combat.attackRange(),
+                )
+        );
+        ChickenHostilitySettings.Movement movementSettings = new ChickenHostilitySettings.Movement(
                 movement.movementSpeedMultiplier(),
                 movement.movementDistanceBoostStartDistance(),
                 movement.movementDistanceBoostExtraSpeedPerBlock(),
@@ -138,22 +144,30 @@ public final class ChickenHostilitySettingsLoader {
                 movement.movementTerrainJumpEnabled(),
                 movement.movementTerrainJumpVerticalBoost(),
                 movement.movementTerrainJumpCooldownTicks(),
-                movement.movementTerrainJumpTriggerHeightDelta(),
-                worldFilter,
+                movement.movementTerrainJumpTriggerHeightDelta()
+        );
+        ChickenHostilitySettings.DamageScaling damageScaling = new ChickenHostilitySettings.DamageScaling(
                 peacefulDamageMultiplier,
                 easyDamageMultiplier,
                 normalDamageMultiplier,
                 hardDamageMultiplier,
                 worldDamageMultipliers,
                 nightBehavior.nightDamageEnabled(),
-                nightBehavior.nightDamageMultiplier(),
+                nightBehavior.nightDamageMultiplier()
+        );
+
+        return new ChickenHostilitySettings(
+                config.getBoolean("chicken-hostility.enabled", true),
+                combatSettings,
+                limits,
+                socialAlert,
+                visuals,
+                movementSettings,
+                damageScaling,
+                activation,
+                worldFilter,
                 itemPickupTerritoriality
         );
     }
 
 }
-
-
-
-
-

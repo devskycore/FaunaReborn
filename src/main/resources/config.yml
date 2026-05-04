@@ -22,7 +22,7 @@ damage-scaling:
 
 activation:
   chance: 1.0 # 1.0 = 100%
-  only-natural-chickens: true
+  only-natural: true
   ignore-named: true
 
 # Hard caps for active hostile entities (non-IDLE) to protect server performance.

@@ -133,6 +133,7 @@ final class CowMilkInteractionListener implements Listener {
         return spawnReason == CreatureSpawnEvent.SpawnReason.NATURAL
                 || spawnReason == CreatureSpawnEvent.SpawnReason.DEFAULT
                 || spawnReason == CreatureSpawnEvent.SpawnReason.BREEDING
+                || spawnReason == CreatureSpawnEvent.SpawnReason.COMMAND
                 || "CHUNK_GEN".equals(spawnReason.name());
     }
 }

@@ -2,8 +2,8 @@ package io.github.devskycore.faunareborn.animal.cow.hostility;
 
 import io.github.devskycore.faunareborn.animal.cow.CowSettings;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
-import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import org.bukkit.event.HandlerList;
+import org.bukkit.scheduler.BukkitTask;
 
 public final class CowMilkProvocationTask {
 
@@ -13,7 +13,7 @@ public final class CowMilkProvocationTask {
     private final CowMilkAggressionController aggressionController;
     private final CowMilkInteractionListener interactionListener;
 
-    private ScheduledTask task;
+    private BukkitTask task;
 
     public CowMilkProvocationTask(FaunaRebornPlugin plugin, CowSettings.MilkProvocationSettings settings, CowSettings.GlobalHostilitySettings globalSettings) {
         this.plugin = plugin;
@@ -26,12 +26,7 @@ public final class CowMilkProvocationTask {
             return;
         }
         plugin.getServer().getPluginManager().registerEvents(interactionListener, plugin);
-        task = plugin.getServer().getGlobalRegionScheduler().runAtFixedRate(
-                plugin,
-                ignored -> aggressionController.tick(),
-                1L,
-                TICK_RATE
-        );
+        task = plugin.getServer().getScheduler().runTaskTimer(plugin, aggressionController::tick, 1L, TICK_RATE);
     }
 
     public void stop() {

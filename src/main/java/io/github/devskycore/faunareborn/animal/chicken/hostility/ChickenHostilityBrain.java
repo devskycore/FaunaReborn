@@ -23,6 +23,8 @@ final class ChickenHostilityBrain {
     long nextProcessTick;
     long lastJumpTick;
     int noLineOfSightTicks;
+    long lastLineOfSightCheckTick;
+    boolean lastLineOfSightResult;
 
     double lastTargetDistSq2D = Double.NaN;
     int noProgressTicks;
@@ -38,6 +40,8 @@ final class ChickenHostilityBrain {
         this.lastJumpTick = Long.MIN_VALUE;
         this.ignoreTargetUntilTick = Long.MIN_VALUE;
         this.nextProcessTick = 0L;
+        this.lastLineOfSightCheckTick = Long.MIN_VALUE;
+        this.lastLineOfSightResult = true;
     }
 }
 

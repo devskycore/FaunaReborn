@@ -7,7 +7,6 @@ final class CowMilkAggressionBrain {
     long aggressionUntilTick;
     long forgetTargetAtTick;
     long lastAttackTick;
-    long nextSocialPropagationAllowedTick;
     long nextChargeTick;
     long warningUntilTick;
     CowMilkAggressionState state;

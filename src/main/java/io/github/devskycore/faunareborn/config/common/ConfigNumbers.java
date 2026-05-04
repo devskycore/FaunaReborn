@@ -1,7 +1,6 @@
 package io.github.devskycore.faunareborn.config.common;
 
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
-import io.github.devskycore.faunareborn.animal.chicken.config.PluginConfigDefaults;
 
 public final class ConfigNumbers {
 
@@ -78,7 +77,7 @@ public final class ConfigNumbers {
             return atLeastOne ? 1 : 0;
         }
 
-        double boundedSeconds = Math.min(seconds, PluginConfigDefaults.MAX_TIMER_SECONDS);
+        double boundedSeconds = Math.min(seconds, CommonConfigDefaults.MAX_TIMER_SECONDS);
         long ticks = Math.round(boundedSeconds * 20.0D);
         if (ticks > Integer.MAX_VALUE) {
             return Integer.MAX_VALUE;

@@ -14,7 +14,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
 
 public final class CowSettingsLoader implements EntitySettingsLoader<CowSettings> {
 
@@ -159,7 +158,7 @@ public final class CowSettingsLoader implements EntitySettingsLoader<CowSettings
         double activationChance = readActivationChance(globalConfig);
         boolean onlyNatural = globalConfig.getBoolean(
                 "activation.only-natural",
-                globalConfig.getBoolean("activation.only-natural-chickens", PluginConfigDefaults.ONLY_NATURAL_CHICKENS)
+                PluginConfigDefaults.ONLY_NATURAL_CHICKENS
         );
         boolean ignoreNamed = globalConfig.getBoolean("activation.ignore-named", PluginConfigDefaults.IGNORE_NAMED);
 

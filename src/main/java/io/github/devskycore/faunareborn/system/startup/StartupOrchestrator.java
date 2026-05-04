@@ -1,14 +1,13 @@
 package io.github.devskycore.faunareborn.system.startup;
 
-import io.github.devskycore.faunareborn.animal.chicken.hostility.ChickenHostilityModule;
-import io.github.devskycore.faunareborn.animal.cow.CowModule;
 import io.github.devskycore.faunareborn.config.PluginConfigManager;
 import io.github.devskycore.faunareborn.config.PluginSettings;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
+import io.github.devskycore.faunareborn.module.FaunaFeatureRegistry;
 import io.github.devskycore.faunareborn.module.ModuleManager;
+import io.github.devskycore.faunareborn.system.platform.RuntimePlatform;
 import org.bukkit.plugin.PluginManager;
 
-import java.util.List;
 import java.util.logging.Level;
 
 public final class StartupOrchestrator {
@@ -27,13 +26,24 @@ public final class StartupOrchestrator {
 
     public boolean run() {
         try {
-            PluginSettings settings = new PluginConfigManager(plugin).load();
+            if (RuntimePlatform.isFolia()) {
+                plugin.getLogger().severe(
+                        "Folia runtime detected. This build uses cross-entity global AI loops and is not safe for Folia thread ownership."
+                );
+                plugin.getLogger().severe(
+                        "Use a Folia-specific build with region/entity scheduler architecture before enabling hostility modules."
+                );
+                if (disablePluginOnFailure) {
+                    disablePluginSafely();
+                }
+                return false;
+            }
+
+            FaunaFeatureRegistry featureRegistry = FaunaFeatureRegistry.defaults();
+            PluginSettings settings = new PluginConfigManager(plugin, featureRegistry.createSettingsLoaders(plugin)).load();
             ModuleManager moduleManager = new ModuleManager(
                     plugin,
-                    List.of(
-                            new ChickenHostilityModule(plugin, settings.chickenHostility(), settings.global().globalEnabled()),
-                            new CowModule(plugin, settings.cow(), settings.global().globalEnabled())
-                    )
+                    featureRegistry.createModules(plugin, settings)
             );
             moduleManager.enableAll();
             plugin.setModuleManager(moduleManager);

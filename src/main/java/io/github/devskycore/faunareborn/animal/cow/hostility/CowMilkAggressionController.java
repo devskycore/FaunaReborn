@@ -4,7 +4,6 @@ import io.github.devskycore.faunareborn.animal.cow.CowSettings;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
-import org.bukkit.Location;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
@@ -33,8 +32,12 @@ final class CowMilkAggressionController {
     private final Int2ObjectOpenHashMap<CowMilkAggressionBrain> brains = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectOpenHashMap<Cow> trackedCows = new Int2ObjectOpenHashMap<>();
     private final Map<PlayerCowPair, Long> milkTriggerCooldownUntil = new java.util.HashMap<>();
+    private final Map<UUID, Double> originalMovementSpeedByCow = new java.util.HashMap<>();
+    private final Map<UUID, Integer> activeCowsByWorld = new java.util.HashMap<>();
+    private final Map<WorldChunkKey, Integer> activeCowsByChunk = new java.util.HashMap<>();
     private final Vector scratch = new Vector();
     private long currentTick;
+    private long activeCacheTick = Long.MIN_VALUE;
 
     CowMilkAggressionController(CowSettings.MilkProvocationSettings settings, CowSettings.GlobalHostilitySettings global) {
         this.settings = settings;
@@ -47,6 +50,7 @@ final class CowMilkAggressionController {
         if (brains.isEmpty()) {
             return;
         }
+        rebuildActiveCowCaches();
 
         int processed = 0;
         for (var iterator = brains.int2ObjectEntrySet().fastIterator(); iterator.hasNext() && processed < global.maxProcessedPerTick(); ) {
@@ -110,6 +114,7 @@ final class CowMilkAggressionController {
         if (global.activationChance() < 1.0D && ThreadLocalRandom.current().nextDouble() > global.activationChance()) {
             return;
         }
+        ensureActiveCowCachesFresh();
         if (countActiveForChunk(cow) >= global.maxActiveHostilePerChunk()) {
             return;
         }
@@ -147,6 +152,7 @@ final class CowMilkAggressionController {
         Cow cow = trackedCows.get(cowId);
         if (cow != null) {
             cow.setGlowing(false);
+            restoreMovementBase(cow);
         }
         brains.remove(cowId);
         trackedCows.remove(cowId);
@@ -181,6 +187,7 @@ final class CowMilkAggressionController {
         brains.clear();
         trackedCows.clear();
         milkTriggerCooldownUntil.clear();
+        originalMovementSpeedByCow.clear();
     }
 
     private void handleWarning(Cow cow, Player target, CowMilkAggressionBrain brain) {
@@ -275,7 +282,9 @@ final class CowMilkAggressionController {
         if (movement == null) {
             return;
         }
-        double desired = BASE_SPEED * (1.0D + ((settings.speedMultiplier() - 1.0D) * Math.max(0.0D, intensity)));
+        UUID cowId = cow.getUniqueId();
+        double originalBase = originalMovementSpeedByCow.computeIfAbsent(cowId, ignored -> movement.getBaseValue());
+        double desired = originalBase * (1.0D + ((settings.speedMultiplier() - 1.0D) * Math.max(0.0D, intensity)));
         movement.setBaseValue(Math.max(0.05D, Math.min(0.8D, desired)));
     }
 
@@ -283,17 +292,15 @@ final class CowMilkAggressionController {
         cow.setTarget(null);
         cow.setAggressive(false);
         cow.setGlowing(false);
-        setAggressiveMovement(cow, 0.0D);
+        restoreMovementBase(cow);
         brain.targetUuid = null;
     }
 
     private void faceTarget(Cow cow, Player target) {
-        Location from = cow.getLocation();
-        Location to = target.getLocation();
-        double dx = to.getX() - from.getX();
-        double dz = to.getZ() - from.getZ();
+        double dx = target.getX() - cow.getX();
+        double dz = target.getZ() - cow.getZ();
         float yaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
-        cow.setRotation(yaw, from.getPitch());
+        cow.setRotation(yaw, cow.getPitch());
     }
 
     private double normalizedIntensity(CowMilkAggressionBrain brain) {
@@ -365,29 +372,14 @@ final class CowMilkAggressionController {
     }
 
     private int countActiveForChunk(Cow probe) {
-        int count = 0;
-        for (Cow cow : trackedCows.values()) {
-            if (cow == null || !cow.isValid() || cow.isDead()) {
-                continue;
-            }
-            if (cow.getChunk().equals(probe.getChunk())) {
-                count++;
-            }
-        }
-        return count;
+        return activeCowsByChunk.getOrDefault(
+                new WorldChunkKey(probe.getWorld().getUID(), probe.getChunk().getX(), probe.getChunk().getZ()),
+                0
+        );
     }
 
     private int countActiveForWorld(World world) {
-        int count = 0;
-        for (Cow cow : trackedCows.values()) {
-            if (cow == null || !cow.isValid() || cow.isDead()) {
-                continue;
-            }
-            if (cow.getWorld().equals(world)) {
-                count++;
-            }
-        }
-        return count;
+        return activeCowsByWorld.getOrDefault(world.getUID(), 0);
     }
 
     private double resolveDamageMultiplier(World world) {
@@ -420,6 +412,45 @@ final class CowMilkAggressionController {
         }
     }
 
+    private void restoreMovementBase(Cow cow) {
+        AttributeInstance movement = cow.getAttribute(Attribute.MOVEMENT_SPEED);
+        if (movement == null) {
+            return;
+        }
+        Double original = originalMovementSpeedByCow.remove(cow.getUniqueId());
+        if (original != null) {
+            movement.setBaseValue(original);
+        }
+    }
+
+    private void ensureActiveCowCachesFresh() {
+        if (activeCacheTick == currentTick) {
+            return;
+        }
+        rebuildActiveCowCaches();
+    }
+
+    private void rebuildActiveCowCaches() {
+        activeCowsByWorld.clear();
+        activeCowsByChunk.clear();
+        for (Cow cow : trackedCows.values()) {
+            if (cow == null || !cow.isValid() || cow.isDead()) {
+                continue;
+            }
+            UUID worldId = cow.getWorld().getUID();
+            activeCowsByWorld.merge(worldId, 1, Integer::sum);
+            activeCowsByChunk.merge(
+                    new WorldChunkKey(worldId, cow.getChunk().getX(), cow.getChunk().getZ()),
+                    1,
+                    Integer::sum
+            );
+        }
+        activeCacheTick = currentTick;
+    }
+
     private record PlayerCowPair(UUID playerUuid, UUID cowUuid) {
+    }
+
+    private record WorldChunkKey(UUID worldId, int chunkX, int chunkZ) {
     }
 }

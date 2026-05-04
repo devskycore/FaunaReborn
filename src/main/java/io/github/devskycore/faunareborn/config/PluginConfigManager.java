@@ -1,13 +1,11 @@
 package io.github.devskycore.faunareborn.config;
 
-import io.github.devskycore.faunareborn.animal.chicken.config.ChickenSettingsLoader;
-import io.github.devskycore.faunareborn.animal.cow.CowSettingsLoader;
-import io.github.devskycore.faunareborn.animal.cow.CowSettings;
 import io.github.devskycore.faunareborn.config.entity.EntitySettings;
 import io.github.devskycore.faunareborn.config.entity.EntitySettingsLoader;
 import io.github.devskycore.faunareborn.config.entity.EntitySettingsRegistry;
 import io.github.devskycore.faunareborn.config.entity.EntityType;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
+import io.github.devskycore.faunareborn.module.FaunaFeatureRegistry;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -21,11 +19,12 @@ public final class PluginConfigManager {
     private final List<EntitySettingsLoader<?>> entityLoaders;
 
     public PluginConfigManager(FaunaRebornPlugin plugin) {
+        this(plugin, FaunaFeatureRegistry.defaults().createSettingsLoaders(plugin));
+    }
+
+    public PluginConfigManager(FaunaRebornPlugin plugin, List<EntitySettingsLoader<?>> entityLoaders) {
         this.plugin = plugin;
-        this.entityLoaders = List.of(
-                new ChickenSettingsLoader(plugin),
-                new CowSettingsLoader(plugin)
-        );
+        this.entityLoaders = List.copyOf(entityLoaders);
     }
 
     public PluginSettings load() {
@@ -48,11 +47,7 @@ public final class PluginConfigManager {
             loadAndRegisterEntitySettings(registry, loader, entitiesDirectory.toPath());
         }
 
-        return new PluginSettings(
-                globalSettings,
-                registry.require(io.github.devskycore.faunareborn.animal.chicken.config.ChickenHostilitySettings.class),
-                registry.require(CowSettings.class)
-        );
+        return new PluginSettings(globalSettings, registry);
     }
 
     private File ensureEntityConfigFile(EntitySettingsLoader<?> loader, Path entitiesDirectory) {

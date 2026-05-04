@@ -12,6 +12,9 @@ public record WorldFilter(WorldFilterMode mode, Set<String> worlds) {
     }
 
     public boolean isWorldAllowed(String worldName) {
+        if (mode == WorldFilterMode.ALL) {
+            return true;
+        }
         if (worldName == null || worldName.trim().isEmpty()) {
             return mode != WorldFilterMode.WHITELIST;
         }
