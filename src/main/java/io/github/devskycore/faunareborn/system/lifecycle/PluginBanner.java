@@ -12,14 +12,11 @@ public final class PluginBanner {
 
     private static final TextColor PRIMARY = NamedTextColor.AQUA;
     private static final TextColor SECONDARY = NamedTextColor.GRAY;
-    private static final TextColor ACCENT = NamedTextColor.GREEN;
     private static final String SEPARATOR = "==============================";
 
     private PluginBanner() {}
 
-    public static void printEnable(JavaPlugin plugin, long startNanos) {
-        long ms = (System.nanoTime() - startNanos) / 1_000_000;
-
+    public static void printEnable(JavaPlugin plugin) {
         final String version = plugin.getPluginMeta().getVersion();
         final String mcVersion = plugin.getServer().getMinecraftVersion();
 
@@ -29,16 +26,12 @@ public final class PluginBanner {
         lines.add(center("FAUNAREBORN", PRIMARY));
         lines.add(center("Version > " + version, SECONDARY));
         lines.add(center("MC > " + mcVersion, SECONDARY));
-        lines.add(center("Status > ENABLED", ACCENT));
-        lines.add(center("Load Time > " + ms + " ms", ACCENT));
         lines.add(center(SEPARATOR, SECONDARY));
 
         send(lines, plugin);
     }
 
-    public static void printDisable(JavaPlugin plugin, long startNanos) {
-        long ms = (System.nanoTime() - startNanos) / 1_000_000;
-
+    public static void printDisable(JavaPlugin plugin) {
         final String version = plugin.getPluginMeta().getVersion();
 
         List<Component> lines = new ArrayList<>();
@@ -46,8 +39,6 @@ public final class PluginBanner {
         lines.add(center(SEPARATOR, SECONDARY));
         lines.add(center("FAUNAREBORN", PRIMARY));
         lines.add(center("Version > " + version, SECONDARY));
-        lines.add(center("Status > DISABLED", NamedTextColor.RED));
-        lines.add(center("Time > " + ms + " ms", NamedTextColor.RED));
         lines.add(center(SEPARATOR, SECONDARY));
 
         send(lines, plugin);
@@ -67,3 +58,4 @@ public final class PluginBanner {
         return Component.text(" ".repeat(padding) + text, color);
     }
 }
+

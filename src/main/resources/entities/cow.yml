@@ -1,0 +1,41 @@
+cow:
+  # Scaffold module for upcoming cow behavior.
+  enabled: true
+
+cow-milk-provocation:
+  enabled: true
+
+  # How long the cow remains aggressive after being milked.
+  aggression-duration-seconds: 6.0
+  # Cooldown per player-cow pair to prevent trigger spam.
+  milking-trigger-cooldown-seconds: 2.0
+
+  # Maximum distance the cow keeps tracking its target.
+  detection-range: 12.0
+
+  warning:
+    # Brief warning phase (stare + sound) before full chase.
+    duration-seconds: 0.25
+
+  attack:
+    damage: 2.0
+    cooldown: 1.2
+    knockback-strength: 1.1
+
+  movement:
+    speed-multiplier: 1.25
+
+  targeting:
+    forget-target-after-seconds: 8.0
+    require-line-of-sight: true
+
+  charge:
+    enabled: true
+    min-interval-seconds: 0.8
+    max-interval-seconds: 2.5
+    extra-push: 0.17
+
+  sounds:
+    aggressive-enabled: true
+    warning-enabled: true
+    stomp-enabled: true

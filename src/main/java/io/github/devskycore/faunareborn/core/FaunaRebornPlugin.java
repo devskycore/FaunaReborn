@@ -1,6 +1,7 @@
 package io.github.devskycore.faunareborn.core;
 
 import io.github.devskycore.faunareborn.command.FaunaCommand;
+import io.github.devskycore.faunareborn.module.ModuleManager;
 import io.github.devskycore.faunareborn.system.lifecycle.PluginBanner;
 import io.github.devskycore.faunareborn.system.lifecycle.PluginLifecycleLogger;
 import io.github.devskycore.faunareborn.system.shutdown.ShutdownOrchestrator;
@@ -9,8 +10,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class FaunaRebornPlugin extends JavaPlugin {
 
-    private Runnable chickenHostilityEnableHook;
-    private Runnable chickenHostilityDisableHook;
+    private ModuleManager moduleManager;
 
     @Override
     public void onEnable() {
@@ -22,7 +22,7 @@ public final class FaunaRebornPlugin extends JavaPlugin {
         }
 
         registerCommands();
-        PluginBanner.printEnable(this, startedAt);
+        PluginBanner.printEnable(this);
         PluginLifecycleLogger.onEnable(this, startedAt);
     }
 
@@ -32,30 +32,16 @@ public final class FaunaRebornPlugin extends JavaPlugin {
 
         new ShutdownOrchestrator(this).run();
 
-        PluginBanner.printDisable(this, startedAt);
+        PluginBanner.printDisable(this);
         PluginLifecycleLogger.onDisable(this, startedAt);
     }
 
-    public void setChickenHostilityHooks(Runnable onEnable, Runnable onDisable) {
-        this.chickenHostilityEnableHook = onEnable;
-        this.chickenHostilityDisableHook = onDisable;
+    public ModuleManager moduleManager() {
+        return moduleManager;
     }
 
-    public void clearChickenHostilityHooks() {
-        this.chickenHostilityEnableHook = null;
-        this.chickenHostilityDisableHook = null;
-    }
-
-    public void enableChickenHostility() {
-        if (chickenHostilityEnableHook != null) {
-            chickenHostilityEnableHook.run();
-        }
-    }
-
-    public void disableChickenHostility() {
-        if (chickenHostilityDisableHook != null) {
-            chickenHostilityDisableHook.run();
-        }
+    public void setModuleManager(ModuleManager moduleManager) {
+        this.moduleManager = moduleManager;
     }
 
     private void registerCommands() {

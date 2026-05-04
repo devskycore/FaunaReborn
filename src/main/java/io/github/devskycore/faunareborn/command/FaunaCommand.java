@@ -12,10 +12,12 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.logging.Level;
 
 public final class FaunaCommand implements BasicCommand {
@@ -44,8 +46,11 @@ public final class FaunaCommand implements BasicCommand {
         }
 
         long startedAt = System.nanoTime();
-        Path configPath = plugin.getDataFolder().toPath().resolve("config.yml");
-        String previousConfig = readConfigSnapshot(configPath);
+        Map<Path, String> previousConfigs = readConfigSnapshots(
+                plugin.getDataFolder().toPath().resolve("config.yml"),
+                plugin.getDataFolder().toPath().resolve("entities/chicken.yml"),
+                plugin.getDataFolder().toPath().resolve("entities/cow.yml")
+        );
 
         try {
             new ShutdownOrchestrator(plugin).run();
@@ -62,9 +67,7 @@ public final class FaunaCommand implements BasicCommand {
 
         plugin.getLogger().severe("Reload startup failed. Trying to restore previous config snapshot.");
 
-        if (previousConfig != null) {
-            writeConfigSnapshot(configPath, previousConfig);
-        }
+        writeConfigSnapshots(previousConfigs);
 
         boolean restored = new StartupOrchestrator(plugin, false).run();
         if (!restored) {
@@ -95,24 +98,29 @@ public final class FaunaCommand implements BasicCommand {
         return RELOAD_PERMISSION;
     }
 
-    private String readConfigSnapshot(Path configPath) {
-        if (!Files.exists(configPath)) {
-            return null;
+    private Map<Path, String> readConfigSnapshots(Path... configPaths) {
+        Map<Path, String> snapshots = new HashMap<>();
+        for (Path configPath : configPaths) {
+            if (!Files.exists(configPath)) {
+                continue;
+            }
+            try {
+                snapshots.put(configPath, Files.readString(configPath, StandardCharsets.UTF_8));
+            } catch (IOException ioException) {
+                plugin.getLogger().log(Level.WARNING, "Could not read config snapshot before reload: " + configPath, ioException);
+            }
         }
-        try {
-            return Files.readString(configPath, StandardCharsets.UTF_8);
-        } catch (IOException ioException) {
-            plugin.getLogger().log(Level.WARNING, "Could not read config snapshot before reload.", ioException);
-            return null;
-        }
+        return snapshots;
     }
 
-    private void writeConfigSnapshot(Path configPath, String content) {
-        try {
-            Files.createDirectories(configPath.getParent());
-            Files.writeString(configPath, content, StandardCharsets.UTF_8);
-        } catch (IOException ioException) {
-            plugin.getLogger().log(Level.SEVERE, "Could not restore previous config snapshot.", ioException);
+    private void writeConfigSnapshots(Map<Path, String> snapshots) {
+        for (Map.Entry<Path, String> entry : snapshots.entrySet()) {
+            try {
+                Files.createDirectories(entry.getKey().getParent());
+                Files.writeString(entry.getKey(), entry.getValue(), StandardCharsets.UTF_8);
+            } catch (IOException ioException) {
+                plugin.getLogger().log(Level.SEVERE, "Could not restore previous config snapshot: " + entry.getKey(), ioException);
+            }
         }
     }
 
@@ -120,3 +128,4 @@ public final class FaunaCommand implements BasicCommand {
         return (System.nanoTime() - startedAt) / 1_000_000L;
     }
 }
+
