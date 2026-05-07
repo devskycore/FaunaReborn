@@ -15,10 +15,15 @@ public final class CowMilkProvocationTask {
 
     private BukkitTask task;
 
-    public CowMilkProvocationTask(FaunaRebornPlugin plugin, CowSettings.MilkProvocationSettings settings, CowSettings.GlobalHostilitySettings globalSettings) {
+    public CowMilkProvocationTask(
+            FaunaRebornPlugin plugin,
+            CowSettings.MilkProvocationSettings settings,
+            CowSettings.SocialAlertSettings socialAlertSettings,
+            CowSettings.GlobalHostilitySettings globalSettings
+    ) {
         this.plugin = plugin;
         this.aggressionController = new CowMilkAggressionController(settings, globalSettings);
-        this.interactionListener = new CowMilkInteractionListener(plugin, settings, globalSettings, aggressionController);
+        this.interactionListener = new CowMilkInteractionListener(plugin, settings, socialAlertSettings, globalSettings, aggressionController);
     }
 
     public void start() {

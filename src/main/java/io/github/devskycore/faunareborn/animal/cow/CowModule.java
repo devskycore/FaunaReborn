@@ -14,7 +14,12 @@ public final class CowModule implements FaunaModule {
         this.settings = settings;
         this.globalEnabled = globalEnabled;
         if (settings.milkProvocation().enabled()) {
-            this.milkProvocationTask = new CowMilkProvocationTask(plugin, settings.milkProvocation(), settings.globalHostility());
+            this.milkProvocationTask = new CowMilkProvocationTask(
+                    plugin,
+                    settings.milkProvocation(),
+                    settings.socialAlert(),
+                    settings.globalHostility()
+            );
         }
     }
 

@@ -2,6 +2,19 @@ cow:
   # Scaffold module for upcoming cow behavior.
   enabled: true
 
+cow-hostility:
+  social-alert:
+    enabled: true
+    radius: 14.0
+    cooldown-seconds: 0.76
+    join-cooldown-seconds: 2.0
+    responders:
+      adults-only: true
+    max-responders: 3
+    triggers:
+      by-damage-to-cow: true
+      by-nearby-cow-death: true
+
 cow-milk-provocation:
   enabled: true
 
@@ -28,6 +41,7 @@ cow-milk-provocation:
   targeting:
     forget-target-after-seconds: 8.0
     require-line-of-sight: true
+    retarget-grace-seconds: 3.0
 
   charge:
     enabled: true

@@ -100,6 +100,12 @@ public final class CowSettingsLoader implements EntitySettingsLoader<CowSettings
         );
 
         boolean requireLineOfSight = config.getBoolean("cow-milk-provocation.targeting.require-line-of-sight", true);
+        int retargetGraceTicks = secondsToTicks(clampedDouble(
+                config.getDouble("cow-milk-provocation.targeting.retarget-grace-seconds", 3.0D),
+                0.0D,
+                60.0D,
+                3.0D
+        ), false);
         boolean playAggressiveSounds = config.getBoolean("cow-milk-provocation.sounds.aggressive-enabled", true);
         boolean playWarningSound = config.getBoolean("cow-milk-provocation.sounds.warning-enabled", true);
         boolean playStompSound = config.getBoolean("cow-milk-provocation.sounds.stomp-enabled", true);
@@ -139,6 +145,7 @@ public final class CowSettingsLoader implements EntitySettingsLoader<CowSettings
                 secondsToTicks(attackCooldownSeconds, true),
                 knockbackStrength,
                 speedMultiplier,
+                retargetGraceTicks,
                 playAggressiveSounds,
                 playWarningSound,
                 playStompSound,
@@ -147,7 +154,51 @@ public final class CowSettingsLoader implements EntitySettingsLoader<CowSettings
                 chargeMaxIntervalTicks,
                 chargeExtraPush
         );
-        return new CowSettings(moduleEnabled, milkProvocation, loadGlobalHostilitySettings());
+        CowSettings.SocialAlertSettings socialAlert = new CowSettings.SocialAlertSettings(
+                config.getBoolean("cow-hostility.social-alert.enabled", true),
+                config.getBoolean("cow-hostility.social-alert.triggers.by-damage-to-cow", true),
+                config.getBoolean("cow-hostility.social-alert.triggers.by-nearby-cow-death", true),
+                config.getBoolean("cow-hostility.social-alert.responders.adults-only", true),
+                clampedDouble(
+                        config.getDouble("cow-hostility.social-alert.radius", 10.0D),
+                        2.0D,
+                        32.0D,
+                        10.0D
+                ),
+                0.0D,
+                secondsToTicks(clampedDouble(
+                        config.getDouble("cow-hostility.social-alert.cooldown-seconds", 1.0D),
+                        0.0D,
+                        60.0D,
+                        1.0D
+                ), false),
+                secondsToTicks(clampedDouble(
+                        config.getDouble("cow-hostility.social-alert.join-cooldown-seconds", 2.0D),
+                        0.0D,
+                        60.0D,
+                        2.0D
+                ), false),
+                numbers.intRange(
+                        config.getInt("cow-hostility.social-alert.max-responders", 4),
+                        0,
+                        32,
+                        4,
+                        "Invalid cow-hostility.social-alert.max-responders in cow.yml. Falling back to 4",
+                        "cow-hostility.social-alert.max-responders is too high. Clamped to 32"
+                )
+        );
+        socialAlert = new CowSettings.SocialAlertSettings(
+                socialAlert.enabled(),
+                socialAlert.onDamage(),
+                socialAlert.onNearbyDeath(),
+                socialAlert.responderAdultsOnly(),
+                socialAlert.radius(),
+                socialAlert.radius() * socialAlert.radius(),
+                socialAlert.cooldownTicks(),
+                socialAlert.joinCooldownTicks(),
+                socialAlert.maxResponders()
+        );
+        return new CowSettings(moduleEnabled, milkProvocation, socialAlert, loadGlobalHostilitySettings());
     }
 
     private CowSettings.GlobalHostilitySettings loadGlobalHostilitySettings() {

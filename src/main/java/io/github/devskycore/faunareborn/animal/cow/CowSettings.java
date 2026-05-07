@@ -8,6 +8,7 @@ import java.util.Map;
 public record CowSettings(
         boolean enabled,
         MilkProvocationSettings milkProvocation,
+        SocialAlertSettings socialAlert,
         GlobalHostilitySettings globalHostility
 ) implements EntitySettings {
 
@@ -24,6 +25,7 @@ public record CowSettings(
             int attackCooldownTicks,
             double knockbackStrength,
             double speedMultiplier,
+            int retargetGraceTicks,
             boolean playAggressiveSounds,
             boolean playWarningSound,
             boolean playStompSound,
@@ -50,6 +52,19 @@ public record CowSettings(
             boolean nightDamageEnabled,
             double nightDamageMultiplier,
             VisualEffectsSettings visualEffects
+    ) {
+    }
+
+    public record SocialAlertSettings(
+            boolean enabled,
+            boolean onDamage,
+            boolean onNearbyDeath,
+            boolean responderAdultsOnly,
+            double radius,
+            double radiusSq,
+            int cooldownTicks,
+            int joinCooldownTicks,
+            int maxResponders
     ) {
     }
 
