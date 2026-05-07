@@ -534,7 +534,7 @@ final class ChickenHostilityTask implements Listener {
         }
         int chickenId = chicken.getEntityId();
         if (!tracker.isTracked(chickenId)) {
-            trackChicken(chicken, null, false);
+            trackChicken(chicken, false);
         }
 
         ChickenHostilityBrain brain = tracker.brain(chickenId);
@@ -594,13 +594,13 @@ final class ChickenHostilityTask implements Listener {
                 continue;
             }
             for (Chicken chicken : world.getEntitiesByClass(Chicken.class)) {
-                trackChicken(chicken, null, false);
+                trackChicken(chicken, false);
             }
         }
         tracker.resetCursors();
     }
 
-    private void trackChicken(Chicken chicken, CreatureSpawnEvent.SpawnReason spawnReason, boolean replaceActivationState) {
+    private void trackChicken(Chicken chicken, boolean replaceActivationState) {
         if (chicken == null || !chicken.isValid() || chicken.isDead()) {
             return;
         }
@@ -609,7 +609,7 @@ final class ChickenHostilityTask implements Listener {
         }
 
         tracker.track(chicken);
-        activationPolicy.track(chicken, spawnReason, replaceActivationState);
+        activationPolicy.track(chicken, replaceActivationState);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -617,7 +617,7 @@ final class ChickenHostilityTask implements Listener {
         if (event.getEntity() instanceof Chicken chicken) {
             CreatureSpawnEvent.SpawnReason spawnReason = event.getSpawnReason();
             activationPolicy.markNonNaturalChicken(chicken, spawnReason);
-            enqueueStateMutation(() -> trackChicken(chicken, spawnReason, true));
+            enqueueStateMutation(() -> trackChicken(chicken, true));
         }
     }
 
@@ -671,7 +671,7 @@ final class ChickenHostilityTask implements Listener {
 
         Item item = event.getItem();
         Material material = item.getItemStack().getType();
-        if (!territorialPickupService.isTerritorialPickupMaterial(material)) {
+        if (territorialPickupService.isNonTerritorialPickupMaterial(material)) {
             return;
         }
         if (territorialPickupService.maxItemAgeTicks() > 0 && item.getTicksLived() > territorialPickupService.maxItemAgeTicks()) {
@@ -720,7 +720,7 @@ final class ChickenHostilityTask implements Listener {
         if (chickens.isEmpty()) return;
         enqueueStateMutation(() -> {
             for (Chicken chicken : chickens) {
-                trackChicken(chicken, null, false);
+                trackChicken(chicken, false);
             }
         });
     }

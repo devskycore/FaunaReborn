@@ -44,7 +44,7 @@ final class ActivationPolicy {
         activationStates.remove(chickenId);
     }
 
-    void track(Chicken chicken, CreatureSpawnEvent.SpawnReason spawnReason, boolean replaceActivationState) {
+    void track(Chicken chicken, boolean replaceActivationState) {
         int chickenId = chicken.getEntityId();
         if (replaceActivationState) {
             activationStates.put(chickenId, new ActivationState());

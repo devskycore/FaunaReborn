@@ -5,7 +5,6 @@ import io.github.devskycore.faunareborn.config.entity.EntitySettingsLoader;
 import io.github.devskycore.faunareborn.config.entity.EntitySettingsRegistry;
 import io.github.devskycore.faunareborn.config.entity.EntityType;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
-import io.github.devskycore.faunareborn.module.FaunaFeatureRegistry;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -17,10 +16,6 @@ public final class PluginConfigManager {
 
     private final FaunaRebornPlugin plugin;
     private final List<EntitySettingsLoader<?>> entityLoaders;
-
-    public PluginConfigManager(FaunaRebornPlugin plugin) {
-        this(plugin, FaunaFeatureRegistry.defaults().createSettingsLoaders(plugin));
-    }
 
     public PluginConfigManager(FaunaRebornPlugin plugin, List<EntitySettingsLoader<?>> entityLoaders) {
         this.plugin = plugin;

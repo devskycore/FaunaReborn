@@ -25,7 +25,6 @@ final class CowMilkAggressionController {
     private static final double ATTACK_RANGE_SQ = ATTACK_RANGE * ATTACK_RANGE;
     private static final double FORWARD_PUSH = 0.23D;
     private static final double MAX_VERTICAL_GAP = 5.0D;
-    private static final double BASE_SPEED = 0.2D;
 
     private final CowSettings.MilkProvocationSettings settings;
     private final CowSettings.GlobalHostilitySettings global;
@@ -65,7 +64,7 @@ final class CowMilkAggressionController {
                 continue;
             }
 
-            if (!isWorldAllowed(cow.getWorld()) || cow.getWorld().getDifficulty() == Difficulty.PEACEFUL) {
+            if (isWorldDisallowed(cow.getWorld()) || cow.getWorld().getDifficulty() == Difficulty.PEACEFUL) {
                 calmDown(cow, brain);
                 trackedCows.remove(cowId);
                 iterator.remove();
@@ -102,7 +101,7 @@ final class CowMilkAggressionController {
         if (!settings.enabled() || !cow.isAdult()) {
             return;
         }
-        if (!isWorldAllowed(cow.getWorld()) || cow.getWorld().getDifficulty() == Difficulty.PEACEFUL) {
+        if (isWorldDisallowed(cow.getWorld()) || cow.getWorld().getDifficulty() == Difficulty.PEACEFUL) {
             return;
         }
         if (global.ignoreNamed() && cow.customName() != null) {
@@ -285,7 +284,7 @@ final class CowMilkAggressionController {
         UUID cowId = cow.getUniqueId();
         double originalBase = originalMovementSpeedByCow.computeIfAbsent(cowId, ignored -> movement.getBaseValue());
         double desired = originalBase * (1.0D + ((settings.speedMultiplier() - 1.0D) * Math.max(0.0D, intensity)));
-        movement.setBaseValue(Math.max(0.05D, Math.min(0.8D, desired)));
+        movement.setBaseValue(Math.clamp(desired, 0.05D, 0.8D));
     }
 
     private void calmDown(Cow cow, CowMilkAggressionBrain brain) {
@@ -306,7 +305,7 @@ final class CowMilkAggressionController {
     private double normalizedIntensity(CowMilkAggressionBrain brain) {
         long remaining = Math.max(0L, brain.aggressionUntilTick - currentTick);
         double ratio = (double) remaining / (double) settings.aggressionDurationTicks();
-        return Math.max(0.35D, Math.min(1.0D, ratio));
+        return Math.clamp(ratio, 0.35D, 1.0D);
     }
 
     private long randomChargeDelay() {
@@ -367,8 +366,8 @@ final class CowMilkAggressionController {
         return dx * dx + dy * dy + dz * dz;
     }
 
-    private boolean isWorldAllowed(World world) {
-        return world != null && global.worldFilter().isWorldAllowed(world.getName());
+    private boolean isWorldDisallowed(World world) {
+        return world == null || !global.worldFilter().isWorldAllowed(world.getName());
     }
 
     private int countActiveForChunk(Cow probe) {

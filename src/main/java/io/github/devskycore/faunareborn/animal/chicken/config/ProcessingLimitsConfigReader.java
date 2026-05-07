@@ -6,11 +6,9 @@ import org.bukkit.configuration.file.FileConfiguration;
 
 public final class ProcessingLimitsConfigReader {
 
-    private final FaunaRebornPlugin plugin;
     private final ConfigNumbers numbers;
 
     public ProcessingLimitsConfigReader(FaunaRebornPlugin plugin) {
-        this.plugin = plugin;
         this.numbers = new ConfigNumbers(plugin);
     }
 

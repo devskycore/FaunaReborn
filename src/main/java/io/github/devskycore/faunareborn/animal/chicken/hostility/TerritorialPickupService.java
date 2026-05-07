@@ -73,19 +73,15 @@ final class TerritorialPickupService {
         return maxItemAgeTicks;
     }
 
-    int aggressionDurationTicks() {
-        return aggressionDurationTicks;
-    }
-
-    boolean isTerritorialPickupMaterial(Material material) {
-        return material == Material.EGG || material == Material.FEATHER || material == Material.CHICKEN;
+    boolean isNonTerritorialPickupMaterial(Material material) {
+        return material != Material.EGG && material != Material.FEATHER && material != Material.CHICKEN;
     }
 
     void recordPickup(Player player, Material material, int amount, List<Entity> nearbyEntities, long currentTick) {
         if (!enabled) {
             return;
         }
-        if (amount <= 0 || !isTerritorialPickupMaterial(material)) {
+        if (amount <= 0 || isNonTerritorialPickupMaterial(material)) {
             return;
         }
         if (player == null || !player.isOnline() || player.isDead()) {
@@ -121,7 +117,7 @@ final class TerritorialPickupService {
             if (!(entity instanceof Chicken chicken)) {
                 continue;
             }
-            if (!canPerceiveTerritorialPickup(chicken, player)) {
+            if (cannotPerceiveTerritorialPickup(chicken, player)) {
                 continue;
             }
             if (HostilityDistances.distanceSq(chicken.getLocation(), itemLocation) <= detectionRadiusSq) {
@@ -157,7 +153,7 @@ final class TerritorialPickupService {
             if (!(entity instanceof Chicken chicken)) {
                 continue;
             }
-            if (!canPerceiveTerritorialPickup(chicken, player)) {
+            if (cannotPerceiveTerritorialPickup(chicken, player)) {
                 continue;
             }
             if (!recruitment.tryRecruit(chicken, player, aggressionDurationTicks, true)) {
@@ -173,7 +169,7 @@ final class TerritorialPickupService {
             }
         }
 
-        if (recruited > 0 && socialPropagationEnabled && socialAlertService.enabled() && firstRecruit != null) {
+        if (recruited > 0 && socialPropagationEnabled && socialAlertService.enabled()) {
             List<Entity> socialNearby = firstRecruit.getNearbyEntities(
                     socialAlertService.radius(),
                     socialAlertService.radius(),
@@ -183,23 +179,23 @@ final class TerritorialPickupService {
         }
     }
 
-    private boolean canPerceiveTerritorialPickup(Chicken chicken, Player player) {
+    private boolean cannotPerceiveTerritorialPickup(Chicken chicken, Player player) {
         if (chicken == null || player == null) {
-            return false;
+            return true;
         }
         if (!chicken.isValid() || chicken.isDead()) {
-            return false;
+            return true;
         }
         if (targetValidator.isInvalidTarget(chicken, player)) {
-            return false;
+            return true;
         }
         if (HostilityDistances.distanceSq(chicken, player) > detectionRadiusSq) {
-            return false;
+            return true;
         }
         if (Math.abs(chicken.getY() - player.getY()) > ChickenHostilityConstants.MAX_VERTICAL_GAP) {
-            return false;
+            return true;
         }
-        return chicken.hasLineOfSight(player);
+        return !chicken.hasLineOfSight(player);
     }
 
     private int resolveItemPickupThreshold(Material material, World world) {

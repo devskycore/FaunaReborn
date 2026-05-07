@@ -24,7 +24,7 @@ public record WorldFilter(WorldFilterMode mode, Set<String> worlds) {
         return switch (mode) {
             case WHITELIST -> listed;
             case BLACKLIST -> !listed;
-            case ALL -> true;
+            default -> true;
         };
     }
 
