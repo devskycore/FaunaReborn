@@ -15,11 +15,9 @@ public final class WorldFilterConfigReader {
 
     public WorldFilter readWorldFilter(FileConfiguration config) {
         final String globalFilterRoot = "world-filter";
-        FileConfiguration globalConfig = plugin.getConfig();
-
-        if (globalConfig.isConfigurationSection(globalFilterRoot)) {
-            WorldFilterMode mode = parseWorldFilterMode(globalConfig.getString(globalFilterRoot + ".mode"));
-            return new WorldFilter(mode, WorldFilter.normalizeWorldNames(globalConfig.getStringList(globalFilterRoot + ".worlds")));
+        if (config.isConfigurationSection(globalFilterRoot)) {
+            WorldFilterMode mode = parseWorldFilterMode(config.getString(globalFilterRoot + ".mode"));
+            return new WorldFilter(mode, WorldFilter.normalizeWorldNames(config.getStringList(globalFilterRoot + ".worlds")));
         }
 
         return new WorldFilter(WorldFilterMode.ALL, java.util.Set.of());

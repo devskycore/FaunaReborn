@@ -15,9 +15,8 @@ public final class ProcessingLimitsConfigReader {
     }
 
     public ProcessingLimitsConfigValues read(FileConfiguration config) {
-        FileConfiguration globalConfig = plugin.getConfig();
         int maxActivePerChunk = numbers.intRange(
-                globalConfig.getInt(
+                config.getInt(
                         "max-active-hostile-chickens-per-chunk",
                         PluginConfigDefaults.MAX_ACTIVE_HOSTILE_CHICKENS_PER_CHUNK
                 ),
@@ -28,7 +27,7 @@ public final class ProcessingLimitsConfigReader {
                 "max-active-hostile-chickens-per-chunk is too high. Clamped to 128"
         );
         int maxActivePerWorld = numbers.intRange(
-                globalConfig.getInt(
+                config.getInt(
                         "max-active-hostile-chickens-per-world",
                         PluginConfigDefaults.MAX_ACTIVE_HOSTILE_CHICKENS_PER_WORLD
                 ),
@@ -39,7 +38,7 @@ public final class ProcessingLimitsConfigReader {
                 "max-active-hostile-chickens-per-world is too high. Clamped to 5000"
         );
         int maxProcessedPerTick = numbers.intRange(
-                globalConfig.getInt(
+                config.getInt(
                         "max-processed-chickens-per-tick",
                         PluginConfigDefaults.MAX_PROCESSED_CHICKENS_PER_TICK
                 ),

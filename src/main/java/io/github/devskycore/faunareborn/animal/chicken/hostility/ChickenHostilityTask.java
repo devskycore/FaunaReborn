@@ -66,8 +66,6 @@ final class ChickenHostilityTask implements Listener {
 
     private BukkitTask task;
     private long currentTick;
-    private int idleBucketModulo = 1;
-
     ChickenHostilityTask(FaunaRebornPlugin plugin, ChickenHostilitySettings settings) {
         this.plugin = plugin;
 
@@ -141,7 +139,7 @@ final class ChickenHostilityTask implements Listener {
         if (currentTick % INVALID_CLEANUP_INTERVAL_TICKS == 0L) {
             cleanupInvalidTrackedChickensBatch();
         }
-        idleBucketModulo = resolveIdleBucketModulo();
+        int idleBucketModulo = resolveIdleBucketModulo();
         int processed = 0;
         int scanned = 0;
         int scanBudget = Math.max(maxProcessedChickensPerTick * 3, idleBucketModulo * 64);
@@ -249,7 +247,7 @@ final class ChickenHostilityTask implements Listener {
         if (requireAdult && !isAdult) {
             return true;
         }
-        return requireBabyNearby && !hasBabyNearby;
+        return !hasBabyNearby;
     }
 
     private void handleIdle(Chicken chicken, ChickenHostilityBrain brain, List<Entity> nearby) {
@@ -393,9 +391,9 @@ final class ChickenHostilityTask implements Listener {
         if (brain.state == nextState) return;
 
         ChickenHostilityState previousState = brain.state;
-        if (previousState == ChickenHostilityState.IDLE && nextState != ChickenHostilityState.IDLE) {
+        if (previousState == ChickenHostilityState.IDLE) {
             targetingService.registerActiveTracking(chicken, brain.targetUuid);
-        } else if (previousState != ChickenHostilityState.IDLE && nextState == ChickenHostilityState.IDLE) {
+        } else if (nextState == ChickenHostilityState.IDLE) {
             targetingService.unregisterActiveTracking(chicken, brain.targetUuid);
         }
 
@@ -513,7 +511,7 @@ final class ChickenHostilityTask implements Listener {
         }
         int idleTargetPerTick = Math.max(maxProcessedChickensPerTick * 2, 128);
         int computed = (int) Math.ceil((double) tracked / (double) idleTargetPerTick);
-        return Math.max(1, Math.min(MAX_IDLE_BUCKETS, computed));
+        return Math.clamp(computed, 1, MAX_IDLE_BUCKETS);
     }
 
     private void removeTrackedChicken(int chickenId, Chicken chicken) {

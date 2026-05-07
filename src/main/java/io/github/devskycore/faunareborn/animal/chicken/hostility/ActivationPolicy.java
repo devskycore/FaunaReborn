@@ -47,10 +47,10 @@ final class ActivationPolicy {
     void track(Chicken chicken, CreatureSpawnEvent.SpawnReason spawnReason, boolean replaceActivationState) {
         int chickenId = chicken.getEntityId();
         if (replaceActivationState) {
-            activationStates.put(chickenId, new ActivationState(spawnReason));
+            activationStates.put(chickenId, new ActivationState());
             return;
         }
-        activationStates.putIfAbsent(chickenId, new ActivationState(spawnReason));
+        activationStates.putIfAbsent(chickenId, new ActivationState());
     }
 
     void markNonNaturalChicken(Chicken chicken, CreatureSpawnEvent.SpawnReason spawnReason) {
@@ -104,11 +104,11 @@ final class ActivationPolicy {
 
         ActivationState activationState = activationStates.get(chicken.getEntityId());
         if (activationState == null) {
-            activationState = new ActivationState(null);
+            activationState = new ActivationState();
             activationStates.put(chicken.getEntityId(), activationState);
         }
 
-        if (onlyNaturalChickens && !isNaturalChicken(chicken, activationState.spawnReason)) {
+        if (onlyNaturalChickens && !isNaturalChicken(chicken)) {
             return true;
         }
 
@@ -132,17 +132,9 @@ final class ActivationPolicy {
         return false;
     }
 
-    private boolean isNaturalChicken(Chicken chicken, CreatureSpawnEvent.SpawnReason spawnReason) {
+    private boolean isNaturalChicken(Chicken chicken) {
         CreatureSpawnEvent.SpawnReason entitySpawnReason = chicken.getEntitySpawnReason();
-        if (entitySpawnReason != null) {
-            return isNaturalSpawnReason(entitySpawnReason);
-        }
-
-        if (spawnReason == null) {
-            return !isMarkedNonNaturalChicken(chicken);
-        }
-
-        return isNaturalSpawnReason(spawnReason);
+        return isNaturalSpawnReason(entitySpawnReason);
     }
 
     private boolean isNaturalSpawnReason(CreatureSpawnEvent.SpawnReason spawnReason) {
@@ -166,18 +158,11 @@ final class ActivationPolicy {
         return ThreadLocalRandom.current().nextDouble() < activationChance;
     }
 
-    private boolean isMarkedNonNaturalChicken(Chicken chicken) {
-        Byte marker = chicken.getPersistentDataContainer().get(nonNaturalChickenKey, PersistentDataType.BYTE);
-        return marker != null && marker == TRUE_BYTE;
-    }
-
     private static final class ActivationState {
-        private final CreatureSpawnEvent.SpawnReason spawnReason;
         private boolean chanceRolled;
         private boolean chancePassed;
 
-        private ActivationState(CreatureSpawnEvent.SpawnReason spawnReason) {
-            this.spawnReason = spawnReason;
+        private ActivationState() {
             this.chanceRolled = false;
             this.chancePassed = false;
         }

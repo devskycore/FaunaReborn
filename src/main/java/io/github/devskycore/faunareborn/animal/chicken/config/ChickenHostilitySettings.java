@@ -19,15 +19,15 @@ public record ChickenHostilitySettings(
 ) implements EntitySettings {
 
     public ChickenHostilitySettings {
-        combat = Objects.requireNonNull(combat, "combat");
-        limits = Objects.requireNonNull(limits, "limits");
-        socialAlert = Objects.requireNonNull(socialAlert, "socialAlert");
-        visuals = Objects.requireNonNull(visuals, "visuals");
-        movement = Objects.requireNonNull(movement, "movement");
-        damageScaling = Objects.requireNonNull(damageScaling, "damageScaling");
-        activation = Objects.requireNonNull(activation, "activation");
-        worldFilter = Objects.requireNonNull(worldFilter, "worldFilter");
-        itemPickupTerritoriality = Objects.requireNonNull(itemPickupTerritoriality, "itemPickupTerritoriality");
+        Objects.requireNonNull(combat, "combat");
+        Objects.requireNonNull(limits, "limits");
+        Objects.requireNonNull(socialAlert, "socialAlert");
+        Objects.requireNonNull(visuals, "visuals");
+        Objects.requireNonNull(movement, "movement");
+        Objects.requireNonNull(damageScaling, "damageScaling");
+        Objects.requireNonNull(activation, "activation");
+        Objects.requireNonNull(worldFilter, "worldFilter");
+        Objects.requireNonNull(itemPickupTerritoriality, "itemPickupTerritoriality");
     }
 
     public ChickenHostilitySettings(

@@ -19,16 +19,13 @@ public final class DamageScalingConfigReader {
 
     public double readDifficultyDamageMultiplier(FileConfiguration config, org.bukkit.Difficulty difficulty, double defaultValue) {
         String globalPath = "damage-scaling.difficulty-multipliers." + difficulty.name().toLowerCase(Locale.ROOT);
-        FileConfiguration globalConfig = plugin.getConfig();
-        String effectivePath = globalPath;
-
-        double multiplier = globalConfig.getDouble(globalPath, defaultValue);
+        double multiplier = config.getDouble(globalPath, defaultValue);
         if (Double.isNaN(multiplier) || Double.isInfinite(multiplier) || multiplier < 0.0D) {
-            plugin.getLogger().warning("Invalid " + effectivePath + " in config.yml. Falling back to " + defaultValue);
+            plugin.getLogger().warning("Invalid " + globalPath + " in config.yml. Falling back to " + defaultValue);
             return defaultValue;
         }
         if (multiplier > PluginConfigDefaults.MAX_DAMAGE_MULTIPLIER) {
-            plugin.getLogger().warning(effectivePath + " is too high. Clamped to 10.0");
+            plugin.getLogger().warning(globalPath + " is too high. Clamped to 10.0");
             return PluginConfigDefaults.MAX_DAMAGE_MULTIPLIER;
         }
         return multiplier;
@@ -36,10 +33,7 @@ public final class DamageScalingConfigReader {
 
     public Map<String, Double> readWorldDamageMultipliers(FileConfiguration config) {
         String globalRoot = "damage-scaling.world-multipliers";
-        FileConfiguration globalConfig = plugin.getConfig();
-        String effectiveRoot = globalRoot;
-
-        ConfigurationSection section = globalConfig.getConfigurationSection(globalRoot);
+        ConfigurationSection section = config.getConfigurationSection(globalRoot);
         if (section == null) {
             return Map.of();
         }
@@ -52,11 +46,11 @@ public final class DamageScalingConfigReader {
 
             double value = section.getDouble(key, 1.0D);
             if (Double.isNaN(value) || Double.isInfinite(value) || value < 0.0D) {
-                plugin.getLogger().warning("Invalid " + effectiveRoot + "." + key + " in config.yml. Skipping.");
+                plugin.getLogger().warning("Invalid " + globalRoot + "." + key + " in config.yml. Skipping.");
                 continue;
             }
             if (value > PluginConfigDefaults.MAX_DAMAGE_MULTIPLIER) {
-                plugin.getLogger().warning(effectiveRoot + "." + key + " is too high. Clamped to 10.0");
+                plugin.getLogger().warning(globalRoot + "." + key + " is too high. Clamped to 10.0");
                 value = PluginConfigDefaults.MAX_DAMAGE_MULTIPLIER;
             }
 

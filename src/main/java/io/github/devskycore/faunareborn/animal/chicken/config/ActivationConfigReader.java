@@ -12,17 +12,16 @@ final class ActivationConfigReader {
     }
 
     ActivationConfig read(FileConfiguration config) {
-        FileConfiguration globalConfig = plugin.getConfig();
         String root = "activation";
 
         double chance = sanitizeActivationChance(
-                globalConfig.getDouble(root + ".chance", PluginConfigDefaults.ACTIVATION_CHANCE)
+                config.getDouble(root + ".chance", PluginConfigDefaults.ACTIVATION_CHANCE)
         );
-        boolean onlyNaturalChickens = globalConfig.getBoolean(
+        boolean onlyNaturalChickens = config.getBoolean(
                 root + ".only-natural",
                 PluginConfigDefaults.ONLY_NATURAL_CHICKENS
         );
-        boolean ignoreNamed = globalConfig.getBoolean(
+        boolean ignoreNamed = config.getBoolean(
                 root + ".ignore-named",
                 PluginConfigDefaults.IGNORE_NAMED
         );

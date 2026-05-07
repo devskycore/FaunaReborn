@@ -66,7 +66,7 @@ final class ChickenTargetingService {
         if (globalTargetCooldownUntil.isEmpty()) {
             return;
         }
-        globalTargetCooldownUntil.entrySet().removeIf(entry -> currentTick >= entry.getValue());
+        globalTargetCooldownUntil.object2LongEntrySet().removeIf(entry -> currentTick >= entry.getLongValue());
     }
 
     void registerActiveTracking(Chicken chicken, UUID targetUuid) {
@@ -165,7 +165,7 @@ final class ChickenTargetingService {
         }
 
         long untilTick = globalTargetCooldownUntil.getLong(targetUuid);
-        return untilTick != Long.MIN_VALUE && currentTick < untilTick;
+        return currentTick < untilTick;
     }
 
     boolean isRetargetBlocked(ChickenHostilityBrain brain, UUID candidateTargetUuid, long currentTick) {

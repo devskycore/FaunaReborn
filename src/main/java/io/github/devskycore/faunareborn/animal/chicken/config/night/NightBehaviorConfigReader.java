@@ -13,13 +13,12 @@ public final class NightBehaviorConfigReader {
     }
 
     public NightBehaviorConfigValues read(FileConfiguration config) {
-        FileConfiguration globalConfig = plugin.getConfig();
         String root = "night-behavior";
 
-        boolean nightBehaviorEnabled = globalConfig.getBoolean(root + ".enabled", true);
-        boolean nightDamageToggleEnabled = globalConfig.getBoolean(root + ".damage.enabled", true);
+        boolean nightBehaviorEnabled = config.getBoolean(root + ".enabled", true);
+        boolean nightDamageToggleEnabled = config.getBoolean(root + ".damage.enabled", true);
         boolean nightDamageEnabled = nightBehaviorEnabled && nightDamageToggleEnabled;
-        double nightDamageMultiplier = readNightDamageMultiplier(globalConfig, root);
+        double nightDamageMultiplier = readNightDamageMultiplier(config, root);
         return new NightBehaviorConfigValues(nightDamageEnabled, nightDamageMultiplier);
     }
 

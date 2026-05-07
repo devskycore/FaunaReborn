@@ -78,7 +78,7 @@ final class SocialAlertService {
         }
 
         long cooldownUntil = cooldownUntilByChickenId.get(emitterChickenId);
-        if (cooldownUntil != Long.MIN_VALUE && currentTick < cooldownUntil) {
+        if (currentTick < cooldownUntil) {
             return;
         }
 
