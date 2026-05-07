@@ -49,7 +49,7 @@ final class CowMilkInteractionListener implements Listener {
         if (!(event.getRightClicked() instanceof Cow cow) || !cow.isAdult()) {
             return;
         }
-        if (!global.worldFilter().isWorldAllowed(cow.getWorld().getName())) {
+        if (global.worldFilter().isWorldDisallowed(cow.getWorld().getName())) {
             return;
         }
 

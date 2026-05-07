@@ -11,20 +11,20 @@ public record WorldFilter(WorldFilterMode mode, Set<String> worlds) {
         worlds = worlds == null ? Set.of() : Set.copyOf(worlds);
     }
 
-    public boolean isWorldAllowed(String worldName) {
+    public boolean isWorldDisallowed(String worldName) {
         if (mode == WorldFilterMode.ALL) {
-            return true;
+            return false;
         }
         if (worldName == null || worldName.trim().isEmpty()) {
-            return mode != WorldFilterMode.WHITELIST;
+            return mode == WorldFilterMode.WHITELIST;
         }
 
         String normalizedName = normalize(worldName);
         boolean listed = worlds.contains(normalizedName);
         return switch (mode) {
-            case WHITELIST -> listed;
-            case BLACKLIST -> !listed;
-            default -> true;
+            case WHITELIST -> !listed;
+            case BLACKLIST -> listed;
+            default -> false;
         };
     }
 

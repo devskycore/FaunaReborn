@@ -61,7 +61,7 @@ final class ActivationPolicy {
     }
 
     boolean isWorldDisallowed(World world) {
-        return !worldFilter.isWorldAllowed(world.getName());
+        return worldFilter.isWorldDisallowed(world.getName());
     }
 
     boolean isPeacefulWorld(World world) {

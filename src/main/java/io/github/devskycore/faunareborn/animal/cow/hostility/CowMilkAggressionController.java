@@ -367,7 +367,7 @@ final class CowMilkAggressionController {
     }
 
     private boolean isWorldDisallowed(World world) {
-        return world == null || !global.worldFilter().isWorldAllowed(world.getName());
+        return world == null || global.worldFilter().isWorldDisallowed(world.getName());
     }
 
     private int countActiveForChunk(Cow probe) {
