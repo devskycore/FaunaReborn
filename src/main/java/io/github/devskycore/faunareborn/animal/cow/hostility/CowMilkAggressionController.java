@@ -1,8 +1,10 @@
 package io.github.devskycore.faunareborn.animal.cow.hostility;
 
 import io.github.devskycore.faunareborn.animal.cow.CowSettings;
+import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntIterator;
 import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
 import org.bukkit.Particle;
@@ -26,16 +28,22 @@ final class CowMilkAggressionController {
     private static final double ATTACK_RANGE_SQ = ATTACK_RANGE * ATTACK_RANGE;
     private static final double FORWARD_PUSH = 0.23D;
     private static final double MAX_VERTICAL_GAP = 5.0D;
+    private static final long LINE_OF_SIGHT_CACHE_TICKS = 4L;
+    private static final long TARGET_REFRESH_INTERVAL_TICKS = 10L;
+    private static final long MOVEMENT_ATTRIBUTE_UPDATE_INTERVAL_TICKS = 5L;
+    private static final double MOVEMENT_ATTRIBUTE_EPSILON = 0.0005D;
 
     private final CowSettings.MilkProvocationSettings settings;
     private final CowSettings.GlobalHostilitySettings global;
     private final CowTargetingIndex targetingIndex = new CowTargetingIndex();
     private final Int2ObjectOpenHashMap<CowMilkAggressionBrain> brains = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectOpenHashMap<Cow> trackedCows = new Int2ObjectOpenHashMap<>();
-    private final Map<PlayerCowPair, Long> milkTriggerCooldownUntil = new java.util.HashMap<>();
-    private final Map<UUID, Double> originalMovementSpeedByCow = new java.util.HashMap<>();
+    private final Map<UUID, Int2LongOpenHashMap> milkTriggerCooldownUntilByPlayer = new java.util.HashMap<>();
+    private final Map<UUID, Int2LongOpenHashMap> resourceTriggerCooldownUntilByPlayer = new java.util.HashMap<>();
+    private final Int2DoubleOpenHashMap originalMovementSpeedByCowId = new Int2DoubleOpenHashMap();
     private final Int2LongOpenHashMap socialAlertCooldownUntilByCowId = new Int2LongOpenHashMap();
     private final Vector scratch = new Vector();
+    private IntIterator processingCursor;
     private long currentTick;
     private long activeCacheTick = Long.MIN_VALUE;
 
@@ -43,80 +51,108 @@ final class CowMilkAggressionController {
         this.settings = settings;
         this.global = global;
         this.socialAlertCooldownUntilByCowId.defaultReturnValue(Long.MIN_VALUE);
+        this.originalMovementSpeedByCowId.defaultReturnValue(Double.NaN);
     }
 
     void tick() {
         currentTick++;
         cleanupMilkCooldownMap();
+        cleanupResourceCooldownMap();
         if (brains.isEmpty()) {
             return;
         }
-        rebuildActiveCowCaches();
 
         int processed = 0;
-        for (var iterator = brains.int2ObjectEntrySet().fastIterator(); iterator.hasNext() && processed < global.maxProcessedPerTick(); ) {
-            var entry = iterator.next();
-            processed++;
-            int cowId = entry.getIntKey();
-            CowMilkAggressionBrain brain = entry.getValue();
+        int scanned = 0;
+        int scanBudgetTarget = Math.max(global.maxProcessedPerTick() * 3, 64);
+        int scanBudget = Math.clamp(scanBudgetTarget, 0, brains.size());
+        while (processed < global.maxProcessedPerTick() && scanned < scanBudget && !brains.isEmpty()) {
+            int cowId = nextProcessingCowId();
+            if (cowId == Integer.MIN_VALUE) {
+                break;
+            }
+            scanned++;
+
+            CowMilkAggressionBrain brain = brains.get(cowId);
+            if (brain == null) {
+                continue;
+            }
             Cow cow = trackedCows.get(cowId);
             if (cow == null || !cow.isValid() || cow.isDead()) {
-                trackedCows.remove(cowId);
-                iterator.remove();
+                removeAggressionState(cowId, cow, brain, false);
                 continue;
             }
 
             if (isWorldDisallowed(cow.getWorld()) || cow.getWorld().getDifficulty() == Difficulty.PEACEFUL) {
-                calmDown(cow, brain);
-                trackedCows.remove(cowId);
-                iterator.remove();
+                removeAggressionState(cowId, cow, brain, true);
                 continue;
             }
 
             Player target = resolveTarget(brain.targetUuid);
             if (target == null || target.getWorld() != cow.getWorld()) {
-                calmDown(cow, brain);
-                trackedCows.remove(cowId);
-                iterator.remove();
+                removeAggressionState(cowId, cow, brain, true);
                 continue;
             }
 
             if (currentTick > brain.aggressionUntilTick) {
-                calmDown(cow, brain);
-                trackedCows.remove(cowId);
-                iterator.remove();
+                removeAggressionState(cowId, cow, brain, true);
                 continue;
             }
 
-            applyVisualEffects(cow);
+            processed++;
+            applyVisualEffects(cow, brain);
             if (brain.state == CowMilkAggressionState.WARNING) {
                 handleWarning(cow, target, brain);
                 continue;
             }
 
-            pursue(cow, target, brain);
-            tryAttack(cow, target, brain);
+            if (pursue(cow, target, brain)) {
+                tryAttack(cow, target, brain);
+                continue;
+            }
+
+            if (brain.targetUuid == null) {
+                removeAggressionState(cowId, cow, brain, false);
+            }
         }
     }
 
     void provokeCowFromMilking(Cow cow, Player aggressor, boolean naturalCow) {
-        if (!settings.enabled()) {
-            return;
-        }
         if (isProvocationBlocked(cow, naturalCow)) {
             return;
         }
 
-        PlayerCowPair pair = new PlayerCowPair(aggressor.getUniqueId(), cow.getUniqueId());
-        Long cooldownUntil = milkTriggerCooldownUntil.get(pair);
-        if (cooldownUntil != null && currentTick < cooldownUntil) {
+        UUID playerId = aggressor.getUniqueId();
+        int cowId = cow.getEntityId();
+        if (isCooldownActive(milkTriggerCooldownUntilByPlayer, playerId, cowId)) {
             return;
         }
         if (settings.milkingTriggerCooldownTicks() > 0) {
-            milkTriggerCooldownUntil.put(pair, currentTick + settings.milkingTriggerCooldownTicks());
+            putCooldown(milkTriggerCooldownUntilByPlayer, playerId, cowId, currentTick + settings.milkingTriggerCooldownTicks());
         }
 
-        activateCowAggression(cow, aggressor);
+        activateCowAggression(cow, aggressor, settings.aggressionDurationTicks());
+    }
+
+    boolean provokeCowFromResources(
+            Cow cow,
+            Player aggressor,
+            boolean naturalCow,
+            int triggerCooldownTicks,
+            int aggressionDurationTicks
+    ) {
+        if (isProvocationBlocked(cow, naturalCow)) {
+            return false;
+        }
+        UUID playerId = aggressor.getUniqueId();
+        int cowId = cow.getEntityId();
+        if (isCooldownActive(resourceTriggerCooldownUntilByPlayer, playerId, cowId)) {
+            return false;
+        }
+        if (triggerCooldownTicks > 0) {
+            putCooldown(resourceTriggerCooldownUntilByPlayer, playerId, cowId, currentTick + triggerCooldownTicks);
+        }
+        return activateCowAggression(cow, aggressor, aggressionDurationTicks);
     }
 
     void provokeNearbyCowsFromSocialAlert(
@@ -143,6 +179,7 @@ final class CowMilkAggressionController {
 
         UUID aggressorId = aggressor.getUniqueId();
         int recruited = 0;
+        ensureActiveCowCachesFresh();
         for (org.bukkit.entity.Entity entity : nearbyEntities) {
             if (!(entity instanceof Cow ally) || ally.getEntityId() == emitter.getEntityId()) {
                 continue;
@@ -160,7 +197,7 @@ final class CowMilkAggressionController {
             if (allyBrain != null && currentTick < allyBrain.socialAlertBlockedUntilTick) {
                 continue;
             }
-            if (!activateCowAggression(ally, aggressor)) {
+            if (!activateCowAggression(ally, aggressor, settings.aggressionDurationTicks())) {
                 continue;
             }
             if (socialAlertSettings.joinCooldownTicks() > 0) {
@@ -203,14 +240,20 @@ final class CowMilkAggressionController {
         return targetingIndex.activeInWorld(cow.getWorld().getUID()) >= global.maxActiveHostilePerWorld();
     }
 
-    private boolean activateCowAggression(Cow cow, Player aggressor) {
+    private boolean activateCowAggression(Cow cow, Player aggressor, int aggressionDurationTicks) {
         int cowId = cow.getEntityId();
         trackedCows.put(cowId, cow);
-        CowMilkAggressionBrain brain = brains.computeIfAbsent(cowId, ignored -> new CowMilkAggressionBrain());
+        CowMilkAggressionBrain brain = brains.get(cowId);
+        if (brain == null) {
+            brain = new CowMilkAggressionBrain();
+            brains.put(cowId, brain);
+            resetProcessingCursor();
+        }
         UUID nextTarget = aggressor.getUniqueId();
         if (isRetargetBlocked(brain, nextTarget)) {
             return false;
         }
+        captureOriginalVisualState(cow, brain);
         UUID previousTarget = brain.targetUuid;
         if (previousTarget != null && !previousTarget.equals(nextTarget) && settings.retargetGraceTicks() > 0) {
             brain.ignoreTargetUuid = previousTarget;
@@ -218,29 +261,33 @@ final class CowMilkAggressionController {
         }
         targetingIndex.replaceTarget(previousTarget, nextTarget);
         brain.targetUuid = nextTarget;
-        brain.aggressionUntilTick = Math.max(brain.aggressionUntilTick, currentTick + settings.aggressionDurationTicks());
+        brain.aggressionUntilTick = Math.max(brain.aggressionUntilTick, currentTick + Math.max(1, aggressionDurationTicks));
         brain.forgetTargetAtTick = Math.max(brain.forgetTargetAtTick, currentTick + settings.forgetTargetAfterTicks());
         brain.warningUntilTick = currentTick + settings.warningDurationTicks();
         brain.state = settings.warningDurationTicks() > 0 ? CowMilkAggressionState.WARNING : CowMilkAggressionState.CHASE;
         brain.lastAttackTick = Long.MIN_VALUE;
         brain.nextChargeTick = currentTick + randomChargeDelay();
+        brain.nextTargetRefreshTick = currentTick + TARGET_REFRESH_INTERVAL_TICKS;
+        brain.lastLineOfSightCheckTick = Long.MIN_VALUE;
+        brain.nextMovementUpdateTick = currentTick;
+        brain.nextParticleTick = nextParticleTick(cowId);
 
         cow.setTarget(aggressor);
         cow.setAggressive(true);
         faceTarget(cow, aggressor);
         playWarningAudio(cow, aggressor);
+        invalidateActiveCowCache();
         return true;
     }
 
     void removeCow(int cowId) {
         Cow cow = trackedCows.get(cowId);
-        if (cow != null) {
-            cow.setGlowing(false);
-            restoreMovementBase(cow);
-        }
         CowMilkAggressionBrain removedBrain = brains.remove(cowId);
+        if (cow != null && cow.isValid()) {
+            restoreCowRuntimeState(cow, removedBrain);
+        }
         if (removedBrain != null) {
-            if (cow != null) {
+            if (cow != null && cow.isValid()) {
                 targetingIndex.unregisterActive(cow, removedBrain.targetUuid);
             } else {
                 targetingIndex.replaceTarget(removedBrain.targetUuid, null);
@@ -248,6 +295,9 @@ final class CowMilkAggressionController {
         }
         trackedCows.remove(cowId);
         socialAlertCooldownUntilByCowId.remove(cowId);
+        originalMovementSpeedByCowId.remove(cowId);
+        resetProcessingCursor();
+        invalidateActiveCowCache();
     }
 
     void removeTarget(UUID targetId) {
@@ -261,34 +311,44 @@ final class CowMilkAggressionController {
                 continue;
             }
             Cow cow = trackedCows.get(entry.getIntKey());
-            if (cow != null) {
+            if (cow != null && cow.isValid()) {
                 calmDown(cow, brain);
             } else {
                 targetingIndex.replaceTarget(brain.targetUuid, null);
             }
             trackedCows.remove(entry.getIntKey());
+            originalMovementSpeedByCowId.remove(entry.getIntKey());
             iterator.remove();
+            resetProcessingCursor();
+            invalidateActiveCowCache();
         }
     }
 
     void clearAll() {
         for (var entry : brains.int2ObjectEntrySet()) {
             Cow cow = trackedCows.get(entry.getIntKey());
-            if (cow != null) {
+            if (cow != null && cow.isValid()) {
                 calmDown(cow, entry.getValue());
             }
         }
         brains.clear();
         trackedCows.clear();
         targetingIndex.clear();
-        milkTriggerCooldownUntil.clear();
+        milkTriggerCooldownUntilByPlayer.clear();
+        resourceTriggerCooldownUntilByPlayer.clear();
         socialAlertCooldownUntilByCowId.clear();
-        originalMovementSpeedByCow.clear();
+        originalMovementSpeedByCowId.clear();
+        resetProcessingCursor();
+        invalidateActiveCowCache();
+    }
+
+    long currentTick() {
+        return currentTick;
     }
 
     private void handleWarning(Cow cow, Player target, CowMilkAggressionBrain brain) {
         faceTarget(cow, target);
-        setAggressiveMovement(cow, 0.0D);
+        setAggressiveMovement(cow, brain, 0.0D);
         if (currentTick < brain.warningUntilTick) {
             return;
         }
@@ -296,12 +356,12 @@ final class CowMilkAggressionController {
         playChargeSound(cow, target);
     }
 
-    private void pursue(Cow cow, Player target, CowMilkAggressionBrain brain) {
-        if (settings.requireLineOfSight() && !cow.hasLineOfSight(target)) {
+    private boolean pursue(Cow cow, Player target, CowMilkAggressionBrain brain) {
+        if (settings.requireLineOfSight() && !hasLineOfSight(cow, target, brain)) {
             if (currentTick > brain.forgetTargetAtTick) {
                 calmDown(cow, brain);
             }
-            return;
+            return false;
         }
 
         double distanceSq = distanceSq(cow, target);
@@ -309,19 +369,22 @@ final class CowMilkAggressionController {
             if (currentTick > brain.forgetTargetAtTick) {
                 calmDown(cow, brain);
             }
-            return;
+            return false;
         }
 
-        cow.setTarget(target);
-        cow.setAggressive(true);
-        setAggressiveMovement(cow, normalizedIntensity(brain));
+        if (currentTick >= brain.nextTargetRefreshTick) {
+            cow.setTarget(target);
+            cow.setAggressive(true);
+            brain.nextTargetRefreshTick = currentTick + TARGET_REFRESH_INTERVAL_TICKS;
+        }
+        setAggressiveMovement(cow, brain, normalizedIntensity(brain));
 
         scratch.setX(target.getX() - cow.getX());
         scratch.setY(0.0D);
         scratch.setZ(target.getZ() - cow.getZ());
         double length = scratch.length();
         if (length <= 0.001D) {
-            return;
+            return true;
         }
 
         scratch.multiply(1.0D / length);
@@ -337,6 +400,7 @@ final class CowMilkAggressionController {
         currentVelocity.setX(currentVelocity.getX() * 0.65D + scratch.getX());
         currentVelocity.setZ(currentVelocity.getZ() * 0.65D + scratch.getZ());
         cow.setVelocity(currentVelocity);
+        return true;
     }
 
     private void tryAttack(Cow cow, Player target, CowMilkAggressionBrain brain) {
@@ -349,11 +413,15 @@ final class CowMilkAggressionController {
         brain.lastAttackTick = currentTick;
 
         target.damage(settings.attackDamage() * resolveDamageMultiplier(cow.getWorld()), cow);
-        Vector knockbackDirection = target.getLocation().toVector().subtract(cow.getLocation().toVector());
-        knockbackDirection.setY(0.0D);
-        if (knockbackDirection.lengthSquared() > 0.0001D) {
-            knockbackDirection.normalize().multiply(settings.knockbackStrength());
-            target.setVelocity(target.getVelocity().add(knockbackDirection));
+        double dx = target.getX() - cow.getX();
+        double dz = target.getZ() - cow.getZ();
+        double lengthSq = dx * dx + dz * dz;
+        if (lengthSq > 0.0001D) {
+            double scale = settings.knockbackStrength() / Math.sqrt(lengthSq);
+            Vector velocity = target.getVelocity();
+            velocity.setX(velocity.getX() + (dx * scale));
+            velocity.setZ(velocity.getZ() + (dz * scale));
+            target.setVelocity(velocity);
         }
         playAttackSound(cow, target);
     }
@@ -373,24 +441,46 @@ final class CowMilkAggressionController {
         return player;
     }
 
-    private void setAggressiveMovement(Cow cow, double intensity) {
+    private void setAggressiveMovement(Cow cow, CowMilkAggressionBrain brain, double intensity) {
+        if (currentTick < brain.nextMovementUpdateTick) {
+            return;
+        }
         AttributeInstance movement = cow.getAttribute(Attribute.MOVEMENT_SPEED);
         if (movement == null) {
             return;
         }
-        UUID cowId = cow.getUniqueId();
-        double originalBase = originalMovementSpeedByCow.computeIfAbsent(cowId, ignored -> movement.getBaseValue());
+        int cowId = cow.getEntityId();
+        double originalBase = originalMovementSpeedByCowId.get(cowId);
+        if (Double.isNaN(originalBase)) {
+            originalBase = movement.getBaseValue();
+            originalMovementSpeedByCowId.put(cowId, originalBase);
+        }
         double desired = originalBase * (1.0D + ((settings.speedMultiplier() - 1.0D) * Math.max(0.0D, intensity)));
-        movement.setBaseValue(Math.clamp(desired, 0.05D, 0.8D));
+        desired = Math.clamp(desired, 0.05D, 0.8D);
+        if (Double.isNaN(brain.lastMovementBaseValue)
+                || Math.abs(brain.lastMovementBaseValue - desired) >= MOVEMENT_ATTRIBUTE_EPSILON) {
+            movement.setBaseValue(desired);
+            brain.lastMovementBaseValue = desired;
+        }
+        brain.nextMovementUpdateTick = currentTick + MOVEMENT_ATTRIBUTE_UPDATE_INTERVAL_TICKS;
     }
 
     private void calmDown(Cow cow, CowMilkAggressionBrain brain) {
         targetingIndex.replaceTarget(brain.targetUuid, null);
         cow.setTarget(null);
         cow.setAggressive(false);
-        cow.setGlowing(false);
-        restoreMovementBase(cow);
+        restoreCowRuntimeState(cow, brain);
         brain.targetUuid = null;
+        invalidateActiveCowCache();
+    }
+
+    private boolean hasLineOfSight(Cow cow, Player target, CowMilkAggressionBrain brain) {
+        if (brain.lastLineOfSightCheckTick == Long.MIN_VALUE
+                || currentTick - brain.lastLineOfSightCheckTick >= LINE_OF_SIGHT_CACHE_TICKS) {
+            brain.lastLineOfSightResult = cow.hasLineOfSight(target);
+            brain.lastLineOfSightCheckTick = currentTick;
+        }
+        return brain.lastLineOfSightResult;
     }
 
     private boolean isRetargetBlocked(CowMilkAggressionBrain brain, UUID candidateTargetUuid) {
@@ -425,10 +515,42 @@ final class CowMilkAggressionController {
     }
 
     private void cleanupMilkCooldownMap() {
-        if (milkTriggerCooldownUntil.isEmpty() || currentTick % 40L != 0L) {
+        if (milkTriggerCooldownUntilByPlayer.isEmpty() || currentTick % 40L != 0L) {
             return;
         }
-        milkTriggerCooldownUntil.entrySet().removeIf(entry -> currentTick >= entry.getValue());
+        cleanupCooldownMap(milkTriggerCooldownUntilByPlayer);
+    }
+
+    private void cleanupResourceCooldownMap() {
+        if (resourceTriggerCooldownUntilByPlayer.isEmpty() || currentTick % 40L != 0L) {
+            return;
+        }
+        cleanupCooldownMap(resourceTriggerCooldownUntilByPlayer);
+    }
+
+    private boolean isCooldownActive(Map<UUID, Int2LongOpenHashMap> cooldowns, UUID playerId, int cowId) {
+        Int2LongOpenHashMap cooldownByCowId = cooldowns.get(playerId);
+        return cooldownByCowId != null && currentTick < cooldownByCowId.get(cowId);
+    }
+
+    private void putCooldown(Map<UUID, Int2LongOpenHashMap> cooldowns, UUID playerId, int cowId, long untilTick) {
+        Int2LongOpenHashMap cooldownByCowId = cooldowns.get(playerId);
+        if (cooldownByCowId == null) {
+            cooldownByCowId = new Int2LongOpenHashMap();
+            cooldownByCowId.defaultReturnValue(Long.MIN_VALUE);
+            cooldowns.put(playerId, cooldownByCowId);
+        }
+        cooldownByCowId.put(cowId, untilTick);
+    }
+
+    private void cleanupCooldownMap(Map<UUID, Int2LongOpenHashMap> cooldowns) {
+        for (var iterator = cooldowns.entrySet().iterator(); iterator.hasNext(); ) {
+            Int2LongOpenHashMap cooldownByCowId = iterator.next().getValue();
+            cooldownByCowId.int2LongEntrySet().removeIf(entry -> currentTick >= entry.getLongValue());
+            if (cooldownByCowId.isEmpty()) {
+                iterator.remove();
+            }
+        }
     }
 
     private void playWarningAudio(Cow cow, Player target) {
@@ -436,13 +558,13 @@ final class CowMilkAggressionController {
             return;
         }
         if (settings.playWarningSound()) {
-            cow.getWorld().playSound(cow.getLocation(), Sound.ENTITY_COW_AMBIENT, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.75F);
+            cow.getWorld().playSound(cow, Sound.ENTITY_COW_AMBIENT, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.75F);
         }
         if (settings.playStompSound()) {
-            cow.getWorld().playSound(cow.getLocation(), Sound.ENTITY_COW_STEP, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.6F);
+            cow.getWorld().playSound(cow, Sound.ENTITY_COW_STEP, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.6F);
         }
         if (settings.playAggressiveSounds()) {
-            target.playSound(target.getLocation(), Sound.ENTITY_COW_HURT, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.85F);
+            target.playSound(target, Sound.ENTITY_COW_HURT, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.85F);
         }
     }
 
@@ -450,23 +572,23 @@ final class CowMilkAggressionController {
         if (!settings.playAggressiveSounds() || !global.visualEffects().soundEnabled()) {
             return;
         }
-        cow.getWorld().playSound(cow.getLocation(), Sound.ENTITY_COW_HURT, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.65F);
-        target.playSound(target.getLocation(), Sound.ENTITY_COW_HURT, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.75F);
+        cow.getWorld().playSound(cow, Sound.ENTITY_COW_HURT, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.65F);
+        target.playSound(target, Sound.ENTITY_COW_HURT, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.75F);
     }
 
     private void playStompSound(Cow cow) {
         if (!settings.playStompSound() || !global.visualEffects().soundEnabled()) {
             return;
         }
-        cow.getWorld().playSound(cow.getLocation(), Sound.ENTITY_COW_STEP, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.55F);
+        cow.getWorld().playSound(cow, Sound.ENTITY_COW_STEP, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.55F);
     }
 
     private void playAttackSound(Cow cow, Player target) {
         if (!settings.playAggressiveSounds() || !global.visualEffects().soundEnabled()) {
             return;
         }
-        cow.getWorld().playSound(cow.getLocation(), Sound.ENTITY_COW_HURT, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.6F);
-        target.playSound(target.getLocation(), Sound.ENTITY_PLAYER_ATTACK_STRONG, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.9F);
+        cow.getWorld().playSound(cow, Sound.ENTITY_COW_HURT, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.6F);
+        target.playSound(target, Sound.ENTITY_PLAYER_ATTACK_STRONG, SoundCategory.HOSTILE, (float) global.visualEffects().soundVolume(), 0.9F);
     }
 
     private double distanceSq(Cow cow, Player player) {
@@ -500,25 +622,105 @@ final class CowMilkAggressionController {
         return time >= 13000L && time <= 23000L;
     }
 
-    private void applyVisualEffects(Cow cow) {
+    private void applyVisualEffects(Cow cow, CowMilkAggressionBrain brain) {
         CowSettings.VisualEffectsSettings visual = global.visualEffects();
-        cow.setGlowing(visual.glowEnabled());
+        if (visual.glowEnabled() && !cow.isGlowing()) {
+            cow.setGlowing(true);
+        }
 
-        if (visual.particlesEnabled() && visual.particlesIntervalTicks() > 0 && currentTick % visual.particlesIntervalTicks() == 0L) {
+        if (visual.particlesEnabled() && visual.particlesIntervalTicks() > 0 && currentTick >= brain.nextParticleTick) {
             int amount = Math.max(1, (int) Math.round(2.0D * visual.particlesIntensity()));
-            cow.getWorld().spawnParticle(Particle.ANGRY_VILLAGER, cow.getLocation().add(0.0D, 1.2D, 0.0D), amount, 0.25D, 0.25D, 0.25D, 0.0D);
+            cow.getWorld().spawnParticle(
+                    Particle.ANGRY_VILLAGER,
+                    cow.getX(),
+                    cow.getY() + 1.2D,
+                    cow.getZ(),
+                    amount,
+                    0.25D,
+                    0.25D,
+                    0.25D,
+                    0.0D
+            );
+            brain.nextParticleTick = currentTick + visual.particlesIntervalTicks();
         }
     }
 
-    private void restoreMovementBase(Cow cow) {
+    private void restoreCowRuntimeState(Cow cow, CowMilkAggressionBrain brain) {
+        if (brain != null && brain.originalGlowCaptured && cow.isGlowing() != brain.originallyGlowing) {
+            cow.setGlowing(brain.originallyGlowing);
+        }
+        restoreMovementBase(cow, brain);
+    }
+
+    private void restoreMovementBase(Cow cow, CowMilkAggressionBrain brain) {
         AttributeInstance movement = cow.getAttribute(Attribute.MOVEMENT_SPEED);
         if (movement == null) {
             return;
         }
-        Double original = originalMovementSpeedByCow.remove(cow.getUniqueId());
-        if (original != null) {
+        int cowId = cow.getEntityId();
+        if (originalMovementSpeedByCowId.containsKey(cowId)) {
+            double original = originalMovementSpeedByCowId.remove(cowId);
             movement.setBaseValue(original);
         }
+        if (brain != null) {
+            brain.lastMovementBaseValue = Double.NaN;
+            brain.nextMovementUpdateTick = currentTick;
+        }
+    }
+
+    private int nextProcessingCowId() {
+        if (brains.isEmpty()) {
+            processingCursor = null;
+            return Integer.MIN_VALUE;
+        }
+        if (processingCursor == null || !processingCursor.hasNext()) {
+            processingCursor = brains.keySet().iterator();
+        }
+        if (!processingCursor.hasNext()) {
+            return Integer.MIN_VALUE;
+        }
+        return processingCursor.nextInt();
+    }
+
+    private void removeAggressionState(int cowId, Cow cow, CowMilkAggressionBrain brain, boolean calm) {
+        if (calm && cow != null && brain != null) {
+            calmDown(cow, brain);
+        } else if (brain != null) {
+            targetingIndex.replaceTarget(brain.targetUuid, null);
+        }
+        if (cow != null && cow.isValid() && brain != null && !calm) {
+            restoreCowRuntimeState(cow, brain);
+        }
+        brains.remove(cowId);
+        trackedCows.remove(cowId);
+        socialAlertCooldownUntilByCowId.remove(cowId);
+        originalMovementSpeedByCowId.remove(cowId);
+        resetProcessingCursor();
+        invalidateActiveCowCache();
+    }
+
+    private void captureOriginalVisualState(Cow cow, CowMilkAggressionBrain brain) {
+        if (brain.originalGlowCaptured) {
+            return;
+        }
+        brain.originallyGlowing = cow.isGlowing();
+        brain.originalGlowCaptured = true;
+    }
+
+    private long nextParticleTick(int cowId) {
+        CowSettings.VisualEffectsSettings visual = global.visualEffects();
+        if (!visual.particlesEnabled() || visual.particlesIntervalTicks() <= 0) {
+            return Long.MAX_VALUE;
+        }
+        return currentTick + Math.floorMod(cowId, visual.particlesIntervalTicks());
+    }
+
+    private void resetProcessingCursor() {
+        processingCursor = null;
+    }
+
+    private void invalidateActiveCowCache() {
+        activeCacheTick = Long.MIN_VALUE;
     }
 
     private void ensureActiveCowCachesFresh() {
@@ -540,6 +742,4 @@ final class CowMilkAggressionController {
         activeCacheTick = currentTick;
     }
 
-    private record PlayerCowPair(UUID playerUuid, UUID cowUuid) {
-    }
 }

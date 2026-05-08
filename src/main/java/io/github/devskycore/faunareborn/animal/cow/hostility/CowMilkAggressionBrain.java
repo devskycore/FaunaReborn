@@ -10,12 +10,23 @@ final class CowMilkAggressionBrain {
     long forgetTargetAtTick;
     long lastAttackTick;
     long nextChargeTick;
+    long nextTargetRefreshTick;
+    long lastLineOfSightCheckTick;
+    boolean lastLineOfSightResult;
+    long nextMovementUpdateTick;
+    double lastMovementBaseValue;
+    boolean originalGlowCaptured;
+    boolean originallyGlowing;
+    long nextParticleTick;
     long warningUntilTick;
     long socialAlertBlockedUntilTick;
     CowMilkAggressionState state;
 
     CowMilkAggressionBrain() {
         this.lastAttackTick = Long.MIN_VALUE;
+        this.lastLineOfSightCheckTick = Long.MIN_VALUE;
+        this.lastLineOfSightResult = true;
+        this.lastMovementBaseValue = Double.NaN;
         this.socialAlertBlockedUntilTick = Long.MIN_VALUE;
         this.state = CowMilkAggressionState.WARNING;
     }

@@ -3,6 +3,8 @@ package io.github.devskycore.faunareborn.animal.cow.hostility;
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import io.github.devskycore.faunareborn.animal.cow.CowSettings;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
+import org.bukkit.Difficulty;
+import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Cow;
@@ -17,6 +19,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -32,8 +35,10 @@ final class CowMilkInteractionListener implements Listener {
     private final FaunaRebornPlugin plugin;
     private final CowSettings.MilkProvocationSettings settings;
     private final CowSettings.SocialAlertSettings socialAlertSettings;
+    private final CowSettings.ResourceProvocationSettings resourceProvocationSettings;
     private final CowSettings.GlobalHostilitySettings global;
     private final CowMilkAggressionController aggressionController;
+    private final CowTerritorialPickupService territorialPickupService;
     private final NamespacedKey nonNaturalCowKey;
 
     CowMilkInteractionListener(
@@ -41,13 +46,22 @@ final class CowMilkInteractionListener implements Listener {
             CowSettings.MilkProvocationSettings settings,
             CowSettings.SocialAlertSettings socialAlertSettings,
             CowSettings.GlobalHostilitySettings global,
-            CowMilkAggressionController aggressionController
+            CowMilkAggressionController aggressionController,
+            CowSettings.ResourceProvocationSettings resourceProvocationSettings
     ) {
         this.plugin = plugin;
         this.settings = settings;
         this.socialAlertSettings = socialAlertSettings;
+        this.resourceProvocationSettings = resourceProvocationSettings;
         this.global = global;
         this.aggressionController = aggressionController;
+        this.territorialPickupService = new CowTerritorialPickupService(
+                resourceProvocationSettings,
+                socialAlertSettings,
+                aggressionController,
+                this::isNaturalCow,
+                settings.requireLineOfSight()
+        );
         this.nonNaturalCowKey = new NamespacedKey(plugin, "non_natural_cow");
     }
 
@@ -122,10 +136,14 @@ final class CowMilkInteractionListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     private void onPlayerQuit(PlayerQuitEvent event) {
         aggressionController.removeTarget(event.getPlayer().getUniqueId());
+        territorialPickupService.removePlayer(event.getPlayer().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     private void onCowDamaged(EntityDamageByEntityEvent event) {
+        if (event.getFinalDamage() <= 0.0D) {
+            return;
+        }
         if (!socialAlertSettings.enabled() || !socialAlertSettings.onDamage()) {
             return;
         }
@@ -146,6 +164,47 @@ final class CowMilkInteractionListener implements Listener {
                 socialAlertSettings,
                 this::isNaturalCow
         );
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    private void onEntityPickupItem(EntityPickupItemEvent event) {
+        if (!(event.getEntity() instanceof Player player)) {
+            return;
+        }
+        if (!resourceProvocationSettings.enabled() || player.isDead() || !player.isOnline()) {
+            return;
+        }
+        if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) {
+            return;
+        }
+        if (global.worldFilter().isWorldDisallowed(player.getWorld().getName())) {
+            return;
+        }
+        if (player.getWorld().getDifficulty() == Difficulty.PEACEFUL) {
+            return;
+        }
+        Material material = event.getItem().getItemStack().getType();
+        if (territorialPickupService.isNonTerritorialMaterial(material)) {
+            return;
+        }
+        if (resourceProvocationSettings.maxItemAgeTicks() > 0
+                && event.getItem().getTicksLived() > resourceProvocationSettings.maxItemAgeTicks()) {
+            return;
+        }
+        int pickedUpAmount = event.getItem().getItemStack().getAmount() - event.getRemaining();
+        if (pickedUpAmount <= 0) {
+            return;
+        }
+        double radius = resourceProvocationSettings.detectionRadius();
+        var nearby = event.getItem().getNearbyEntities(radius, radius, radius);
+        if (!territorialPickupService.hasTerritorialWitness(player, nearby)) {
+            return;
+        }
+        long currentTick = aggressionController.currentTick();
+        territorialPickupService.recordPickup(player, material, pickedUpAmount, nearby, currentTick);
+        if (currentTick % 100L == 0L) {
+            territorialPickupService.cleanupCounters(currentTick);
+        }
     }
 
     private boolean wasMilkingSuccessful(Player player, int milkBefore, int bucketBefore) {
@@ -207,5 +266,9 @@ final class CowMilkInteractionListener implements Listener {
             }
         }
         return null;
+    }
+
+    void clearState() {
+        territorialPickupService.clear();
     }
 }

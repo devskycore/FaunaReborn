@@ -17,6 +17,7 @@ public final class CowModule implements FaunaModule {
             this.milkProvocationTask = new CowMilkProvocationTask(
                     plugin,
                     settings.milkProvocation(),
+                    settings.resourceProvocation(),
                     settings.socialAlert(),
                     settings.globalHostility()
             );
@@ -30,12 +31,14 @@ public final class CowModule implements FaunaModule {
 
     @Override
     public boolean isEnabledByConfig() {
-        return globalEnabled && settings.enabled() && settings.milkProvocation().enabled();
+        return globalEnabled
+                && settings.enabled()
+                && (settings.milkProvocation().enabled() || settings.resourceProvocation().enabled());
     }
 
     @Override
     public void enable() {
-        if (!settings.milkProvocation().enabled()) {
+        if (!settings.milkProvocation().enabled() && !settings.resourceProvocation().enabled()) {
             return;
         }
         if (milkProvocationTask == null) {

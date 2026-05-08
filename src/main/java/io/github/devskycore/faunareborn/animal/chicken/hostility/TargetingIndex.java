@@ -1,33 +1,50 @@
 package io.github.devskycore.faunareborn.animal.chicken.hostility;
 
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.bukkit.entity.Chicken;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 final class TargetingIndex {
 
-    private final Map<UUID, Integer> attackersByTarget = new HashMap<>();
-    private final Map<UUID, Integer> activeByWorld = new HashMap<>();
-    private final Map<WorldChunkKey, Integer> activeByChunk = new HashMap<>();
+    private final Object2IntOpenHashMap<UUID> attackersByTarget = new Object2IntOpenHashMap<>();
+    private final Object2IntOpenHashMap<UUID> activeByWorld = new Object2IntOpenHashMap<>();
+    private final Object2ObjectOpenHashMap<UUID, Long2IntOpenHashMap> activeByChunkByWorld = new Object2ObjectOpenHashMap<>();
+
+    TargetingIndex() {
+        attackersByTarget.defaultReturnValue(0);
+        activeByWorld.defaultReturnValue(0);
+    }
 
     void clear() {
         attackersByTarget.clear();
         activeByWorld.clear();
-        activeByChunk.clear();
+        activeByChunkByWorld.clear();
     }
 
     int attackersForTarget(UUID targetId) {
-        return attackersByTarget.getOrDefault(targetId, 0);
+        if (targetId == null) {
+            return 0;
+        }
+        return attackersByTarget.getInt(targetId);
     }
 
     int activeInWorld(UUID worldId) {
-        return activeByWorld.getOrDefault(worldId, 0);
+        return worldId == null ? 0 : activeByWorld.getInt(worldId);
     }
 
     int activeInChunk(Chicken chicken) {
-        return activeByChunk.getOrDefault(chunkKey(chicken), 0);
+        if (chicken == null) {
+            return 0;
+        }
+        UUID worldId = chicken.getWorld().getUID();
+        Long2IntOpenHashMap activeByChunk = activeByChunkByWorld.get(worldId);
+        if (activeByChunk == null) {
+            return 0;
+        }
+        return activeByChunk.get(chunkKey(chicken.getChunk().getX(), chicken.getChunk().getZ()));
     }
 
     void registerActive(Chicken chicken, UUID targetUuid) {
@@ -36,7 +53,7 @@ final class TargetingIndex {
         }
         UUID worldId = chicken.getWorld().getUID();
         increment(activeByWorld, worldId);
-        increment(activeByChunk, chunkKey(chicken));
+        incrementChunk(worldId, chicken.getChunk().getX(), chicken.getChunk().getZ());
         if (targetUuid != null) {
             increment(attackersByTarget, targetUuid);
         }
@@ -48,36 +65,70 @@ final class TargetingIndex {
         }
         UUID worldId = chicken.getWorld().getUID();
         decrement(activeByWorld, worldId);
-        decrement(activeByChunk, chunkKey(chicken));
+        decrementChunk(worldId, chicken.getChunk().getX(), chicken.getChunk().getZ());
         if (targetUuid != null) {
             decrement(attackersByTarget, targetUuid);
         }
     }
 
     void replaceTarget(UUID previousTarget, UUID nextTarget) {
+        if (previousTarget != null && previousTarget.equals(nextTarget)) {
+            return;
+        }
         if (previousTarget != null) {
             decrement(attackersByTarget, previousTarget);
         }
-        increment(attackersByTarget, nextTarget);
+        if (nextTarget != null) {
+            increment(attackersByTarget, nextTarget);
+        }
     }
 
-    private static WorldChunkKey chunkKey(Chicken chicken) {
-        return new WorldChunkKey(chicken.getWorld().getUID(), chicken.getChunk().getX(), chicken.getChunk().getZ());
+    private void incrementChunk(UUID worldId, int chunkX, int chunkZ) {
+        Long2IntOpenHashMap activeByChunk = activeByChunkByWorld.get(worldId);
+        if (activeByChunk == null) {
+            activeByChunk = new Long2IntOpenHashMap();
+            activeByChunk.defaultReturnValue(0);
+            activeByChunkByWorld.put(worldId, activeByChunk);
+        }
+        activeByChunk.addTo(chunkKey(chunkX, chunkZ), 1);
     }
 
-    private static <K> void increment(Map<K, Integer> map, K key) {
-        map.merge(key, 1, Integer::sum);
+    private void decrementChunk(UUID worldId, int chunkX, int chunkZ) {
+        Long2IntOpenHashMap activeByChunk = activeByChunkByWorld.get(worldId);
+        if (activeByChunk == null) {
+            return;
+        }
+        long chunkKey = chunkKey(chunkX, chunkZ);
+        int current = activeByChunk.get(chunkKey);
+        if (current <= 1) {
+            activeByChunk.remove(chunkKey);
+            if (activeByChunk.isEmpty()) {
+                activeByChunkByWorld.remove(worldId);
+            }
+            return;
+        }
+        activeByChunk.put(chunkKey, current - 1);
     }
 
-    private static <K> void decrement(Map<K, Integer> map, K key) {
-        Integer current = map.get(key);
-        if (current == null || current <= 1) {
-            map.remove(key);
+    private static void increment(Object2IntOpenHashMap<UUID> map, UUID key) {
+        if (key != null) {
+            map.addTo(key, 1);
+        }
+    }
+
+    private static void decrement(Object2IntOpenHashMap<UUID> map, UUID key) {
+        if (key == null) {
+            return;
+        }
+        int current = map.getInt(key);
+        if (current <= 1) {
+            map.removeInt(key);
             return;
         }
         map.put(key, current - 1);
     }
 
-    private record WorldChunkKey(UUID worldId, int chunkX, int chunkZ) {
+    private static long chunkKey(int chunkX, int chunkZ) {
+        return ((long) chunkX << 32) ^ (chunkZ & 0xFFFF_FFFFL);
     }
 }

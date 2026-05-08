@@ -13,3 +13,6 @@ permissions:
   faunareborn.command.reload:
     description: Allows using /fauna reload.
     default: op
+  faunareborn.command.gui:
+    description: Allows using /fauna gui.
+    default: op

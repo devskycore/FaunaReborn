@@ -154,6 +154,83 @@ public final class CowSettingsLoader implements EntitySettingsLoader<CowSettings
                 chargeMaxIntervalTicks,
                 chargeExtraPush
         );
+        double resourceDetectionRadius = clampedDouble(
+                config.getDouble("cow-resource-provocation.detection-radius", 8.0D),
+                2.0D,
+                64.0D,
+                8.0D
+        );
+        CowSettings.ResourceProvocationSettings resourceProvocation = new CowSettings.ResourceProvocationSettings(
+                config.getBoolean("cow-resource-provocation.enabled", true),
+                numbers.intRange(
+                        config.getInt("cow-resource-provocation.thresholds.leather", 8),
+                        1,
+                        512,
+                        8,
+                        "Invalid cow-resource-provocation.thresholds.leather in cow.yml. Falling back to 8",
+                        "cow-resource-provocation.thresholds.leather is too high. Clamped to 512"
+                ),
+                numbers.intRange(
+                        config.getInt("cow-resource-provocation.thresholds.raw-beef", 6),
+                        1,
+                        512,
+                        6,
+                        "Invalid cow-resource-provocation.thresholds.raw-beef in cow.yml. Falling back to 6",
+                        "cow-resource-provocation.thresholds.raw-beef is too high. Clamped to 512"
+                ),
+                numbers.intRange(
+                        config.getInt("cow-resource-provocation.thresholds.bone", 4),
+                        1,
+                        512,
+                        4,
+                        "Invalid cow-resource-provocation.thresholds.bone in cow.yml. Falling back to 4",
+                        "cow-resource-provocation.thresholds.bone is too high. Clamped to 512"
+                ),
+                resourceDetectionRadius,
+                resourceDetectionRadius * resourceDetectionRadius,
+                secondsToTicks(clampedDouble(
+                        config.getDouble("cow-resource-provocation.time-window-seconds", 12.0D),
+                        0.2D,
+                        300.0D,
+                        12.0D
+                ), true),
+                numbers.intRange(
+                        config.getInt("cow-resource-provocation.max-item-age-ticks", 2400),
+                        0,
+                        12000,
+                        2400,
+                        "Invalid cow-resource-provocation.max-item-age-ticks in cow.yml. Falling back to 2400",
+                        "cow-resource-provocation.max-item-age-ticks is too high. Clamped to 12000"
+                ),
+                config.getBoolean("cow-resource-provocation.night-modifier.enabled", true),
+                clampedDouble(
+                        config.getDouble("cow-resource-provocation.night-modifier.threshold-multiplier", 0.75D),
+                        0.1D,
+                        5.0D,
+                        0.75D
+                ),
+                config.getBoolean("cow-resource-provocation.social-propagation-enabled", true),
+                numbers.intRange(
+                        config.getInt("cow-resource-provocation.max-responders", 3),
+                        1,
+                        32,
+                        3,
+                        "Invalid cow-resource-provocation.max-responders in cow.yml. Falling back to 3",
+                        "cow-resource-provocation.max-responders is too high. Clamped to 32"
+                ),
+                secondsToTicks(clampedDouble(
+                        config.getDouble("cow-resource-provocation.trigger-cooldown-seconds", 2.5D),
+                        0.0D,
+                        60.0D,
+                        2.5D
+                ), false),
+                secondsToTicks(clampedDouble(
+                        config.getDouble("cow-resource-provocation.aggression-duration-seconds", 10.0D),
+                        1.0D,
+                        180.0D,
+                        10.0D
+                ), true)
+        );
         CowSettings.SocialAlertSettings socialAlert = new CowSettings.SocialAlertSettings(
                 config.getBoolean("cow-hostility.social-alert.enabled", true),
                 config.getBoolean("cow-hostility.social-alert.triggers.by-damage-to-cow", true),
@@ -198,7 +275,7 @@ public final class CowSettingsLoader implements EntitySettingsLoader<CowSettings
                 socialAlert.joinCooldownTicks(),
                 socialAlert.maxResponders()
         );
-        return new CowSettings(moduleEnabled, milkProvocation, socialAlert, loadGlobalHostilitySettings());
+        return new CowSettings(moduleEnabled, milkProvocation, resourceProvocation, socialAlert, loadGlobalHostilitySettings());
     }
 
     private CowSettings.GlobalHostilitySettings loadGlobalHostilitySettings() {

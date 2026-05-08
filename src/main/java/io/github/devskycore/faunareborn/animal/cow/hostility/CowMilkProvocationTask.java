@@ -18,12 +18,20 @@ public final class CowMilkProvocationTask {
     public CowMilkProvocationTask(
             FaunaRebornPlugin plugin,
             CowSettings.MilkProvocationSettings settings,
+            CowSettings.ResourceProvocationSettings resourceSettings,
             CowSettings.SocialAlertSettings socialAlertSettings,
             CowSettings.GlobalHostilitySettings globalSettings
     ) {
         this.plugin = plugin;
         this.aggressionController = new CowMilkAggressionController(settings, globalSettings);
-        this.interactionListener = new CowMilkInteractionListener(plugin, settings, socialAlertSettings, globalSettings, aggressionController);
+        this.interactionListener = new CowMilkInteractionListener(
+                plugin,
+                settings,
+                socialAlertSettings,
+                globalSettings,
+                aggressionController,
+                resourceSettings
+        );
     }
 
     public void start() {
@@ -40,6 +48,7 @@ public final class CowMilkProvocationTask {
             task = null;
         }
         HandlerList.unregisterAll(interactionListener);
+        interactionListener.clearState();
         aggressionController.clearAll();
     }
 }

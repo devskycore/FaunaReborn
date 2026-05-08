@@ -3,19 +3,25 @@ package io.github.devskycore.faunareborn.module;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.logging.Level;
 
 public final class ModuleManager {
 
     private final FaunaRebornPlugin plugin;
     private final List<FaunaModule> modules;
+    private final Map<String, FaunaModule> modulesById = new HashMap<>();
     private final List<FaunaModule> enabledModules = new ArrayList<>();
 
     public ModuleManager(FaunaRebornPlugin plugin, List<FaunaModule> modules) {
         this.plugin = plugin;
         this.modules = List.copyOf(modules);
+        for (FaunaModule module : this.modules) {
+            modulesById.put(module.id(), module);
+        }
     }
 
     public void enableAll() {
@@ -49,6 +55,38 @@ public final class ModuleManager {
             }
         }
         enabledModules.clear();
+    }
+
+    public boolean setModuleEnabled(String moduleId, boolean enabled) {
+        FaunaModule module = modulesById.get(moduleId);
+        if (module == null) {
+            return false;
+        }
+
+        boolean currentlyEnabled = enabledModules.contains(module);
+        if (enabled == currentlyEnabled) {
+            return true;
+        }
+
+        if (enabled) {
+            try {
+                module.enable();
+                enabledModules.add(module);
+                return true;
+            } catch (Throwable throwable) {
+                plugin.getLogger().log(Level.SEVERE, "Module enable failed for '" + module.id() + "'.", throwable);
+                return false;
+            }
+        }
+
+        try {
+            module.disable();
+        } catch (Throwable throwable) {
+            plugin.getLogger().log(Level.SEVERE, "Module disable failed for '" + module.id() + "'.", throwable);
+            return false;
+        }
+        enabledModules.remove(module);
+        return true;
     }
 
     private void rollback(List<FaunaModule> started) {

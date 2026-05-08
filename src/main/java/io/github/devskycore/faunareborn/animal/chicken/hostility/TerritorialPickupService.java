@@ -1,11 +1,11 @@
 package io.github.devskycore.faunareborn.animal.chicken.hostility;
 
 import io.github.devskycore.faunareborn.animal.chicken.config.ItemPickupTerritorialityConfig;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 
 import java.util.HashMap;
@@ -89,10 +89,7 @@ final class TerritorialPickupService {
         }
 
         int threshold = resolveItemPickupThreshold(material, player.getWorld());
-        TerritorialPickupCounter counter = counters.computeIfAbsent(
-                player.getUniqueId(),
-                ignored -> new TerritorialPickupCounter()
-        );
+        TerritorialPickupCounter counter = counters.computeIfAbsent(player.getUniqueId(), ignored -> new TerritorialPickupCounter());
         int updatedAmount = counter.add(material, amount, currentTick, timeWindowTicks);
         if (updatedAmount < threshold) {
             return;
@@ -102,14 +99,14 @@ final class TerritorialPickupService {
         triggerTerritorialItemAggression(player, nearbyEntities, currentTick);
     }
 
-    boolean hasTerritorialWitness(Player player, Location itemLocation, List<Entity> nearbyEntities) {
-        if (player == null || itemLocation == null || nearbyEntities.isEmpty()) {
+    boolean hasTerritorialWitness(Player player, Item item, List<Entity> nearbyEntities) {
+        if (player == null || item == null || nearbyEntities.isEmpty()) {
             return false;
         }
-        if (player.getWorld() != itemLocation.getWorld()) {
+        if (player.getWorld() != item.getWorld()) {
             return false;
         }
-        if (HostilityDistances.distanceSq(player.getLocation(), itemLocation) > detectionRadiusSq) {
+        if (HostilityDistances.distanceSq(player, item) > detectionRadiusSq) {
             return false;
         }
 
@@ -120,7 +117,7 @@ final class TerritorialPickupService {
             if (cannotPerceiveTerritorialPickup(chicken, player)) {
                 continue;
             }
-            if (HostilityDistances.distanceSq(chicken.getLocation(), itemLocation) <= detectionRadiusSq) {
+            if (HostilityDistances.distanceSq(chicken, item) <= detectionRadiusSq) {
                 return true;
             }
         }

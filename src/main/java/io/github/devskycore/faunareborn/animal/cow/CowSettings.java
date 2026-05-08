@@ -8,6 +8,7 @@ import java.util.Map;
 public record CowSettings(
         boolean enabled,
         MilkProvocationSettings milkProvocation,
+        ResourceProvocationSettings resourceProvocation,
         SocialAlertSettings socialAlert,
         GlobalHostilitySettings globalHostility
 ) implements EntitySettings {
@@ -65,6 +66,24 @@ public record CowSettings(
             int cooldownTicks,
             int joinCooldownTicks,
             int maxResponders
+    ) {
+    }
+
+    public record ResourceProvocationSettings(
+            boolean enabled,
+            int leatherThreshold,
+            int rawBeefThreshold,
+            int boneThreshold,
+            double detectionRadius,
+            double detectionRadiusSq,
+            int timeWindowTicks,
+            int maxItemAgeTicks,
+            boolean nightModifierEnabled,
+            double nightThresholdMultiplier,
+            boolean socialPropagationEnabled,
+            int maxResponders,
+            int triggerCooldownTicks,
+            int aggressionDurationTicks
     ) {
     }
 

@@ -7,7 +7,6 @@ import io.papermc.paper.event.world.WorldDifficultyChangeEvent;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
-import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Chicken;
@@ -30,7 +29,7 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.ArrayDeque;
 
 final class ChickenHostilityTask implements Listener {
 
@@ -56,7 +55,7 @@ final class ChickenHostilityTask implements Listener {
     private final ChickenDamageScaler damageScaler;
     private final ChickenHostilityVisualController visualController;
     private final WorldNightStateCache worldNightStateCache;
-    private final ConcurrentLinkedQueue<Runnable> pendingStateMutations = new ConcurrentLinkedQueue<>();
+    private final ArrayDeque<Runnable> pendingStateMutations = new ArrayDeque<>();
 
     private final int maxProcessedChickensPerTick;
     private final int attackCooldownTicks;
@@ -483,7 +482,7 @@ final class ChickenHostilityTask implements Listener {
 
     private void drainPendingStateMutations() {
         Runnable mutation;
-        while ((mutation = pendingStateMutations.poll()) != null) {
+        while ((mutation = pendingStateMutations.pollFirst()) != null) {
             mutation.run();
         }
     }
@@ -683,13 +682,12 @@ final class ChickenHostilityTask implements Listener {
             return;
         }
 
-        Location itemLocation = item.getLocation();
         List<Entity> nearby = item.getNearbyEntities(
                 territorialPickupService.detectionRadius(),
                 territorialPickupService.detectionRadius(),
                 territorialPickupService.detectionRadius()
         );
-        if (!territorialPickupService.hasTerritorialWitness(player, itemLocation, nearby)) {
+        if (!territorialPickupService.hasTerritorialWitness(player, item, nearby)) {
             return;
         }
 

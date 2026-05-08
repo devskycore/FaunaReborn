@@ -133,6 +133,10 @@ final class ActivationPolicy {
     }
 
     private boolean isNaturalChicken(Chicken chicken) {
+        Byte marker = chicken.getPersistentDataContainer().get(nonNaturalChickenKey, PersistentDataType.BYTE);
+        if (marker != null && marker == TRUE_BYTE) {
+            return false;
+        }
         CreatureSpawnEvent.SpawnReason entitySpawnReason = chicken.getEntitySpawnReason();
         return isNaturalSpawnReason(entitySpawnReason);
     }

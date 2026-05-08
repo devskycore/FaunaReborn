@@ -53,7 +53,13 @@ final class WorldNightStateCache implements Listener {
         if (world == null) {
             return false;
         }
-        return nightByWorldId.computeIfAbsent(world.getUID(), ignored -> computeNight(world));
+        Boolean cached = nightByWorldId.get(world.getUID());
+        if (cached != null) {
+            return cached;
+        }
+        boolean night = computeNight(world);
+        nightByWorldId.put(world.getUID(), night);
+        return night;
     }
 
     @EventHandler

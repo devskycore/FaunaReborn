@@ -53,3 +53,26 @@ cow-milk-provocation:
     aggressive-enabled: true
     warning-enabled: true
     stomp-enabled: true
+
+cow-resource-provocation:
+  enabled: true
+  thresholds:
+    leather: 8
+    raw-beef: 6
+    bone: 4
+  # Items picked in this time-window accumulate per item type before triggering.
+  time-window-seconds: 12.0
+  # Ignore old dropped items to avoid stale territorial reactions.
+  max-item-age-ticks: 2400
+  night-modifier:
+    enabled: true
+    threshold-multiplier: 0.75
+  social-propagation-enabled: true
+  # Hard cap for direct cows recruited by one resource pickup trigger.
+  max-responders: 3
+  # Radius used to locate nearby cows that can detect the resource carrier.
+  detection-radius: 8.0
+  # Cooldown per player-cow pair to prevent constant retrigger loops.
+  trigger-cooldown-seconds: 2.5
+  # Threat duration applied when resource provocation triggers.
+  aggression-duration-seconds: 10.0
