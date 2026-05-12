@@ -9,9 +9,9 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.world.WorldLoadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 final class WorldNightStateCache implements Listener {
 
@@ -20,7 +20,7 @@ final class WorldNightStateCache implements Listener {
     private static final long NIGHT_END_TICK = 23000L;
 
     private final FaunaRebornPlugin plugin;
-    private final Map<UUID, Boolean> nightByWorldId = new HashMap<>();
+    private final Map<UUID, Boolean> nightByWorldId = new ConcurrentHashMap<>();
 
     private ScheduledTask refreshTask;
 

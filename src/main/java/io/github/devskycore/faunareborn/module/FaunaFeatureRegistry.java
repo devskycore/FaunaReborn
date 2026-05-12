@@ -2,6 +2,7 @@ package io.github.devskycore.faunareborn.module;
 
 import io.github.devskycore.faunareborn.animal.chicken.hostility.ChickenHostilityFeature;
 import io.github.devskycore.faunareborn.animal.cow.CowFeature;
+import io.github.devskycore.faunareborn.animal.pig.PigFeature;
 import io.github.devskycore.faunareborn.config.PluginSettings;
 import io.github.devskycore.faunareborn.config.entity.EntitySettings;
 import io.github.devskycore.faunareborn.config.entity.EntitySettingsLoader;
@@ -21,7 +22,8 @@ public final class FaunaFeatureRegistry {
     public static FaunaFeatureRegistry defaults() {
         return new FaunaFeatureRegistry(List.of(
                 new ChickenHostilityFeature(),
-                new CowFeature()
+                new CowFeature(),
+                new PigFeature()
         ));
     }
 

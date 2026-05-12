@@ -2,7 +2,8 @@ package io.github.devskycore.faunareborn.config.entity;
 
 public enum EntityType {
     CHICKEN("chicken", "entities/chicken.yml"),
-    COW("cow", "entities/cow.yml");
+    COW("cow", "entities/cow.yml"),
+    PIG("pig", "entities/pig.yml");
 
     private final String id;
     private final String resourcePath;

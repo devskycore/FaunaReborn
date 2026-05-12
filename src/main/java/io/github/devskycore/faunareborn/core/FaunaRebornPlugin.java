@@ -66,7 +66,8 @@ public final class FaunaRebornPlugin extends JavaPlugin {
                 this,
                 java.util.List.of(
                         new EntityModuleToggle(EntityType.CHICKEN, "chicken-hostility", "Chicken Hostility", "chicken-hostility.enabled", Material.CHICKEN_SPAWN_EGG),
-                        new EntityModuleToggle(EntityType.COW, "cow", "Cow Hostility", "cow.enabled", Material.COW_SPAWN_EGG)
+                        new EntityModuleToggle(EntityType.COW, "cow", "Cow Hostility", "cow.enabled", Material.COW_SPAWN_EGG),
+                        new EntityModuleToggle(EntityType.PIG, "pig", "Pig Hostility", "pig.enabled", Material.PIG_SPAWN_EGG)
                 )
         );
         return new FaunaMainGui(this, guiConfigService, new FaunaReloadService(this));

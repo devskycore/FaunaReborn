@@ -3,10 +3,11 @@ package io.github.devskycore.faunareborn.gui;
 import io.github.devskycore.faunareborn.command.FaunaReloadService;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
 import io.github.devskycore.faunareborn.module.ModuleManager;
+import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapter;
+import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapters;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
@@ -39,6 +40,7 @@ public final class FaunaMainGui implements Listener {
     private final FaunaRebornPlugin plugin;
     private final PluginGuiConfigService configService;
     private final FaunaReloadService reloadService;
+    private final SchedulerAdapter scheduler;
 
     public FaunaMainGui(
             FaunaRebornPlugin plugin,
@@ -48,6 +50,7 @@ public final class FaunaMainGui implements Listener {
         this.plugin = plugin;
         this.configService = configService;
         this.reloadService = reloadService;
+        this.scheduler = SchedulerAdapters.create(plugin);
     }
 
     public void open(Player player) {
@@ -82,7 +85,7 @@ public final class FaunaMainGui implements Listener {
             }
             Inventory top = event.getView().getTopInventory();
             top.setItem(slot, createReloadingItem());
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            scheduler.runLater(() -> {
                 reloadService.reload(clicker);
                 if (clicker instanceof Player player) {
                     player.playSound(player.getLocation(), Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, SoundCategory.MASTER, 0.65f, 1.35f);
@@ -130,7 +133,7 @@ public final class FaunaMainGui implements Listener {
         }
         Inventory top = event.getView().getTopInventory();
         top.setItem(slot, createAnimatedStateItem(toggle, targetState));
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+        scheduler.runLater(() -> {
             if (clicker instanceof Player player) {
                 player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_CHIME, SoundCategory.MASTER, 0.65f, 1.65f);
             }
@@ -152,7 +155,7 @@ public final class FaunaMainGui implements Listener {
     }
 
     private Inventory buildInventory() {
-        Inventory inventory = Bukkit.createInventory(null, SIZE, TITLE);
+        Inventory inventory = plugin.getServer().createInventory(null, SIZE, TITLE);
         fillBackground(inventory);
 
         List<EntityModuleToggle> toggles = configService.moduleToggles();

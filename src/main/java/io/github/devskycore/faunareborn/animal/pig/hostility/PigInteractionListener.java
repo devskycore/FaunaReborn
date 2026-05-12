@@ -1,7 +1,7 @@
-package io.github.devskycore.faunareborn.animal.cow.hostility;
+package io.github.devskycore.faunareborn.animal.pig.hostility;
 
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
-import io.github.devskycore.faunareborn.animal.cow.CowSettings;
+import io.github.devskycore.faunareborn.animal.pig.PigSettings;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
 import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapter;
 import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapters;
@@ -9,7 +9,7 @@ import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.entity.Cow;
+import org.bukkit.entity.Pig;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Projectile;
@@ -25,115 +25,105 @@ import org.bukkit.event.entity.EntityPickupItemEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.entity.AnimalTamer;
 
-final class CowMilkInteractionListener implements Listener {
+final class PigInteractionListener implements Listener {
 
     private static final byte TRUE_BYTE = 1;
 
-    private final FaunaRebornPlugin plugin;
-    private final CowSettings.MilkProvocationSettings settings;
-    private final CowSettings.SocialAlertSettings socialAlertSettings;
-    private final CowSettings.ResourceProvocationSettings resourceProvocationSettings;
-    private final CowSettings.GlobalHostilitySettings global;
-    private final CowMilkAggressionController aggressionController;
-    private final CowTerritorialPickupService territorialPickupService;
-    private final NamespacedKey nonNaturalCowKey;
+    private final PigSettings.RodProvocationSettings settings;
+    private final PigSettings.SocialAlertSettings socialAlertSettings;
+    private final PigSettings.ResourceProvocationSettings resourceProvocationSettings;
+    private final PigSettings.GlobalHostilitySettings global;
+    private final PigAggressionController aggressionController;
+    private final PigTerritorialPickupService territorialPickupService;
+    private final NamespacedKey nonNaturalPigKey;
     private final SchedulerAdapter scheduler;
 
-    CowMilkInteractionListener(
+    PigInteractionListener(
             FaunaRebornPlugin plugin,
-            CowSettings.MilkProvocationSettings settings,
-            CowSettings.SocialAlertSettings socialAlertSettings,
-            CowSettings.GlobalHostilitySettings global,
-            CowMilkAggressionController aggressionController,
-            CowSettings.ResourceProvocationSettings resourceProvocationSettings
+            PigSettings.RodProvocationSettings settings,
+            PigSettings.SocialAlertSettings socialAlertSettings,
+            PigSettings.GlobalHostilitySettings global,
+            PigAggressionController aggressionController,
+            PigSettings.ResourceProvocationSettings resourceProvocationSettings
     ) {
-        this.plugin = plugin;
         this.settings = settings;
         this.socialAlertSettings = socialAlertSettings;
         this.resourceProvocationSettings = resourceProvocationSettings;
         this.global = global;
         this.aggressionController = aggressionController;
         this.scheduler = SchedulerAdapters.create(plugin);
-        this.territorialPickupService = new CowTerritorialPickupService(
+        this.territorialPickupService = new PigTerritorialPickupService(
                 resourceProvocationSettings,
                 socialAlertSettings,
                 aggressionController,
-                this::isNaturalCow,
+                this::isNaturalPig,
                 settings.requireLineOfSight()
         );
-        this.nonNaturalCowKey = new NamespacedKey(plugin, "non_natural_cow");
+        this.nonNaturalPigKey = new NamespacedKey(plugin, "non_natural_pig");
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    private void onPlayerMilkCow(PlayerInteractEntityEvent event) {
+    @EventHandler(priority = EventPriority.MONITOR)
+    private void onPlayerProvokePigWithCarrotOnAStick(PlayerInteractEntityEvent event) {
         if (!settings.enabled() || event.getHand() != EquipmentSlot.HAND) {
             return;
         }
-        if (!(event.getRightClicked() instanceof Cow cow) || !cow.isAdult()) {
+        if (!(event.getRightClicked() instanceof Pig pig) || !pig.isAdult()) {
             return;
         }
-        if (global.worldFilter().isWorldDisallowed(cow.getWorld().getName())) {
+        if (global.worldFilter().isWorldDisallowed(pig.getWorld().getName())) {
             return;
         }
 
         Player player = event.getPlayer();
-        PlayerInventory inventory = player.getInventory();
-        if (inventory.getItemInMainHand().getType() != Material.BUCKET) {
+        if (player.getInventory().getItemInMainHand().getType() != Material.CARROT_ON_A_STICK) {
             return;
         }
-
-        int milkBefore = countMaterial(inventory, Material.MILK_BUCKET);
-        int bucketBefore = countMaterial(inventory, Material.BUCKET);
-        scheduler.runForEntity(cow, () -> {
-            if (!player.isOnline() || player.isDead() || !cow.isValid() || cow.isDead()) {
+        scheduler.runForEntity(pig, () -> {
+            if (!player.isOnline() || player.isDead() || !pig.isValid() || pig.isDead()) {
                 return;
             }
-            if (!wasMilkingSuccessful(player, milkBefore, bucketBefore)) {
-                return;
-            }
-            aggressionController.provokeCowFromMilking(cow, player, isNaturalCow(cow));
+            aggressionController.provokePigFromRodProvocation(pig, player, isNaturalPig(pig));
         });
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     private void onCreatureSpawn(CreatureSpawnEvent event) {
-        if (!(event.getEntity() instanceof Cow cow)) {
+        if (!(event.getEntity() instanceof Pig pig)) {
             return;
         }
         if (!isNaturalSpawn(event.getSpawnReason())) {
-            cow.getPersistentDataContainer().set(nonNaturalCowKey, PersistentDataType.BYTE, TRUE_BYTE);
+            pig.getPersistentDataContainer().set(nonNaturalPigKey, PersistentDataType.BYTE, TRUE_BYTE);
         }
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    private void onCowDeath(EntityDeathEvent event) {
-        if (!(event.getEntity() instanceof Cow cow)) {
+    private void onPigDeath(EntityDeathEvent event) {
+        if (!(event.getEntity() instanceof Pig pig)) {
             return;
         }
-        if (socialAlertSettings.enabled() && socialAlertSettings.onNearbyDeath() && !global.worldFilter().isWorldDisallowed(cow.getWorld().getName())) {
-            Player killer = cow.getKiller();
+        if (socialAlertSettings.enabled() && socialAlertSettings.onNearbyDeath() && !global.worldFilter().isWorldDisallowed(pig.getWorld().getName())) {
+            Player killer = pig.getKiller();
             if (killer != null && killer.isOnline() && !killer.isDead()) {
-                aggressionController.provokeNearbyCowsFromSocialAlert(
-                        cow,
+                aggressionController.provokeNearbyPigsFromSocialAlert(
+                        pig,
                         killer,
-                        cow.getNearbyEntities(socialAlertSettings.radius(), socialAlertSettings.radius(), socialAlertSettings.radius()),
+                        pig.getNearbyEntities(socialAlertSettings.radius(), socialAlertSettings.radius(), socialAlertSettings.radius()),
                         socialAlertSettings,
-                        this::isNaturalCow
+                        this::isNaturalPig
                 );
             }
         }
-        aggressionController.removeCow(cow.getEntityId());
+        aggressionController.removePig(pig.getEntityId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
-    private void onCowRemoved(EntityRemoveFromWorldEvent event) {
-        if (event.getEntity() instanceof Cow cow) {
-            aggressionController.removeCow(cow.getEntityId());
+    private void onPigRemoved(EntityRemoveFromWorldEvent event) {
+        if (event.getEntity() instanceof Pig pig) {
+            aggressionController.removePig(pig.getEntityId());
         }
     }
 
@@ -144,29 +134,29 @@ final class CowMilkInteractionListener implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    private void onCowDamaged(EntityDamageByEntityEvent event) {
+    private void onPigDamaged(EntityDamageByEntityEvent event) {
         if (event.getFinalDamage() <= 0.0D) {
             return;
         }
         if (!socialAlertSettings.enabled() || !socialAlertSettings.onDamage()) {
             return;
         }
-        if (!(event.getEntity() instanceof Cow victimCow)) {
+        if (!(event.getEntity() instanceof Pig victimPig)) {
             return;
         }
-        if (global.worldFilter().isWorldDisallowed(victimCow.getWorld().getName())) {
+        if (global.worldFilter().isWorldDisallowed(victimPig.getWorld().getName())) {
             return;
         }
         Player aggressor = resolveDamagingPlayer(event.getDamager());
         if (aggressor == null || aggressor.isDead() || !aggressor.isOnline()) {
             return;
         }
-        aggressionController.provokeNearbyCowsFromSocialAlert(
-                victimCow,
+        aggressionController.provokeNearbyPigsFromSocialAlert(
+                victimPig,
                 aggressor,
-                victimCow.getNearbyEntities(socialAlertSettings.radius(), socialAlertSettings.radius(), socialAlertSettings.radius()),
+                victimPig.getNearbyEntities(socialAlertSettings.radius(), socialAlertSettings.radius(), socialAlertSettings.radius()),
                 socialAlertSettings,
-                this::isNaturalCow
+                this::isNaturalPig
         );
     }
 
@@ -211,31 +201,8 @@ final class CowMilkInteractionListener implements Listener {
         }
     }
 
-    private boolean wasMilkingSuccessful(Player player, int milkBefore, int bucketBefore) {
-        PlayerInventory inventory = player.getInventory();
-        int milkAfter = countMaterial(inventory, Material.MILK_BUCKET);
-        int bucketAfter = countMaterial(inventory, Material.BUCKET);
-        Material handAfter = inventory.getItemInMainHand().getType();
-
-        if (handAfter == Material.MILK_BUCKET) {
-            return true;
-        }
-        return milkAfter > milkBefore && bucketAfter < bucketBefore;
-    }
-
-    private int countMaterial(PlayerInventory inventory, Material material) {
-        int total = 0;
-        for (var item : inventory.getContents()) {
-            if (item == null || item.getType() != material) {
-                continue;
-            }
-            total += item.getAmount();
-        }
-        return total;
-    }
-
-    private boolean isNaturalCow(Cow cow) {
-        Byte marker = cow.getPersistentDataContainer().get(nonNaturalCowKey, PersistentDataType.BYTE);
+    private boolean isNaturalPig(Pig pig) {
+        Byte marker = pig.getPersistentDataContainer().get(nonNaturalPigKey, PersistentDataType.BYTE);
         return marker == null || marker != TRUE_BYTE;
     }
 
@@ -276,3 +243,6 @@ final class CowMilkInteractionListener implements Listener {
         territorialPickupService.clear();
     }
 }
+
+
+

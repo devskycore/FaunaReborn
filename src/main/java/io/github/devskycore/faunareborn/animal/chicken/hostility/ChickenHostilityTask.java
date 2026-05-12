@@ -3,6 +3,10 @@ package io.github.devskycore.faunareborn.animal.chicken.hostility;
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import io.github.devskycore.faunareborn.animal.chicken.config.ChickenHostilitySettings;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
+import io.github.devskycore.faunareborn.system.platform.RuntimePlatform;
+import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapter;
+import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapters;
+import io.github.devskycore.faunareborn.system.scheduler.TaskHandle;
 import io.papermc.paper.event.world.WorldDifficultyChangeEvent;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.bukkit.Difficulty;
@@ -25,11 +29,12 @@ import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
-import org.bukkit.scheduler.BukkitTask;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 final class ChickenHostilityTask implements Listener {
 
@@ -46,6 +51,7 @@ final class ChickenHostilityTask implements Listener {
     private static final long PICKUP_COUNTER_CLEANUP_INTERVAL_TICKS = 100L;
 
     private final FaunaRebornPlugin plugin;
+    private final SchedulerAdapter scheduler;
     private final ChickenTracker tracker = new ChickenTracker();
     private final ActivationPolicy activationPolicy;
     private final ChickenTargetingService targetingService;
@@ -55,7 +61,9 @@ final class ChickenHostilityTask implements Listener {
     private final ChickenDamageScaler damageScaler;
     private final ChickenHostilityVisualController visualController;
     private final WorldNightStateCache worldNightStateCache;
-    private final ArrayDeque<Runnable> pendingStateMutations = new ArrayDeque<>();
+    private final Queue<Runnable> pendingStateMutations = new ConcurrentLinkedQueue<>();
+    private final Object stateLock = new Object();
+    private final boolean folia;
 
     private final int maxProcessedChickensPerTick;
     private final int attackCooldownTicks;
@@ -63,10 +71,12 @@ final class ChickenHostilityTask implements Listener {
     private final int retargetGraceTicks;
     private final double processingRadius;
 
-    private BukkitTask task;
+    private TaskHandle task;
     private long currentTick;
     ChickenHostilityTask(FaunaRebornPlugin plugin, ChickenHostilitySettings settings) {
         this.plugin = plugin;
+        this.scheduler = SchedulerAdapters.create(plugin);
+        this.folia = RuntimePlatform.isFolia();
 
         ChickenHostilitySettings.Combat combat = settings.combat();
         ChickenHostilitySettings.Limits limits = settings.limits();
@@ -107,7 +117,7 @@ final class ChickenHostilityTask implements Listener {
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
         worldNightStateCache.start();
         trackLoadedChickens();
-        task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 1L, TICK_RATE);
+        task = scheduler.runAtFixedRate(this::tick, 1L, TICK_RATE);
     }
 
     void stop() {
@@ -128,6 +138,64 @@ final class ChickenHostilityTask implements Listener {
     }
 
     private void tick() {
+        if (!folia) {
+            tickLegacy();
+            return;
+        }
+
+        List<Integer> toProcess = new ArrayList<>(maxProcessedChickensPerTick);
+        long tickSnapshot;
+        synchronized (stateLock) {
+            drainPendingStateMutations();
+            currentTick++;
+            tickSnapshot = currentTick;
+            targetingService.cleanupGlobalTargetCooldowns(currentTick);
+            socialAlertService.cleanupCooldowns(currentTick);
+            if (currentTick % PICKUP_COUNTER_CLEANUP_INTERVAL_TICKS == 0L) {
+                territorialPickupService.cleanupCounters(currentTick);
+            }
+            if (currentTick % INVALID_CLEANUP_INTERVAL_TICKS == 0L) {
+                cleanupInvalidTrackedChickensBatch();
+            }
+
+            int idleBucketModulo = resolveIdleBucketModulo();
+            int processed = 0;
+            int scanned = 0;
+            int scanBudget = Math.max(maxProcessedChickensPerTick * 3, idleBucketModulo * 64);
+            while (processed < maxProcessedChickensPerTick && scanned < scanBudget && !tracker.isEmpty()) {
+                int chickenId = tracker.nextProcessingChickenId();
+                if (chickenId == Integer.MIN_VALUE) break;
+                scanned++;
+
+                Chicken chicken = tracker.chicken(chickenId);
+                if (chicken == null) continue;
+                ChickenHostilityBrain brain = tracker.brain(chickenId);
+                if (brain == null || brain.state == ChickenHostilityState.IDLE) {
+                    if (Math.floorMod(chickenId, idleBucketModulo) != Math.floorMod(currentTick, idleBucketModulo)) {
+                        continue;
+                    }
+                } else {
+                    if (currentTick < brain.nextProcessTick) continue;
+                    brain.nextProcessTick = currentTick + ACTIVE_TICK_INTERVAL;
+                }
+                toProcess.add(chickenId);
+                processed++;
+            }
+        }
+
+        for (int chickenId : toProcess) {
+            Chicken chicken;
+            synchronized (stateLock) {
+                chicken = tracker.chicken(chickenId);
+            }
+            if (chicken == null) {
+                continue;
+            }
+            scheduler.runForEntity(chicken, () -> processChickenFolia(chickenId, tickSnapshot));
+        }
+    }
+
+    private void tickLegacy() {
         drainPendingStateMutations();
         currentTick++;
         targetingService.cleanupGlobalTargetCooldowns(currentTick);
@@ -170,6 +238,25 @@ final class ChickenHostilityTask implements Listener {
         }
 
         visualController.tick(currentTick, tracker.trackedChickens(), tracker.brains());
+    }
+
+    private void processChickenFolia(int chickenId, long tickSnapshot) {
+        synchronized (stateLock) {
+            if (currentTick != tickSnapshot) {
+                return;
+            }
+            Chicken chicken = tracker.chicken(chickenId);
+            if (chicken == null) {
+                return;
+            }
+            if (!chicken.isValid() || chicken.isDead()) {
+                removeTrackedChicken(chickenId, chicken);
+                return;
+            }
+            ChickenHostilityBrain brain = tracker.brain(chickenId);
+            processChicken(chicken, chickenId, brain);
+            visualController.sync(chickenId, chicken, tracker.brain(chickenId), currentTick);
+        }
     }
 
     private void processChicken(Chicken chicken, int chickenId, ChickenHostilityBrain brain) {
@@ -477,12 +564,12 @@ final class ChickenHostilityTask implements Listener {
     }
 
     private void enqueueStateMutation(Runnable mutation) {
-        pendingStateMutations.add(mutation);
+        pendingStateMutations.offer(mutation);
     }
 
     private void drainPendingStateMutations() {
         Runnable mutation;
-        while ((mutation = pendingStateMutations.pollFirst()) != null) {
+        while ((mutation = pendingStateMutations.poll()) != null) {
             mutation.run();
         }
     }
