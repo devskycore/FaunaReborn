@@ -27,7 +27,7 @@ import java.util.List;
 
 public final class FaunaMainGui implements Listener {
 
-    private static final Component TITLE = Component.text("FaunaReborn", NamedTextColor.DARK_AQUA)
+    private static final Component TITLE = Component.text("FaunaReborn", NamedTextColor.BLACK)
             .decorate(TextDecoration.BOLD)
             .append(Component.text(" | ", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
             .append(Component.text("Control Panel", NamedTextColor.DARK_GRAY).decoration(TextDecoration.BOLD, false))
@@ -55,8 +55,7 @@ public final class FaunaMainGui implements Listener {
 
     public void open(Player player) {
         player.openInventory(buildInventory());
-        player.playSound(player.getLocation(), Sound.BLOCK_ENDER_CHEST_OPEN, SoundCategory.MASTER, 0.65f, 1.2f);
-        player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_RESONATE, SoundCategory.MASTER, 0.5f, 1.4f);
+        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, SoundCategory.MASTER, 0.5f, 1.25f);
     }
 
     @EventHandler
@@ -73,22 +72,20 @@ public final class FaunaMainGui implements Listener {
         int slot = event.getRawSlot();
         if (slot == CLOSE_SLOT) {
             if (clicker instanceof Player player) {
-                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, SoundCategory.MASTER, 0.8f, 1.0f);
-                player.playSound(player.getLocation(), Sound.BLOCK_CHEST_CLOSE, SoundCategory.MASTER, 0.6f, 0.9f);
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, SoundCategory.MASTER, 0.6f, 0.9f);
             }
             clicker.closeInventory();
             return;
         }
         if (slot == RELOAD_SLOT) {
             if (clicker instanceof Player player) {
-                player.playSound(player.getLocation(), Sound.BLOCK_BEACON_ACTIVATE, SoundCategory.MASTER, 0.7f, 1.0f);
+                player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_RESONATE, SoundCategory.MASTER, 0.55f, 1.2f);
             }
             Inventory top = event.getView().getTopInventory();
             top.setItem(slot, createReloadingItem());
             scheduler.runLater(() -> {
                 reloadService.reload(clicker);
                 if (clicker instanceof Player player) {
-                    player.playSound(player.getLocation(), Sound.BLOCK_RESPAWN_ANCHOR_CHARGE, SoundCategory.MASTER, 0.65f, 1.35f);
                     player.openInventory(buildInventory());
                 }
             }, 1L);
@@ -122,21 +119,20 @@ public final class FaunaMainGui implements Listener {
             return;
         }
 
-        Component toggleMessage = Component.text(toggle.label() + " Hostility", NamedTextColor.YELLOW)
+        Component toggleMessage = Component.text(toggle.label(), NamedTextColor.YELLOW)
                 .append(Component.text(" set to ", NamedTextColor.GRAY))
                 .append(Component.text(targetState ? "enabled" : "disabled", targetState ? NamedTextColor.GREEN : NamedTextColor.RED))
                 .append(Component.text(".", NamedTextColor.GRAY))
                 .decoration(TextDecoration.ITALIC, false);
         clicker.sendMessage(toggleMessage);
         if (clicker instanceof Player player) {
-            player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_HIT, SoundCategory.MASTER, 0.7f, 1.3f);
+            Sound stateSound = targetState ? Sound.BLOCK_NOTE_BLOCK_CHIME : Sound.BLOCK_AMETHYST_BLOCK_HIT;
+            float statePitch = targetState ? 1.6f : 0.8f;
+            player.playSound(player.getLocation(), stateSound, SoundCategory.MASTER, 0.6f, statePitch);
         }
         Inventory top = event.getView().getTopInventory();
         top.setItem(slot, createAnimatedStateItem(toggle, targetState));
         scheduler.runLater(() -> {
-            if (clicker instanceof Player player) {
-                player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_CHIME, SoundCategory.MASTER, 0.65f, 1.65f);
-            }
             clicker.openInventory(buildInventory());
         }, 1L);
     }

@@ -29,16 +29,7 @@ public final class StartupOrchestrator {
     public boolean run() {
         try {
             if (RuntimePlatform.isFolia()) {
-                plugin.getLogger().severe(
-                        "Folia runtime detected. This build uses cross-entity global AI loops and is not safe for Folia thread ownership."
-                );
-                plugin.getLogger().severe(
-                        "Use a Folia-specific build with region/entity scheduler architecture before enabling hostility modules."
-                );
-                if (disablePluginOnFailure) {
-                    disablePluginSafely();
-                }
-                return false;
+                plugin.getLogger().info("Folia runtime detected. Enabling Folia scheduler pathways.");
             }
 
             FaunaFeatureRegistry featureRegistry = FaunaFeatureRegistry.defaults();

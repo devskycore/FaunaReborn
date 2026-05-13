@@ -41,9 +41,9 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.projectiles.ProjectileSource;
 import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 final class CowMilkInteractionListener implements Listener {
 
@@ -60,8 +60,8 @@ final class CowMilkInteractionListener implements Listener {
     private final CowTerritorialPickupService territorialPickupService;
     private final NamespacedKey nonNaturalCowKey;
     private final SchedulerAdapter scheduler;
-    private final Map<UUID, PendingCookIntent> pendingCookIntentByPlayer = new HashMap<>();
-    private final Map<String, CookedBatchReady> cookedBatchByCooker = new HashMap<>();
+    private final Map<UUID, PendingCookIntent> pendingCookIntentByPlayer = new ConcurrentHashMap<>();
+    private final Map<String, CookedBatchReady> cookedBatchByCooker = new ConcurrentHashMap<>();
 
     CowMilkInteractionListener(
             FaunaRebornPlugin plugin,
@@ -191,6 +191,7 @@ final class CowMilkInteractionListener implements Listener {
         if (aggressor == null || aggressor.isDead() || !aggressor.isOnline()) {
             return;
         }
+        aggressionController.provokeCowFromDamage(victimCow, aggressor, isNaturalCow(victimCow));
         aggressionController.provokeNearbyCowsFromSocialAlert(
                 victimCow,
                 aggressor,
@@ -272,7 +273,10 @@ final class CowMilkInteractionListener implements Listener {
             return;
         }
         long currentTick = aggressionController.currentTick();
-        cookedBatchByCooker.put(blockKey(event.getBlock().getLocation()), new CookedBatchReady(COOKED_MEAT, currentTick + COOK_VALIDATION_WINDOW_TICKS));
+        cookedBatchByCooker.put(
+                blockKey(event.getBlock().getLocation()),
+                new CookedBatchReady(COOKED_MEAT, currentTick + COOK_VALIDATION_WINDOW_TICKS, resolveCookingCause(cookerType))
+        );
         cleanupCookValidationState(currentTick);
     }
 
@@ -293,7 +297,7 @@ final class CowMilkInteractionListener implements Listener {
             return;
         }
         Location outputLocation = block.getLocation().add(0.5D, 0.5D, 0.5D);
-        HostilityCause cookingCause = consumeCookValidation(player, outputLocation, COOKED_MEAT);
+        HostilityCause cookingCause = consumeCookValidation(player, outputLocation, COOKED_MEAT, resolveCookingCause(block.getType()));
         if (cookingCause == null) {
             return;
         }
@@ -428,11 +432,12 @@ final class CowMilkInteractionListener implements Listener {
     }
 
     private HostilityCause consumeCookValidation(Player player, Location outputLocation, Material cookedType) {
+        return consumeCookValidation(player, outputLocation, cookedType, null);
+    }
+
+    private HostilityCause consumeCookValidation(Player player, Location outputLocation, Material cookedType, HostilityCause fallbackCause) {
         long currentTick = aggressionController.currentTick();
         PendingCookIntent intent = pendingCookIntentByPlayer.get(player.getUniqueId());
-        if (intent == null || currentTick > intent.expiresAtTick()) {
-            return null;
-        }
         String cookerKey = resolveCookerKey(outputLocation);
         if (cookerKey == null) {
             return null;
@@ -441,12 +446,13 @@ final class CowMilkInteractionListener implements Listener {
         if (ready == null || currentTick > ready.expiresAtTick() || ready.material() != cookedType) {
             return null;
         }
-        if (!intent.cookerKey().equals(cookerKey)) {
-            return null;
+        if (intent != null && currentTick <= intent.expiresAtTick() && intent.cookerKey().equals(cookerKey)) {
+            pendingCookIntentByPlayer.remove(player.getUniqueId());
+            cookedBatchByCooker.remove(cookerKey);
+            return intent.cookingCause();
         }
-        pendingCookIntentByPlayer.remove(player.getUniqueId());
         cookedBatchByCooker.remove(cookerKey);
-        return intent.cookingCause();
+        return ready.cookingCause() == null ? fallbackCause : ready.cookingCause();
     }
 
     private void triggerCookedMeatAggression(Player player, Location origin, HostilityCause cookingCause) {
@@ -527,6 +533,6 @@ final class CowMilkInteractionListener implements Listener {
 
     private record PendingCookIntent(String cookerKey, long expiresAtTick, HostilityCause cookingCause) {}
 
-    private record CookedBatchReady(Material material, long expiresAtTick) {}
+    private record CookedBatchReady(Material material, long expiresAtTick, HostilityCause cookingCause) {}
 }
 

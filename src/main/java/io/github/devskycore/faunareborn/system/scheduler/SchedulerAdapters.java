@@ -62,7 +62,7 @@ public final class SchedulerAdapters {
 
         @Override
         public void runForEntity(Entity entity, Runnable task) {
-            if (entity == null || !entity.isValid()) {
+            if (entity == null) {
                 return;
             }
             entity.getScheduler().run(plugin, t -> task.run(), () -> {

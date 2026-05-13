@@ -40,9 +40,9 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.projectiles.ProjectileSource;
 import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 final class PigInteractionListener implements Listener {
 
@@ -59,8 +59,8 @@ final class PigInteractionListener implements Listener {
     private final PigTerritorialPickupService territorialPickupService;
     private final NamespacedKey nonNaturalPigKey;
     private final SchedulerAdapter scheduler;
-    private final Map<UUID, PendingCookIntent> pendingCookIntentByPlayer = new HashMap<>();
-    private final Map<String, CookedBatchReady> cookedBatchByCooker = new HashMap<>();
+    private final Map<UUID, PendingCookIntent> pendingCookIntentByPlayer = new ConcurrentHashMap<>();
+    private final Map<String, CookedBatchReady> cookedBatchByCooker = new ConcurrentHashMap<>();
 
     PigInteractionListener(
             FaunaRebornPlugin plugin,

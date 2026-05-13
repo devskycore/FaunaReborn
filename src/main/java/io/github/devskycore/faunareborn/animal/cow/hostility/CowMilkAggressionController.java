@@ -228,6 +228,7 @@ final class CowMilkAggressionController {
     }
 
     void provokeCowFromMilking(Cow cow, Player aggressor, boolean naturalCow) {
+        synchronized (stateLock) {
         if (isProvocationBlocked(cow, naturalCow)) {
             return;
         }
@@ -242,6 +243,19 @@ final class CowMilkAggressionController {
         }
 
         activateCowAggression(cow, aggressor, naturalCow, settings.aggressionDurationTicks(), HostilityCause.MILKING_PROVOCATION);
+        }
+    }
+
+    boolean provokeCowFromDamage(Cow cow, Player aggressor, boolean naturalCow) {
+        synchronized (stateLock) {
+        return activateCowAggression(
+                cow,
+                aggressor,
+                naturalCow,
+                settings.aggressionDurationTicks(),
+                HostilityCause.HERD_RETALIATION_DAMAGE
+        );
+        }
     }
 
     boolean provokeCowFromResources(
@@ -269,6 +283,7 @@ final class CowMilkAggressionController {
             int aggressionDurationTicks,
             HostilityCause hostilityCause
     ) {
+        synchronized (stateLock) {
         if (isProvocationBlocked(cow, naturalCow)) {
             return false;
         }
@@ -281,6 +296,7 @@ final class CowMilkAggressionController {
             putCooldown(resourceTriggerCooldownUntilByPlayer, playerId, cowId, currentTick + triggerCooldownTicks);
         }
         return activateCowAggression(cow, aggressor, naturalCow, aggressionDurationTicks, hostilityCause);
+        }
     }
 
     void provokeNearbyCowsFromSocialAlert(
@@ -291,6 +307,7 @@ final class CowMilkAggressionController {
             java.util.function.Predicate<Cow> naturalCowPredicate,
             HostilityCause hostilityCause
     ) {
+        synchronized (stateLock) {
         if (!socialAlertSettings.enabled() || socialAlertSettings.maxResponders() <= 0) {
             return;
         }
@@ -343,6 +360,7 @@ final class CowMilkAggressionController {
 
         if (recruited > 0 && socialAlertSettings.cooldownTicks() > 0) {
             socialAlertCooldownUntilByCowId.put(emitter.getEntityId(), currentTick + socialAlertSettings.cooldownTicks());
+        }
         }
     }
 
@@ -414,6 +432,7 @@ final class CowMilkAggressionController {
         brain.nextMovementUpdateTick = currentTick;
         brain.nextParticleTick = nextParticleTick(cowId);
         brain.hostilityCause = hostilityCause;
+        HostilityContextTracker.record(nextTarget, HostileSpecies.COW, hostilityCause);
 
         cow.setTarget(aggressor);
         cow.setAggressive(true);
@@ -424,6 +443,7 @@ final class CowMilkAggressionController {
     }
 
     void removeCow(int cowId) {
+        synchronized (stateLock) {
         Cow cow = trackedCows.get(cowId);
         CowMilkAggressionBrain removedBrain = brains.remove(cowId);
         if (cow != null && cow.isValid()) {
@@ -442,9 +462,11 @@ final class CowMilkAggressionController {
         activationPolicy.forget(cowId);
         resetProcessingCursor();
         invalidateActiveCowCache();
+        }
     }
 
     void removeTarget(UUID targetId) {
+        synchronized (stateLock) {
         if (targetId == null) {
             return;
         }
@@ -466,9 +488,11 @@ final class CowMilkAggressionController {
             resetProcessingCursor();
             invalidateActiveCowCache();
         }
+        }
     }
 
     void clearAll() {
+        synchronized (stateLock) {
         for (var entry : brains.int2ObjectEntrySet()) {
             Cow cow = trackedCows.get(entry.getIntKey());
             if (cow != null && cow.isValid()) {
@@ -486,10 +510,13 @@ final class CowMilkAggressionController {
         activationPolicy.clear();
         resetProcessingCursor();
         invalidateActiveCowCache();
+        }
     }
 
     long currentTick() {
-        return currentTick;
+        synchronized (stateLock) {
+            return currentTick;
+        }
     }
 
     private void processState(Cow cow, Player target, CowMilkAggressionBrain brain) {
@@ -591,8 +618,8 @@ final class CowMilkAggressionController {
         brain.lastAttackTick = currentTick;
 
         double envDamageMultiplier = environmentCache.context(cow.getWorld()).modifiers().attackDamageMultiplier();
-        target.damage(settings.attackDamage() * resolveDamageMultiplier(cow.getWorld()) * envDamageMultiplier, cow);
         HostilityContextTracker.record(target.getUniqueId(), HostileSpecies.COW, brain.hostilityCause);
+        target.damage(settings.attackDamage() * resolveDamageMultiplier(cow.getWorld()) * envDamageMultiplier, cow);
         double dx = target.getX() - cow.getX();
         double dz = target.getZ() - cow.getZ();
         double lengthSq = dx * dx + dz * dz;

@@ -9,10 +9,10 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 final class PigTerritorialPickupService {
 
@@ -22,7 +22,7 @@ final class PigTerritorialPickupService {
     private final NaturalPigResolver naturalPigResolver;
     private final boolean requireLineOfSight;
     private final WorldEnvironmentContextCache environmentCache;
-    private final Map<UUID, TerritorialPickupCounter> counters = new HashMap<>();
+    private final Map<UUID, TerritorialPickupCounter> counters = new ConcurrentHashMap<>();
 
     PigTerritorialPickupService(
             PigSettings.ResourceProvocationSettings settings,

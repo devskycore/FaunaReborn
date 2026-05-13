@@ -585,8 +585,8 @@ final class ChickenHostilityTask implements Listener {
     private void attack(Chicken chicken, Player player, ChickenHostilityBrain brain) {
         if (brain.lastAttackTick != Long.MIN_VALUE && currentTick - brain.lastAttackTick < attackCooldownTicks) return;
 
-        player.damage(damageScaler.resolveScaledDamage(chicken.getWorld()), chicken);
         HostilityContextTracker.record(player.getUniqueId(), HostileSpecies.CHICKEN, brain.hostilityCause);
+        player.damage(damageScaler.resolveScaledDamage(chicken.getWorld()), chicken);
         brain.lastAttackTick = currentTick;
     }
 
