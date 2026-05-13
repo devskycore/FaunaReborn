@@ -1,6 +1,8 @@
 package io.github.devskycore.faunareborn.gui;
 
 import io.github.devskycore.faunareborn.command.FaunaReloadService;
+import io.github.devskycore.faunareborn.command.message.CommandMessages;
+import io.github.devskycore.faunareborn.command.permission.PermissionService;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
 import io.github.devskycore.faunareborn.module.ModuleManager;
 import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapter;
@@ -41,6 +43,7 @@ public final class FaunaMainGui implements Listener {
     private final PluginGuiConfigService configService;
     private final FaunaReloadService reloadService;
     private final SchedulerAdapter scheduler;
+    private final PermissionService permissionService;
 
     public FaunaMainGui(
             FaunaRebornPlugin plugin,
@@ -51,9 +54,14 @@ public final class FaunaMainGui implements Listener {
         this.configService = configService;
         this.reloadService = reloadService;
         this.scheduler = SchedulerAdapters.create(plugin);
+        this.permissionService = new PermissionService();
     }
 
     public void open(Player player) {
+        if (!permissionService.canUseGui(player)) {
+            CommandMessages.sendNoPermission(player);
+            return;
+        }
         player.openInventory(buildInventory());
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, SoundCategory.MASTER, 0.5f, 1.25f);
     }
@@ -69,6 +77,11 @@ public final class FaunaMainGui implements Listener {
         }
 
         HumanEntity clicker = event.getWhoClicked();
+        if (!permissionService.canUseGui(clicker)) {
+            CommandMessages.sendNoPermission(clicker);
+            clicker.closeInventory();
+            return;
+        }
         int slot = event.getRawSlot();
         if (slot == CLOSE_SLOT) {
             if (clicker instanceof Player player) {
@@ -78,6 +91,10 @@ public final class FaunaMainGui implements Listener {
             return;
         }
         if (slot == RELOAD_SLOT) {
+            if (!permissionService.canUseReload(clicker)) {
+                CommandMessages.sendNoPermission(clicker);
+                return;
+            }
             if (clicker instanceof Player player) {
                 player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_RESONATE, SoundCategory.MASTER, 0.55f, 1.2f);
             }
@@ -132,9 +149,7 @@ public final class FaunaMainGui implements Listener {
         }
         Inventory top = event.getView().getTopInventory();
         top.setItem(slot, createAnimatedStateItem(toggle, targetState));
-        scheduler.runLater(() -> {
-            clicker.openInventory(buildInventory());
-        }, 1L);
+        scheduler.runLater(() -> clicker.openInventory(buildInventory()), 1L);
     }
 
     @EventHandler
@@ -208,8 +223,7 @@ public final class FaunaMainGui implements Listener {
                         .decoration(TextDecoration.ITALIC, false)
         );
         List<Component> reloadLore = new ArrayList<>(List.of(
-                Component.text("| ", NamedTextColor.WHITE).append(Component.text("Sync manual edits", NamedTextColor.GRAY)),
-                Component.text("| ", NamedTextColor.WHITE).append(Component.text("from yml files", NamedTextColor.GRAY)),
+                Component.text("| ", NamedTextColor.WHITE).append(Component.text("Applies manual changes", NamedTextColor.GRAY)),
                 Component.empty(),
                 Component.text("(!) ", NamedTextColor.YELLOW).append(
                         Component.text("Click to reload files", NamedTextColor.GRAY)
@@ -231,6 +245,8 @@ public final class FaunaMainGui implements Listener {
                         .decoration(TextDecoration.ITALIC, false)
         );
         List<Component> closeLore = new ArrayList<>(List.of(
+                Component.text("| ", NamedTextColor.WHITE).append(Component.text("Exit this control panel", NamedTextColor.GRAY)),
+                Component.empty(),
                 Component.text("(!) ", NamedTextColor.YELLOW).append(
                         Component.text("Click to close menu", NamedTextColor.GRAY)
                 )
@@ -303,4 +319,5 @@ public final class FaunaMainGui implements Listener {
         stack.setItemMeta(meta);
         return stack;
     }
+
 }

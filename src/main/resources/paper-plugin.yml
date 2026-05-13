@@ -11,15 +11,50 @@ authors: [ DevSkyCore ]
 website: https://github.com/devskycore
 
 permissions:
-  faunareborn.command.reload:
-    description: Allows using /fauna reload.
+  fauna.*:
+    description: Grants access to all FaunaReborn commands.
     default: op
-  faunareborn.reload:
-    description: Legacy reload permission alias.
+    children:
+      fauna.admin: true
+      fauna.command.help: true
+      fauna.command.help.admin: true
+      fauna.command.version: true
+      fauna.command.about: true
+      fauna.command.entities: true
+      fauna.command.reload: true
+      fauna.command.gui: true
+
+  fauna.admin:
+    description: Grants access to FaunaReborn administrative commands.
     default: op
-  faunareborn.admin:
-    description: Admin permission alias for reload and management.
+    children:
+      fauna.command.reload: true
+      fauna.command.gui: true
+
+  fauna.command.help:
+    description: Allows viewing the FaunaReborn help menu.
+    default: true
+
+  fauna.command.help.admin:
+    description: Allows viewing administrative commands in /fauna help.
     default: op
-  faunareborn.command.gui:
-    description: Allows using /fauna gui.
+
+  fauna.command.version:
+    description: Allows viewing the FaunaReborn version information.
+    default: true
+
+  fauna.command.about:
+    description: Allows viewing information about FaunaReborn.
+    default: true
+
+  fauna.command.entities:
+    description: Allows viewing supported FaunaReborn entities.
+    default: true
+
+  fauna.command.reload:
+    description: Allows reloading the FaunaReborn configuration.
+    default: op
+
+  fauna.command.gui:
+    description: Allows opening the FaunaReborn admin GUI.
     default: op

@@ -69,18 +69,19 @@ public final class FaunaRebornPlugin extends JavaPlugin {
     }
 
     private void registerCommands() {
-        FaunaMainGui mainGui = createMainGui();
+        PluginGuiConfigService guiConfigService = createGuiConfigService();
+        FaunaMainGui mainGui = new FaunaMainGui(this, guiConfigService, reloadService());
         getServer().getPluginManager().registerEvents(mainGui, this);
         registerCommand(
                 "fauna",
                 "Main command for FaunaReborn.",
                 java.util.List.of("faunareborn", "fr"),
-                new FaunaCommand(this, mainGui)
+                new FaunaCommand(this, mainGui, guiConfigService)
         );
     }
 
-    private FaunaMainGui createMainGui() {
-        PluginGuiConfigService guiConfigService = new PluginGuiConfigService(
+    private PluginGuiConfigService createGuiConfigService() {
+        return new PluginGuiConfigService(
                 this,
                 java.util.List.of(
                         new EntityModuleToggle(EntityType.CHICKEN, "chicken-hostility", "Chicken Hostility", "chicken-hostility.enabled", Material.CHICKEN_SPAWN_EGG),
@@ -88,6 +89,5 @@ public final class FaunaRebornPlugin extends JavaPlugin {
                         new EntityModuleToggle(EntityType.PIG, "pig", "Pig Hostility", "pig.enabled", Material.PIG_SPAWN_EGG)
                 )
         );
-        return new FaunaMainGui(this, guiConfigService, reloadService());
     }
 }

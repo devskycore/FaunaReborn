@@ -51,8 +51,13 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 
 | Command | Description | Permission |
 |---|---|---|
-| `/fauna reload` | Reloads plugin configuration and modules. | `faunareborn.command.reload` |
-| `/fauna gui` | Opens the FaunaReborn management GUI. | `faunareborn.command.gui` |
+| `/fauna` | Opens the help menu. | `fauna.command.help` |
+| `/fauna help [page]` | Shows command help filtered by sender permissions. | `fauna.command.help` |
+| `/fauna version` | Shows plugin/runtime version information. | `fauna.command.version` |
+| `/fauna about` | Shows a short professional plugin summary. | `fauna.command.about` |
+| `/fauna entities` | Lists supported entities and enabled/disabled state. | `fauna.command.entities` |
+| `/fauna reload` | Reloads plugin configuration and modules. | `fauna.command.reload` (or `fauna.admin` / `fauna.*`) |
+| `/fauna gui` | Opens the FaunaReborn management GUI. | `fauna.command.gui` (or `fauna.admin` / `fauna.*`) |
 
 ### Aliases
 - `/faunareborn`
@@ -62,10 +67,15 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 
 | Permission | Description | Default |
 |---|---|---|
-| `faunareborn.command.reload` | Allows `/fauna reload`. | `op` |
-| `faunareborn.reload` | Legacy alias for reload access. | `op` |
-| `faunareborn.admin` | Admin alias for reload/management access. | `op` |
-| `faunareborn.command.gui` | Allows `/fauna gui`. | `op` |
+| `fauna.*` | Grants access to all FaunaReborn commands. | `op` |
+| `fauna.admin` | Grants access to FaunaReborn administrative commands. | `op` |
+| `fauna.command.help` | Allows viewing the FaunaReborn help menu. | `true` |
+| `fauna.command.help.admin` | Allows viewing administrative commands in `/fauna help`. | `op` |
+| `fauna.command.version` | Allows viewing plugin version/runtime info. | `true` |
+| `fauna.command.about` | Allows viewing information about FaunaReborn. | `true` |
+| `fauna.command.entities` | Allows viewing supported FaunaReborn entities. | `true` |
+| `fauna.command.reload` | Allows reloading configuration and modules. | `op` |
+| `fauna.command.gui` | Allows opening the admin GUI. | `op` |
 
 ## Requirements
 

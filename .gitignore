@@ -5,6 +5,7 @@ Thumbs.db
 # Gradle
 .gradle/
 build/
+.gradle-home/
 
 # IntelliJ
 .idea/
@@ -22,11 +23,34 @@ hs_err_pid*
 *.tmp
 *.swp
 
-# Paper run directory (server files)
+# Local test server directories/files
 run/
+/server/
+/test-server/
+/paper-server/
+/purpur-server/
+/spigot-server/
+/plugins/
+/world/
+/world_nether/
+/world_the_end/
+/cache/
+/libraries/
+/versions/
+/eula.txt
+/banned-ips.json
+/banned-players.json
+/ops.json
+/usercache.json
+/whitelist.json
+/server.properties
+/spigot.yml
+/paper-global.yml
+/paper-world-defaults.yml
+/purpur.yml
+/bukkit.yml
+/commands.yml
+/help.yml
 
 #Symbol Graph
 symbol_graph.json
-.gradle-home/
-.gradle/
-build/
