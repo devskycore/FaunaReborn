@@ -2,6 +2,8 @@ package io.github.devskycore.faunareborn.animal.chicken.hostility;
 
 import io.github.devskycore.faunareborn.animal.chicken.config.ChickenHostilitySettings;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
+import io.github.devskycore.faunareborn.targeting.TargetEligibilityService;
+import io.github.devskycore.faunareborn.targeting.TargetScoringService;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import org.bukkit.Chunk;
 import org.bukkit.World;
@@ -19,6 +21,9 @@ final class ChickenTargetingService {
     private final ActivationPolicy activationPolicy;
     private final TargetingIndex targetingIndex = new TargetingIndex();
     private final Object2LongOpenHashMap<UUID> globalTargetCooldownUntil = new Object2LongOpenHashMap<>();
+    private final Object2LongOpenHashMap<UUID> retargetCooldownUntil = new Object2LongOpenHashMap<>();
+    private final TargetEligibilityService targetEligibilityService;
+    private final TargetScoringService targetScoringService;
     private final int globalTargetCooldownTicks;
     private final int maxSimultaneousAttackersPerTarget;
     private final int maxActiveHostileChickensPerChunk;
@@ -30,12 +35,16 @@ final class ChickenTargetingService {
             FaunaRebornPlugin plugin,
             ChickenTracker tracker,
             ActivationPolicy activationPolicy,
+            TargetEligibilityService targetEligibilityService,
+            TargetScoringService targetScoringService,
             ChickenHostilitySettings.Combat combat,
             ChickenHostilitySettings.Limits limits
     ) {
         this.plugin = plugin;
         this.tracker = tracker;
         this.activationPolicy = activationPolicy;
+        this.targetEligibilityService = targetEligibilityService;
+        this.targetScoringService = targetScoringService;
         this.globalTargetCooldownTicks = combat.globalTargetCooldownTicks();
         this.maxSimultaneousAttackersPerTarget = combat.maxSimultaneousAttackersPerPlayer();
         this.maxActiveHostileChickensPerChunk = limits.maxActiveHostileChickensPerChunk();
@@ -43,6 +52,7 @@ final class ChickenTargetingService {
         this.detectionRadiusSq = combat.detectionRadius() * combat.detectionRadius();
         this.attackRangeSq = combat.attackRange() * combat.attackRange();
         this.globalTargetCooldownUntil.defaultReturnValue(Long.MIN_VALUE);
+        this.retargetCooldownUntil.defaultReturnValue(Long.MIN_VALUE);
     }
 
     double attackRangeSq() {
@@ -55,6 +65,7 @@ final class ChickenTargetingService {
 
     void clear() {
         globalTargetCooldownUntil.clear();
+        retargetCooldownUntil.clear();
         targetingIndex.clear();
     }
 
@@ -103,23 +114,48 @@ final class ChickenTargetingService {
 
         Player best = null;
         double bestDist = Double.MAX_VALUE;
+        double bestScore = Double.NEGATIVE_INFINITY;
+        int validCandidates = 0;
+        UUID currentTargetId = brain == null ? null : brain.targetUuid;
 
         for (Entity entity : nearby) {
             if (!(entity instanceof Player player)) continue;
+            if (!targetEligibilityService.isEligible(chicken, player, activationPolicy.worldFilter(), currentTick)) continue;
             if (activationPolicy.isInvalidTarget(chicken, player)) continue;
             if (brain != null && isRetargetBlocked(brain, player.getUniqueId(), currentTick)) continue;
             if (isOnGlobalTargetCooldown(player.getUniqueId(), chickenId, currentTick)) continue;
             if (isAggressorSlotUnavailable(player.getUniqueId(), chickenId)) continue;
 
             double distSq = HostilityDistances.distanceSq(chicken, player);
-            if (distSq > detectionRadiusSq || distSq >= bestDist) continue;
+            if (distSq > detectionRadiusSq) continue;
+            validCandidates++;
 
-            best = player;
-            bestDist = distSq;
+            if (!targetScoringService.enabled()
+                    || (targetScoringService.requireMultipleCandidates() && validCandidates == 1)) {
+                if (distSq < bestDist) {
+                    best = player;
+                    bestDist = distSq;
+                }
+                continue;
+            }
 
-            if (distSq <= attackRangeSq) break;
+            int attackers = targetingIndex.attackersForTarget(player.getUniqueId());
+            boolean hasLineOfSight = chicken.hasLineOfSight(player);
+            double score = targetScoringService.score(chicken, player, currentTargetId, attackers, distSq, hasLineOfSight);
+            if (score > bestScore || (score == bestScore && distSq < bestDist)) {
+                best = player;
+                bestDist = distSq;
+                bestScore = score;
+            }
         }
 
+        if (brain != null && best != null && brain.targetUuid != null && !brain.targetUuid.equals(best.getUniqueId())) {
+            long until = retargetCooldownUntil.getLong(chicken.getUniqueId());
+            if (currentTick < until) {
+                return plugin.getServer().getPlayer(brain.targetUuid);
+            }
+            retargetCooldownUntil.put(chicken.getUniqueId(), currentTick + targetScoringService.retargetCooldownTicks());
+        }
         return best;
     }
 

@@ -24,7 +24,7 @@ public final class FaunaCommand implements BasicCommand {
     private final FaunaMainGui mainGui;
 
     public FaunaCommand(FaunaRebornPlugin plugin, FaunaMainGui mainGui) {
-        this.reloadService = new FaunaReloadService(plugin);
+        this.reloadService = plugin.reloadService();
         this.mainGui = mainGui;
     }
 
@@ -75,6 +75,10 @@ public final class FaunaCommand implements BasicCommand {
 
     private void executeReload(CommandSender sender) {
         if (!sender.hasPermission(RELOAD_PERMISSION)) {
+            if (sender.hasPermission("faunareborn.reload") || sender.hasPermission("faunareborn.admin")) {
+                reloadService.reload(sender);
+                return;
+            }
             sender.sendMessage("You do not have permission to use this command.");
             return;
         }

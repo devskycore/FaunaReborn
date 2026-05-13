@@ -8,5 +8,5 @@ public interface EntitySettingsLoader<T extends EntitySettings> {
 
     Class<T> settingsType();
 
-    T load(FileConfiguration config);
+    T load(FileConfiguration globalConfig, FileConfiguration entityConfig);
 }

@@ -7,6 +7,7 @@ import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
 import io.github.devskycore.faunareborn.module.FaunaFeatureRegistry;
 import io.github.devskycore.faunareborn.module.ModuleManager;
 import io.github.devskycore.faunareborn.system.platform.RuntimePlatform;
+import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.PluginManager;
 
 import java.util.logging.Level;
@@ -47,7 +48,12 @@ public final class StartupOrchestrator {
                     featureRegistry.createModules(plugin, settings)
             );
             moduleManager.enableAll();
-            plugin.getServer().getPluginManager().registerEvents(new HostilityDeathMessageListener(), plugin);
+            if (plugin.deathMessageListener() != null) {
+                HandlerList.unregisterAll(plugin.deathMessageListener());
+            }
+            HostilityDeathMessageListener deathMessageListener = new HostilityDeathMessageListener();
+            plugin.getServer().getPluginManager().registerEvents(deathMessageListener, plugin);
+            plugin.setDeathMessageListener(deathMessageListener);
             plugin.setModuleManager(moduleManager);
             return true;
         } catch (Throwable throwable) {

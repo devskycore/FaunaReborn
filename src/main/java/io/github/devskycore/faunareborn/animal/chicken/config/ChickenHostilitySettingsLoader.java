@@ -11,6 +11,8 @@ import io.github.devskycore.faunareborn.animal.chicken.config.night.NightBehavio
 import io.github.devskycore.faunareborn.animal.chicken.config.night.NightBehaviorConfigValues;
 import io.github.devskycore.faunareborn.config.common.WorldFilter;
 import io.github.devskycore.faunareborn.config.common.WorldFilterConfigReader;
+import io.github.devskycore.faunareborn.config.common.TargetingSettings;
+import io.github.devskycore.faunareborn.config.common.TargetingSettingsReader;
 import org.bukkit.Difficulty;
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -29,6 +31,7 @@ public final class ChickenHostilitySettingsLoader {
     private final DamageScalingConfigReader damageScalingReader;
     private final NightBehaviorConfigReader nightBehaviorReader;
     private final ItemPickupTerritorialityConfigReader itemPickupTerritorialityReader;
+    private final TargetingSettingsReader targetingSettingsReader;
 
     public ChickenHostilitySettingsLoader(FaunaRebornPlugin plugin) {
         this.plugin = plugin;
@@ -41,27 +44,28 @@ public final class ChickenHostilitySettingsLoader {
         this.damageScalingReader = new DamageScalingConfigReader(plugin);
         this.nightBehaviorReader = new NightBehaviorConfigReader(plugin);
         this.itemPickupTerritorialityReader = new ItemPickupTerritorialityConfigReader(plugin);
+        this.targetingSettingsReader = new TargetingSettingsReader(plugin);
     }
 
-    public ChickenHostilitySettings load(FileConfiguration config) {
-        CombatConfigValues combat = combatReader.read(config);
-        ThreatAndCooldownConfigValues threatAndCooldown = threatAndCooldownReader.read(config);
-        ProcessingLimitsConfigValues processingLimits = processingLimitsReader.read(config);
-        ActivationConfig activation = activationReader.read(config);
-        MovementConfigValues movement = movementReader.read(config);
-        WorldFilter worldFilter = worldFilterReader.readWorldFilter(config);
-        NightBehaviorConfigValues nightBehavior = nightBehaviorReader.read(config);
-        ItemPickupTerritorialityConfig itemPickupTerritoriality = itemPickupTerritorialityReader.read(config);
-        EnvironmentAggressionSettings environmentAggressionSettings = EnvironmentAggressionSettings.fromConfig(config, "");
+    public ChickenHostilitySettings load(FileConfiguration globalConfig, FileConfiguration entityConfig) {
+        CombatConfigValues combat = combatReader.read(entityConfig);
+        ThreatAndCooldownConfigValues threatAndCooldown = threatAndCooldownReader.read(entityConfig);
+        ProcessingLimitsConfigValues processingLimits = processingLimitsReader.read(entityConfig);
+        ActivationConfig activation = activationReader.read(entityConfig);
+        MovementConfigValues movement = movementReader.read(entityConfig);
+        WorldFilter worldFilter = worldFilterReader.readWorldFilter(entityConfig);
+        NightBehaviorConfigValues nightBehavior = nightBehaviorReader.read(entityConfig);
+        ItemPickupTerritorialityConfig itemPickupTerritoriality = itemPickupTerritorialityReader.read(entityConfig);
+        TargetingSettings targeting = targetingSettingsReader.read(globalConfig);
+        EnvironmentAggressionSettings environmentAggressionSettings = EnvironmentAggressionSettings.fromConfig(entityConfig, "");
         ConfigNumbers numbers = new ConfigNumbers(plugin);
-        FileConfiguration globalConfig = plugin.getConfig();
         String visualRoot = "visual-effects";
 
-        double peacefulDamageMultiplier = damageScalingReader.readDifficultyDamageMultiplier(config, Difficulty.PEACEFUL, 0.0D);
-        double easyDamageMultiplier = damageScalingReader.readDifficultyDamageMultiplier(config, Difficulty.EASY, 1.0D);
-        double normalDamageMultiplier = damageScalingReader.readDifficultyDamageMultiplier(config, Difficulty.NORMAL, 1.0D);
-        double hardDamageMultiplier = damageScalingReader.readDifficultyDamageMultiplier(config, Difficulty.HARD, 1.2D);
-        Map<String, Double> worldDamageMultipliers = damageScalingReader.readWorldDamageMultipliers(config);
+        double peacefulDamageMultiplier = damageScalingReader.readDifficultyDamageMultiplier(entityConfig, Difficulty.PEACEFUL, 0.0D);
+        double easyDamageMultiplier = damageScalingReader.readDifficultyDamageMultiplier(entityConfig, Difficulty.EASY, 1.0D);
+        double normalDamageMultiplier = damageScalingReader.readDifficultyDamageMultiplier(entityConfig, Difficulty.NORMAL, 1.0D);
+        double hardDamageMultiplier = damageScalingReader.readDifficultyDamageMultiplier(entityConfig, Difficulty.HARD, 1.2D);
+        Map<String, Double> worldDamageMultipliers = damageScalingReader.readWorldDamageMultipliers(entityConfig);
 
         ChickenHostilitySettings.Combat combatSettings = new ChickenHostilitySettings.Combat(
                 combat.attackDamage(),
@@ -159,7 +163,7 @@ public final class ChickenHostilitySettingsLoader {
         );
 
         return new ChickenHostilitySettings(
-                config.getBoolean("chicken-hostility.enabled", true),
+                entityConfig.getBoolean("chicken-hostility.enabled", true),
                 combatSettings,
                 limits,
                 socialAlert,
@@ -168,6 +172,7 @@ public final class ChickenHostilitySettingsLoader {
                 damageScaling,
                 activation,
                 worldFilter,
+                targeting,
                 itemPickupTerritoriality,
                 environmentAggressionSettings
         );

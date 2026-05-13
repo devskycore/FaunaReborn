@@ -2,6 +2,7 @@ package io.github.devskycore.faunareborn.animal.chicken.config;
 
 import io.github.devskycore.faunareborn.config.entity.EntitySettings;
 import io.github.devskycore.faunareborn.config.common.WorldFilter;
+import io.github.devskycore.faunareborn.config.common.TargetingSettings;
 import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionSettings;
 import java.util.Map;
 import java.util.Objects;
@@ -16,6 +17,7 @@ public record ChickenHostilitySettings(
         DamageScaling damageScaling,
         ActivationConfig activation,
         WorldFilter worldFilter,
+        TargetingSettings targeting,
         ItemPickupTerritorialityConfig itemPickupTerritoriality,
         EnvironmentAggressionSettings environmentAggression
 ) implements EntitySettings {
@@ -29,6 +31,7 @@ public record ChickenHostilitySettings(
         Objects.requireNonNull(damageScaling, "damageScaling");
         Objects.requireNonNull(activation, "activation");
         Objects.requireNonNull(worldFilter, "worldFilter");
+        Objects.requireNonNull(targeting, "targeting");
         Objects.requireNonNull(itemPickupTerritoriality, "itemPickupTerritoriality");
         Objects.requireNonNull(environmentAggression, "environmentAggression");
     }

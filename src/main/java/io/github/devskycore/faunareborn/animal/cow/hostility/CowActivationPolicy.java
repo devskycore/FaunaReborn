@@ -1,9 +1,10 @@
 package io.github.devskycore.faunareborn.animal.cow.hostility;
 
 import io.github.devskycore.faunareborn.animal.cow.CowSettings;
+import io.github.devskycore.faunareborn.config.common.WorldFilter;
+import io.github.devskycore.faunareborn.targeting.TargetEligibilityService;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.bukkit.Difficulty;
-import org.bukkit.GameMode;
 import org.bukkit.entity.Cow;
 import org.bukkit.entity.Player;
 
@@ -15,17 +16,22 @@ final class CowActivationPolicy {
     private final boolean onlyNaturalCows;
     private final boolean ignoreNamed;
     private final double activationProximitySq;
+    private final TargetEligibilityService targetEligibilityService;
+    private final WorldFilter worldFilter;
     private final Int2ObjectOpenHashMap<ActivationState> activationStates = new Int2ObjectOpenHashMap<>();
 
     CowActivationPolicy(
             CowSettings.MilkProvocationSettings settings,
-            CowSettings.GlobalHostilitySettings global
+            CowSettings.GlobalHostilitySettings global,
+            TargetEligibilityService targetEligibilityService
     ) {
         this.activationChance = global.activationChance();
         this.onlyNaturalCows = global.onlyNatural();
         this.ignoreNamed = global.ignoreNamed();
+        this.worldFilter = global.worldFilter();
         double activationProximity = Math.max(8.0D, settings.detectionRange());
         this.activationProximitySq = activationProximity * activationProximity;
+        this.targetEligibilityService = targetEligibilityService;
     }
 
     void clear() {
@@ -43,11 +49,7 @@ final class CowActivationPolicy {
         if (!cow.isAdult() || !cow.isValid() || cow.isDead()) {
             return true;
         }
-        if (!aggressor.isOnline() || aggressor.isDead()) {
-            return true;
-        }
-        GameMode mode = aggressor.getGameMode();
-        if (mode == GameMode.CREATIVE || mode == GameMode.SPECTATOR) {
+        if (!targetEligibilityService.isEligible(cow, aggressor, worldFilter, -1L)) {
             return true;
         }
         if (cow.getWorld() != aggressor.getWorld()) {
@@ -100,4 +102,3 @@ final class CowActivationPolicy {
         private boolean chancePassed;
     }
 }
-

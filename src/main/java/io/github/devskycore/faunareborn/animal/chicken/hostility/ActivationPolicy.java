@@ -3,9 +3,9 @@ package io.github.devskycore.faunareborn.animal.chicken.hostility;
 import io.github.devskycore.faunareborn.animal.chicken.config.ActivationConfig;
 import io.github.devskycore.faunareborn.config.common.WorldFilter;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
+import io.github.devskycore.faunareborn.targeting.TargetEligibilityService;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.bukkit.Difficulty;
-import org.bukkit.GameMode;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Chicken;
@@ -26,14 +26,21 @@ final class ActivationPolicy {
     private final boolean ignoreNamed;
     private final WorldFilter worldFilter;
     private final NamespacedKey nonNaturalChickenKey;
+    private final TargetEligibilityService targetEligibilityService;
     private final Int2ObjectOpenHashMap<ActivationState> activationStates = new Int2ObjectOpenHashMap<>();
 
-    ActivationPolicy(FaunaRebornPlugin plugin, ActivationConfig activation, WorldFilter worldFilter) {
+    ActivationPolicy(
+            FaunaRebornPlugin plugin,
+            ActivationConfig activation,
+            WorldFilter worldFilter,
+            TargetEligibilityService targetEligibilityService
+    ) {
         this.activationChance = activation.chance();
         this.onlyNaturalChickens = activation.onlyNaturalChickens();
         this.ignoreNamed = activation.ignoreNamed();
         this.worldFilter = worldFilter;
         this.nonNaturalChickenKey = new NamespacedKey(plugin, "non_natural_chicken");
+        this.targetEligibilityService = targetEligibilityService;
     }
 
     void clear() {
@@ -64,17 +71,18 @@ final class ActivationPolicy {
         return worldFilter.isWorldDisallowed(world.getName());
     }
 
+    WorldFilter worldFilter() {
+        return worldFilter;
+    }
+
     boolean isPeacefulWorld(World world) {
         return world.getDifficulty() == Difficulty.PEACEFUL;
     }
 
     boolean isInvalidTarget(Chicken chicken, Player player) {
-        if (player == null) return true;
-        if (!player.isOnline() || player.isDead()) return true;
-        if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) return true;
-        if (isWorldDisallowed(chicken.getWorld())) return true;
-        if (isPeacefulWorld(chicken.getWorld())) return true;
-        return chicken.getWorld() != player.getWorld();
+        return player == null
+                || isPeacefulWorld(chicken.getWorld())
+                || !targetEligibilityService.isEligible(chicken, player, worldFilter, -1L);
     }
 
     boolean isActivationBlocked(Chicken chicken, List<Entity> nearbyEntities) {
@@ -85,10 +93,7 @@ final class ActivationPolicy {
     }
 
     boolean isActivationBlockedForAggressor(Chicken chicken, Player aggressor) {
-        if (aggressor == null || !aggressor.isOnline() || aggressor.isDead()) {
-            return true;
-        }
-        if (aggressor.getWorld() != chicken.getWorld()) {
+        if (aggressor == null || !targetEligibilityService.isEligible(chicken, aggressor, worldFilter, -1L)) {
             return true;
         }
         if (HostilityDistances.distanceSq(chicken, aggressor) > ChickenHostilityConstants.PLAYER_PROXIMITY_RADIUS_SQ) {
@@ -123,8 +128,7 @@ final class ActivationPolicy {
     private boolean isPlayerNearby(Entity entity, List<Entity> nearbyEntities) {
         for (Entity nearbyEntity : nearbyEntities) {
             if (!(nearbyEntity instanceof Player player)) continue;
-            if (!player.isOnline() || player.isDead()) continue;
-            if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) continue;
+            if (!targetEligibilityService.isEligible(player, worldFilter, -1L)) continue;
             if (isPeacefulWorld(entity.getWorld())) continue;
             if (player.getWorld() != entity.getWorld()) continue;
             if (HostilityDistances.distanceSq(entity, player) <= ChickenHostilityConstants.PLAYER_PROXIMITY_RADIUS_SQ) return true;

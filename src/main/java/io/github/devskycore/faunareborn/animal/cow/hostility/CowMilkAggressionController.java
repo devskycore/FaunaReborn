@@ -6,13 +6,13 @@ import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
 import io.github.devskycore.faunareborn.combat.deathmessage.HostilityContextTracker;
 import io.github.devskycore.faunareborn.system.platform.RuntimePlatform;
 import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapter;
+import io.github.devskycore.faunareborn.targeting.TargetEligibilityService;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import org.bukkit.Difficulty;
-import org.bukkit.GameMode;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
@@ -49,6 +49,7 @@ final class CowMilkAggressionController {
     private final Object stateLock = new Object();
     private final CowSettings.MilkProvocationSettings settings;
     private final CowSettings.GlobalHostilitySettings global;
+    private final TargetEligibilityService targetEligibilityService;
     private final CowActivationPolicy activationPolicy;
     private final WorldEnvironmentContextCache environmentCache;
     private final CowTargetingIndex targetingIndex = new CowTargetingIndex();
@@ -74,7 +75,8 @@ final class CowMilkAggressionController {
         this.folia = RuntimePlatform.isFolia();
         this.settings = settings;
         this.global = global;
-        this.activationPolicy = new CowActivationPolicy(settings, global);
+        this.targetEligibilityService = new TargetEligibilityService(global.targeting());
+        this.activationPolicy = new CowActivationPolicy(settings, global, targetEligibilityService);
         this.environmentCache = environmentCache;
         this.socialAlertCooldownUntilByCowId.defaultReturnValue(Long.MIN_VALUE);
         this.originalMovementSpeedByCowId.defaultReturnValue(Double.NaN);
@@ -295,7 +297,7 @@ final class CowMilkAggressionController {
         if (emitter == null || aggressor == null || nearbyEntities == null || nearbyEntities.isEmpty()) {
             return;
         }
-        if (!aggressor.isOnline() || aggressor.isDead()) {
+        if (!targetEligibilityService.isEligible(aggressor, global.worldFilter(), -1L)) {
             return;
         }
 
@@ -610,11 +612,7 @@ final class CowMilkAggressionController {
             return null;
         }
         Player player = org.bukkit.Bukkit.getPlayer(targetUuid);
-        if (player == null || !player.isOnline() || player.isDead()) {
-            return null;
-        }
-        GameMode mode = player.getGameMode();
-        if (mode == GameMode.CREATIVE || mode == GameMode.SPECTATOR) {
+        if (!targetEligibilityService.isEligible(player, global.worldFilter(), currentTick)) {
             return null;
         }
         return player;

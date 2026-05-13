@@ -1,6 +1,7 @@
 package io.github.devskycore.faunareborn.animal.pig;
 
 import io.github.devskycore.faunareborn.config.common.WorldFilter;
+import io.github.devskycore.faunareborn.config.common.TargetingSettings;
 import io.github.devskycore.faunareborn.config.entity.EntitySettings;
 
 import java.util.Map;
@@ -54,7 +55,8 @@ public record PigSettings(
             Map<String, Double> worldDamageMultipliers,
             boolean nightDamageEnabled,
             double nightDamageMultiplier,
-            VisualEffectsSettings visualEffects
+            VisualEffectsSettings visualEffects,
+            TargetingSettings targeting
     ) {
     }
 

@@ -14,6 +14,12 @@ permissions:
   faunareborn.command.reload:
     description: Allows using /fauna reload.
     default: op
+  faunareborn.reload:
+    description: Legacy reload permission alias.
+    default: op
+  faunareborn.admin:
+    description: Admin permission alias for reload and management.
+    default: op
   faunareborn.command.gui:
     description: Allows using /fauna gui.
     default: op

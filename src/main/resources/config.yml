@@ -9,6 +9,21 @@ world-filter:
   mode: ALL # ALL | WHITELIST | BLACKLIST
   worlds: []
 
+targeting:
+  ignore:
+    adventure: true
+    invisible-potion: true
+    vanished: true
+    god-mode: true
+  scoring:
+    enabled: true
+    health-weight: 1.25
+    distance-weight: 1.0
+    current-threat-weight: 0.75
+    line-of-sight-bonus: 0.35
+    retarget-cooldown-seconds: 2.5
+    require-multiple-candidates: true
+
 damage-scaling:
   difficulty-multipliers:
     peaceful: 0.0

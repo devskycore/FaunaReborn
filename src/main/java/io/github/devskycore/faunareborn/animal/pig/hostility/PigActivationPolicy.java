@@ -1,9 +1,10 @@
 package io.github.devskycore.faunareborn.animal.pig.hostility;
 
 import io.github.devskycore.faunareborn.animal.pig.PigSettings;
+import io.github.devskycore.faunareborn.config.common.WorldFilter;
+import io.github.devskycore.faunareborn.targeting.TargetEligibilityService;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.bukkit.Difficulty;
-import org.bukkit.GameMode;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Player;
 
@@ -15,17 +16,22 @@ final class PigActivationPolicy {
     private final boolean onlyNaturalPigs;
     private final boolean ignoreNamed;
     private final double activationProximitySq;
+    private final TargetEligibilityService targetEligibilityService;
+    private final WorldFilter worldFilter;
     private final Int2ObjectOpenHashMap<ActivationState> activationStates = new Int2ObjectOpenHashMap<>();
 
     PigActivationPolicy(
             PigSettings.RodProvocationSettings settings,
-            PigSettings.GlobalHostilitySettings global
+            PigSettings.GlobalHostilitySettings global,
+            TargetEligibilityService targetEligibilityService
     ) {
         this.activationChance = global.activationChance();
         this.onlyNaturalPigs = global.onlyNatural();
         this.ignoreNamed = global.ignoreNamed();
+        this.worldFilter = global.worldFilter();
         double activationProximity = Math.max(8.0D, settings.detectionRange());
         this.activationProximitySq = activationProximity * activationProximity;
+        this.targetEligibilityService = targetEligibilityService;
     }
 
     void clear() {
@@ -43,11 +49,7 @@ final class PigActivationPolicy {
         if (!pig.isAdult() || !pig.isValid() || pig.isDead()) {
             return true;
         }
-        if (!aggressor.isOnline() || aggressor.isDead()) {
-            return true;
-        }
-        GameMode mode = aggressor.getGameMode();
-        if (mode == GameMode.CREATIVE || mode == GameMode.SPECTATOR) {
+        if (!targetEligibilityService.isEligible(pig, aggressor, worldFilter, -1L)) {
             return true;
         }
         if (pig.getWorld() != aggressor.getWorld()) {
@@ -100,4 +102,3 @@ final class PigActivationPolicy {
         private boolean chancePassed;
     }
 }
-

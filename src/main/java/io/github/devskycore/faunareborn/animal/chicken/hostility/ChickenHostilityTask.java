@@ -10,10 +10,11 @@ import io.github.devskycore.faunareborn.system.platform.RuntimePlatform;
 import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapter;
 import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapters;
 import io.github.devskycore.faunareborn.system.scheduler.TaskHandle;
+import io.github.devskycore.faunareborn.targeting.TargetEligibilityService;
+import io.github.devskycore.faunareborn.targeting.TargetScoringService;
 import io.papermc.paper.event.world.WorldDifficultyChangeEvent;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.bukkit.Difficulty;
-import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -72,6 +73,7 @@ final class ChickenHostilityTask implements Listener {
     private final SchedulerAdapter scheduler;
     private final ChickenTracker tracker = new ChickenTracker();
     private final ActivationPolicy activationPolicy;
+    private final TargetEligibilityService targetEligibilityService;
     private final ChickenTargetingService targetingService;
     private final MovementController movementController;
     private final SocialAlertService socialAlertService;
@@ -107,8 +109,17 @@ final class ChickenHostilityTask implements Listener {
         this.processingRadius = Math.max(combat.detectionRadius(), ChickenHostilityConstants.PLAYER_PROXIMITY_RADIUS);
 
         this.worldNightStateCache = new WorldNightStateCache(plugin, settings.environmentAggression());
-        this.activationPolicy = new ActivationPolicy(plugin, settings.activation(), settings.worldFilter());
-        this.targetingService = new ChickenTargetingService(plugin, tracker, activationPolicy, combat, limits);
+        this.targetEligibilityService = new TargetEligibilityService(settings.targeting());
+        this.activationPolicy = new ActivationPolicy(plugin, settings.activation(), settings.worldFilter(), targetEligibilityService);
+        this.targetingService = new ChickenTargetingService(
+                plugin,
+                tracker,
+                activationPolicy,
+                targetEligibilityService,
+                new TargetScoringService(settings.targeting().scoring()),
+                combat,
+                limits
+        );
         this.movementController = new MovementController(combat, settings.movement());
         this.damageScaler = new ChickenDamageScaler(combat, settings.damageScaling(), worldNightStateCache);
         this.socialAlertService = new SocialAlertService(settings.socialAlert(), this::tryRecruitChicken);
@@ -150,6 +161,7 @@ final class ChickenHostilityTask implements Listener {
         visualController.clearAll(tracker.trackedChickens());
         tracker.clear();
         activationPolicy.clear();
+        targetEligibilityService.clearExpired(Long.MAX_VALUE);
         targetingService.clear();
         socialAlertService.clear();
         territorialPickupService.clear();
@@ -171,6 +183,7 @@ final class ChickenHostilityTask implements Listener {
             drainPendingStateMutations();
             currentTick++;
             tickSnapshot = currentTick;
+            targetEligibilityService.clearExpired(currentTick);
             targetingService.cleanupGlobalTargetCooldowns(currentTick);
             socialAlertService.cleanupCooldowns(currentTick);
             if (currentTick % PICKUP_COUNTER_CLEANUP_INTERVAL_TICKS == 0L) {
@@ -220,6 +233,7 @@ final class ChickenHostilityTask implements Listener {
     private void tickLegacy() {
         drainPendingStateMutations();
         currentTick++;
+        targetEligibilityService.clearExpired(currentTick);
         targetingService.cleanupGlobalTargetCooldowns(currentTick);
         socialAlertService.cleanupCooldowns(currentTick);
         if (currentTick % PICKUP_COUNTER_CLEANUP_INTERVAL_TICKS == 0L) {
@@ -781,10 +795,8 @@ final class ChickenHostilityTask implements Listener {
         if (!(event.getEntity() instanceof Player player)) {
             return;
         }
-        if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) {
-            return;
-        }
-        if (activationPolicy.isWorldDisallowed(player.getWorld()) || activationPolicy.isPeacefulWorld(player.getWorld())) {
+        if (!targetEligibilityService.isEligible(player, activationPolicy.worldFilter(), currentTick)
+                || activationPolicy.isPeacefulWorld(player.getWorld())) {
             return;
         }
 
@@ -862,7 +874,7 @@ final class ChickenHostilityTask implements Listener {
             return;
         }
         Player player = event.getPlayer();
-        if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) {
+        if (!targetEligibilityService.isEligible(player, activationPolicy.worldFilter(), currentTick)) {
             return;
         }
         Location outputLocation = block.getLocation().add(0.5D, 0.5D, 0.5D);
@@ -1072,10 +1084,7 @@ final class ChickenHostilityTask implements Listener {
             if (!(entity instanceof Player candidate)) {
                 continue;
             }
-            if (candidate.isDead() || !candidate.isOnline()) {
-                continue;
-            }
-            if (candidate.getGameMode() == GameMode.CREATIVE || candidate.getGameMode() == GameMode.SPECTATOR) {
+            if (!targetEligibilityService.isEligible(candidate, activationPolicy.worldFilter(), currentTick)) {
                 continue;
             }
             double distanceSq = candidate.getLocation().distanceSquared(origin);

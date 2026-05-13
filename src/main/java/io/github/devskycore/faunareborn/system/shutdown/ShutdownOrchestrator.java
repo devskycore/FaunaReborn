@@ -2,6 +2,7 @@ package io.github.devskycore.faunareborn.system.shutdown;
 
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
 import io.github.devskycore.faunareborn.module.ModuleManager;
+import org.bukkit.event.HandlerList;
 
 public final class ShutdownOrchestrator {
 
@@ -18,5 +19,9 @@ public final class ShutdownOrchestrator {
         }
         moduleManager.disableAll();
         plugin.setModuleManager(null);
+        if (plugin.deathMessageListener() != null) {
+            HandlerList.unregisterAll(plugin.deathMessageListener());
+            plugin.setDeathMessageListener(null);
+        }
     }
 }

@@ -24,7 +24,7 @@ public final class ChickenSettingsLoader implements EntitySettingsLoader<Chicken
     }
 
     @Override
-    public ChickenHostilitySettings load(FileConfiguration config) {
-        return delegate.load(config);
+    public ChickenHostilitySettings load(FileConfiguration globalConfig, FileConfiguration entityConfig) {
+        return delegate.load(globalConfig, entityConfig);
     }
 }

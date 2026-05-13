@@ -2,6 +2,7 @@ package io.github.devskycore.faunareborn.core;
 
 import io.github.devskycore.faunareborn.command.FaunaCommand;
 import io.github.devskycore.faunareborn.command.FaunaReloadService;
+import io.github.devskycore.faunareborn.combat.deathmessage.HostilityDeathMessageListener;
 import io.github.devskycore.faunareborn.config.entity.EntityType;
 import io.github.devskycore.faunareborn.gui.EntityModuleToggle;
 import io.github.devskycore.faunareborn.gui.FaunaMainGui;
@@ -17,6 +18,8 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class FaunaRebornPlugin extends JavaPlugin {
 
     private ModuleManager moduleManager;
+    private HostilityDeathMessageListener deathMessageListener;
+    private FaunaReloadService reloadService;
 
     @Override
     public void onEnable() {
@@ -50,13 +53,28 @@ public final class FaunaRebornPlugin extends JavaPlugin {
         this.moduleManager = moduleManager;
     }
 
+    public HostilityDeathMessageListener deathMessageListener() {
+        return deathMessageListener;
+    }
+
+    public void setDeathMessageListener(HostilityDeathMessageListener deathMessageListener) {
+        this.deathMessageListener = deathMessageListener;
+    }
+
+    public FaunaReloadService reloadService() {
+        if (reloadService == null) {
+            reloadService = new FaunaReloadService(this);
+        }
+        return reloadService;
+    }
+
     private void registerCommands() {
         FaunaMainGui mainGui = createMainGui();
         getServer().getPluginManager().registerEvents(mainGui, this);
         registerCommand(
                 "fauna",
                 "Main command for FaunaReborn.",
-                java.util.List.of("faunareborn"),
+                java.util.List.of("faunareborn", "fr"),
                 new FaunaCommand(this, mainGui)
         );
     }
@@ -70,6 +88,6 @@ public final class FaunaRebornPlugin extends JavaPlugin {
                         new EntityModuleToggle(EntityType.PIG, "pig", "Pig Hostility", "pig.enabled", Material.PIG_SPAWN_EGG)
                 )
         );
-        return new FaunaMainGui(this, guiConfigService, new FaunaReloadService(this));
+        return new FaunaMainGui(this, guiConfigService, reloadService());
     }
 }
