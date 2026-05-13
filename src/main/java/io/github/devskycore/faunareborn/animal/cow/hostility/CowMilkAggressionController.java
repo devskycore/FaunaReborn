@@ -1,6 +1,9 @@
 package io.github.devskycore.faunareborn.animal.cow.hostility;
 
 import io.github.devskycore.faunareborn.animal.cow.CowSettings;
+import io.github.devskycore.faunareborn.combat.deathmessage.HostileSpecies;
+import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
+import io.github.devskycore.faunareborn.combat.deathmessage.HostilityContextTracker;
 import io.github.devskycore.faunareborn.system.platform.RuntimePlatform;
 import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapter;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
@@ -239,7 +242,7 @@ final class CowMilkAggressionController {
             putCooldown(milkTriggerCooldownUntilByPlayer, playerId, cowId, currentTick + settings.milkingTriggerCooldownTicks());
         }
 
-        activateCowAggression(cow, aggressor, settings.aggressionDurationTicks());
+        activateCowAggression(cow, aggressor, settings.aggressionDurationTicks(), HostilityCause.MILKING_PROVOCATION);
     }
 
     boolean provokeCowFromResources(
@@ -248,6 +251,24 @@ final class CowMilkAggressionController {
             boolean naturalCow,
             int triggerCooldownTicks,
             int aggressionDurationTicks
+    ) {
+        return provokeCowFromResources(
+                cow,
+                aggressor,
+                naturalCow,
+                triggerCooldownTicks,
+                aggressionDurationTicks,
+                HostilityCause.TERRITORIAL_PICKUP
+        );
+    }
+
+    boolean provokeCowFromResources(
+            Cow cow,
+            Player aggressor,
+            boolean naturalCow,
+            int triggerCooldownTicks,
+            int aggressionDurationTicks,
+            HostilityCause hostilityCause
     ) {
         if (isProvocationBlocked(cow, naturalCow)) {
             return false;
@@ -260,7 +281,7 @@ final class CowMilkAggressionController {
         if (triggerCooldownTicks > 0) {
             putCooldown(resourceTriggerCooldownUntilByPlayer, playerId, cowId, currentTick + triggerCooldownTicks);
         }
-        return activateCowAggression(cow, aggressor, aggressionDurationTicks);
+        return activateCowAggression(cow, aggressor, aggressionDurationTicks, hostilityCause);
     }
 
     void provokeNearbyCowsFromSocialAlert(
@@ -268,7 +289,8 @@ final class CowMilkAggressionController {
             Player aggressor,
             java.util.List<org.bukkit.entity.Entity> nearbyEntities,
             CowSettings.SocialAlertSettings socialAlertSettings,
-            java.util.function.Predicate<Cow> naturalCowPredicate
+            java.util.function.Predicate<Cow> naturalCowPredicate,
+            HostilityCause hostilityCause
     ) {
         if (!socialAlertSettings.enabled() || socialAlertSettings.maxResponders() <= 0) {
             return;
@@ -305,7 +327,7 @@ final class CowMilkAggressionController {
             if (allyBrain != null && currentTick < allyBrain.socialAlertBlockedUntilTick) {
                 continue;
             }
-            if (!activateCowAggression(ally, aggressor, settings.aggressionDurationTicks())) {
+            if (!activateCowAggression(ally, aggressor, settings.aggressionDurationTicks(), hostilityCause)) {
                 continue;
             }
             if (socialAlertSettings.joinCooldownTicks() > 0) {
@@ -348,7 +370,7 @@ final class CowMilkAggressionController {
         return targetingIndex.activeInWorld(cow.getWorld().getUID()) >= global.maxActiveHostilePerWorld();
     }
 
-    private boolean activateCowAggression(Cow cow, Player aggressor, int aggressionDurationTicks) {
+    private boolean activateCowAggression(Cow cow, Player aggressor, int aggressionDurationTicks, HostilityCause hostilityCause) {
         int cowId = cow.getEntityId();
         trackedCows.put(cowId, cow);
         CowMilkAggressionBrain brain = brains.get(cowId);
@@ -379,6 +401,7 @@ final class CowMilkAggressionController {
         brain.lastLineOfSightCheckTick = Long.MIN_VALUE;
         brain.nextMovementUpdateTick = currentTick;
         brain.nextParticleTick = nextParticleTick(cowId);
+        brain.hostilityCause = hostilityCause;
 
         cow.setTarget(aggressor);
         cow.setAggressive(true);
@@ -521,6 +544,7 @@ final class CowMilkAggressionController {
         brain.lastAttackTick = currentTick;
 
         target.damage(settings.attackDamage() * resolveDamageMultiplier(cow.getWorld()), cow);
+        HostilityContextTracker.record(target.getUniqueId(), HostileSpecies.COW, brain.hostilityCause);
         double dx = target.getX() - cow.getX();
         double dz = target.getZ() - cow.getZ();
         double lengthSq = dx * dx + dz * dz;

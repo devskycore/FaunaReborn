@@ -27,7 +27,7 @@ import java.util.List;
 
 public final class FaunaMainGui implements Listener {
 
-    private static final Component TITLE = Component.text("FaunaReborn", NamedTextColor.GOLD)
+    private static final Component TITLE = Component.text("FaunaReborn", NamedTextColor.DARK_AQUA)
             .decorate(TextDecoration.BOLD)
             .append(Component.text(" | ", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
             .append(Component.text("Control Panel", NamedTextColor.DARK_GRAY).decoration(TextDecoration.BOLD, false))
@@ -35,7 +35,7 @@ public final class FaunaMainGui implements Listener {
     private static final int SIZE = 54;
     private static final int RELOAD_SLOT = 49;
     private static final int CLOSE_SLOT = 53;
-    private static final int[] TOGGLE_SLOTS = {20, 24, 29, 33};
+    private static final int[] TOGGLE_SLOTS = {20, 22, 24, 33};
 
     private final FaunaRebornPlugin plugin;
     private final PluginGuiConfigService configService;

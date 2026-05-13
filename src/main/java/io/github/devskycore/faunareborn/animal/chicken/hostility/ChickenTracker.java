@@ -20,8 +20,8 @@ final class ChickenTracker {
         return trackedChickens;
     }
 
-    boolean isEmpty() {
-        return trackedChickens.isEmpty();
+    boolean hasTrackedChickens() {
+        return !trackedChickens.isEmpty();
     }
 
     int size() {

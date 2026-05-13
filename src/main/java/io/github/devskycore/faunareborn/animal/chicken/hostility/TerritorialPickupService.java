@@ -1,6 +1,7 @@
 package io.github.devskycore.faunareborn.animal.chicken.hostility;
 
 import io.github.devskycore.faunareborn.animal.chicken.config.ItemPickupTerritorialityConfig;
+import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Chicken;
@@ -61,8 +62,8 @@ final class TerritorialPickupService {
         this.targetValidator = targetValidator;
     }
 
-    boolean enabled() {
-        return enabled;
+    boolean isDisabled() {
+        return !enabled;
     }
 
     double detectionRadius() {
@@ -153,7 +154,7 @@ final class TerritorialPickupService {
             if (cannotPerceiveTerritorialPickup(chicken, player)) {
                 continue;
             }
-            if (!recruitment.tryRecruit(chicken, player, aggressionDurationTicks, true)) {
+            if (!recruitment.tryRecruit(chicken, player, aggressionDurationTicks, true, HostilityCause.TERRITORIAL_PICKUP)) {
                 continue;
             }
 
@@ -172,7 +173,7 @@ final class TerritorialPickupService {
                     socialAlertService.radius(),
                     socialAlertService.radius()
             );
-            socialAlertService.emit(firstRecruit.getEntityId(), player, socialNearby, aggressionDurationTicks, currentTick);
+            socialAlertService.emit(firstRecruit.getEntityId(), player, socialNearby, aggressionDurationTicks, currentTick, HostilityCause.TERRITORIAL_PICKUP);
         }
     }
 
@@ -209,7 +210,7 @@ final class TerritorialPickupService {
     }
 
     interface ChickenRecruitment {
-        boolean tryRecruit(Chicken chicken, Player aggressor, int aggressionDurationTicks, boolean applyJoinCooldown);
+        boolean tryRecruit(Chicken chicken, Player aggressor, int aggressionDurationTicks, boolean applyJoinCooldown, HostilityCause hostilityCause);
     }
 
     interface TargetValidator {
@@ -285,3 +286,4 @@ final class TerritorialPickupService {
         }
     }
 }
+

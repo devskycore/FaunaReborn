@@ -1,6 +1,7 @@
 package io.github.devskycore.faunareborn.animal.pig.hostility;
 
 import io.github.devskycore.faunareborn.animal.pig.PigSettings;
+import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Pig;
@@ -117,7 +118,8 @@ final class PigTerritorialPickupService {
                     player,
                     firstRecruit.getNearbyEntities(socialAlertSettings.radius(), socialAlertSettings.radius(), socialAlertSettings.radius()),
                     socialAlertSettings,
-                    naturalPigResolver::isNaturalPig
+                    naturalPigResolver::isNaturalPig,
+                    HostilityCause.TERRITORIAL_PICKUP
             );
         }
     }

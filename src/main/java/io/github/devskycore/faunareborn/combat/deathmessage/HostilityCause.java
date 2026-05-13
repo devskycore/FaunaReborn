@@ -1,0 +1,14 @@
+package io.github.devskycore.faunareborn.combat.deathmessage;
+
+public enum HostilityCause {
+    ROD_PROVOCATION,
+    MILKING_PROVOCATION,
+    TERRITORIAL_PICKUP,
+    COOKING_FURNACE,
+    COOKING_SMOKER,
+    COOKING_CAMPFIRE,
+    HERD_RETALIATION_DAMAGE,
+    HERD_RETALIATION_NEARBY_KILL,
+    BABY_PROTECTION,
+    DIRECT_ASSAULT
+}

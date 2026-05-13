@@ -1,6 +1,7 @@
 package io.github.devskycore.faunareborn.animal.cow.hostility;
 
 import io.github.devskycore.faunareborn.animal.cow.CowSettings;
+import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.entity.Cow;
@@ -117,7 +118,8 @@ final class CowTerritorialPickupService {
                     player,
                     firstRecruit.getNearbyEntities(socialAlertSettings.radius(), socialAlertSettings.radius(), socialAlertSettings.radius()),
                     socialAlertSettings,
-                    naturalCowResolver::isNaturalCow
+                    naturalCowResolver::isNaturalCow,
+                    HostilityCause.TERRITORIAL_PICKUP
             );
         }
     }

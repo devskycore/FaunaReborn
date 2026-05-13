@@ -1,6 +1,9 @@
 package io.github.devskycore.faunareborn.animal.pig.hostility;
 
 import io.github.devskycore.faunareborn.animal.pig.PigSettings;
+import io.github.devskycore.faunareborn.combat.deathmessage.HostileSpecies;
+import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
+import io.github.devskycore.faunareborn.combat.deathmessage.HostilityContextTracker;
 import io.github.devskycore.faunareborn.system.platform.RuntimePlatform;
 import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapter;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
@@ -240,7 +243,7 @@ final class PigAggressionController {
             putCooldown(milkTriggerCooldownUntilByPlayer, playerId, PigId, currentTick + settings.rodTriggerCooldownTicks());
         }
 
-        activatePigAggression(Pig, aggressor, settings.aggressionDurationTicks());
+        activatePigAggression(Pig, aggressor, settings.aggressionDurationTicks(), HostilityCause.ROD_PROVOCATION);
     }
 
     boolean provokePigFromResources(
@@ -249,6 +252,24 @@ final class PigAggressionController {
             boolean naturalPig,
             int triggerCooldownTicks,
             int aggressionDurationTicks
+    ) {
+        return provokePigFromResources(
+                Pig,
+                aggressor,
+                naturalPig,
+                triggerCooldownTicks,
+                aggressionDurationTicks,
+                HostilityCause.TERRITORIAL_PICKUP
+        );
+    }
+
+    boolean provokePigFromResources(
+            Pig Pig,
+            Player aggressor,
+            boolean naturalPig,
+            int triggerCooldownTicks,
+            int aggressionDurationTicks,
+            HostilityCause hostilityCause
     ) {
         if (isProvocationBlocked(Pig, naturalPig)) {
             return false;
@@ -261,7 +282,7 @@ final class PigAggressionController {
         if (triggerCooldownTicks > 0) {
             putCooldown(resourceTriggerCooldownUntilByPlayer, playerId, PigId, currentTick + triggerCooldownTicks);
         }
-        return activatePigAggression(Pig, aggressor, aggressionDurationTicks);
+        return activatePigAggression(Pig, aggressor, aggressionDurationTicks, hostilityCause);
     }
 
     void provokeNearbyPigsFromSocialAlert(
@@ -269,7 +290,8 @@ final class PigAggressionController {
             Player aggressor,
             java.util.List<org.bukkit.entity.Entity> nearbyEntities,
             PigSettings.SocialAlertSettings socialAlertSettings,
-            java.util.function.Predicate<Pig> naturalPigPredicate
+            java.util.function.Predicate<Pig> naturalPigPredicate,
+            HostilityCause hostilityCause
     ) {
         if (!socialAlertSettings.enabled() || socialAlertSettings.maxResponders() <= 0) {
             return;
@@ -306,7 +328,7 @@ final class PigAggressionController {
             if (allyBrain != null && currentTick < allyBrain.socialAlertBlockedUntilTick) {
                 continue;
             }
-            if (!activatePigAggression(ally, aggressor, settings.aggressionDurationTicks())) {
+            if (!activatePigAggression(ally, aggressor, settings.aggressionDurationTicks(), hostilityCause)) {
                 continue;
             }
             if (socialAlertSettings.joinCooldownTicks() > 0) {
@@ -349,7 +371,7 @@ final class PigAggressionController {
         return targetingIndex.activeInWorld(Pig.getWorld().getUID()) >= global.maxActiveHostilePerWorld();
     }
 
-    private boolean activatePigAggression(Pig Pig, Player aggressor, int aggressionDurationTicks) {
+    private boolean activatePigAggression(Pig Pig, Player aggressor, int aggressionDurationTicks, HostilityCause hostilityCause) {
         int PigId = Pig.getEntityId();
         trackedPigs.put(PigId, Pig);
         PigAggressionBrain brain = brains.get(PigId);
@@ -381,6 +403,7 @@ final class PigAggressionController {
         brain.lastLineOfSightCheckTick = Long.MIN_VALUE;
         brain.nextMovementUpdateTick = currentTick;
         brain.nextParticleTick = nextParticleTick(PigId);
+        brain.hostilityCause = hostilityCause;
 
         Pig.setTarget(aggressor);
         Pig.setAggressive(true);
@@ -531,6 +554,7 @@ final class PigAggressionController {
         brain.lastAttackWallTimeMs = nowMs;
 
         target.damage(finalDamage, Pig);
+        HostilityContextTracker.record(target.getUniqueId(), HostileSpecies.PIG, brain.hostilityCause);
         double dx = target.getX() - Pig.getX();
         double dz = target.getZ() - Pig.getZ();
         double lengthSq = dx * dx + dz * dz;

@@ -1,5 +1,7 @@
 package io.github.devskycore.faunareborn.animal.chicken.hostility;
 
+import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
+
 import java.util.UUID;
 
 final class ChickenHostilityBrain {
@@ -25,6 +27,7 @@ final class ChickenHostilityBrain {
     int noLineOfSightTicks;
     long lastLineOfSightCheckTick;
     boolean lastLineOfSightResult;
+    HostilityCause hostilityCause;
 
     double lastTargetDistSq2D = Double.NaN;
     int noProgressTicks;
@@ -42,6 +45,7 @@ final class ChickenHostilityBrain {
         this.nextProcessTick = 0L;
         this.lastLineOfSightCheckTick = Long.MIN_VALUE;
         this.lastLineOfSightResult = true;
+        this.hostilityCause = HostilityCause.BABY_PROTECTION;
     }
 }
 

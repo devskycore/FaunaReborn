@@ -1,6 +1,7 @@
 package io.github.devskycore.faunareborn.animal.chicken.hostility;
 
 import io.github.devskycore.faunareborn.animal.chicken.config.ChickenHostilitySettings;
+import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
 import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Entity;
@@ -66,7 +67,7 @@ final class SocialAlertService {
         }
     }
 
-    void emit(int emitterChickenId, Player aggressor, List<Entity> nearbyEntities, int aggressionDurationTicks, long currentTick) {
+    void emit(int emitterChickenId, Player aggressor, List<Entity> nearbyEntities, int aggressionDurationTicks, long currentTick, HostilityCause hostilityCause) {
         if (!enabled) {
             return;
         }
@@ -90,7 +91,7 @@ final class SocialAlertService {
             if (ally.getEntityId() == emitterChickenId) {
                 continue;
             }
-            if (recruitment.tryRecruit(ally, aggressor, aggressionDurationTicks, true)) {
+            if (recruitment.tryRecruit(ally, aggressor, aggressionDurationTicks, true, hostilityCause)) {
                 recruited++;
             }
             if (recruited >= maxResponders) {
@@ -132,6 +133,6 @@ final class SocialAlertService {
     }
 
     interface ChickenRecruitment {
-        boolean tryRecruit(Chicken chicken, Player aggressor, int aggressionDurationTicks, boolean applyJoinCooldown);
+        boolean tryRecruit(Chicken chicken, Player aggressor, int aggressionDurationTicks, boolean applyJoinCooldown, HostilityCause hostilityCause);
     }
 }

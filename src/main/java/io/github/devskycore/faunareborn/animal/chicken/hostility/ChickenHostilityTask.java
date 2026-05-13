@@ -2,6 +2,9 @@ package io.github.devskycore.faunareborn.animal.chicken.hostility;
 
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import io.github.devskycore.faunareborn.animal.chicken.config.ChickenHostilitySettings;
+import io.github.devskycore.faunareborn.combat.deathmessage.HostileSpecies;
+import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
+import io.github.devskycore.faunareborn.combat.deathmessage.HostilityContextTracker;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
 import io.github.devskycore.faunareborn.system.platform.RuntimePlatform;
 import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapter;
@@ -11,8 +14,10 @@ import io.papermc.paper.event.world.WorldDifficultyChangeEvent;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Item;
@@ -21,18 +26,28 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
+import org.bukkit.event.block.BlockCookEvent;
+import org.bukkit.event.inventory.FurnaceExtractEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
+import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.ItemStack;
 
 import java.util.List;
 import java.util.UUID;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -49,6 +64,9 @@ final class ChickenHostilityTask implements Listener {
     private static final long INVALID_CLEANUP_INTERVAL_TICKS = 20L;
     private static final int INVALID_CLEANUP_BATCH_SIZE = 32;
     private static final long PICKUP_COUNTER_CLEANUP_INTERVAL_TICKS = 100L;
+    private static final long COOK_VALIDATION_WINDOW_TICKS = 20L * 180L;
+    private static final Material RAW_MEAT = Material.CHICKEN;
+    private static final Material COOKED_MEAT = Material.COOKED_CHICKEN;
 
     private final FaunaRebornPlugin plugin;
     private final SchedulerAdapter scheduler;
@@ -62,6 +80,8 @@ final class ChickenHostilityTask implements Listener {
     private final ChickenHostilityVisualController visualController;
     private final WorldNightStateCache worldNightStateCache;
     private final Queue<Runnable> pendingStateMutations = new ConcurrentLinkedQueue<>();
+    private final Map<UUID, PendingCookIntent> pendingCookIntentByPlayer = new HashMap<>();
+    private final Map<String, CookedBatchReady> cookedBatchByCooker = new HashMap<>();
     private final Object stateLock = new Object();
     private final boolean folia;
 
@@ -133,6 +153,8 @@ final class ChickenHostilityTask implements Listener {
         targetingService.clear();
         socialAlertService.clear();
         territorialPickupService.clear();
+        pendingCookIntentByPlayer.clear();
+        cookedBatchByCooker.clear();
         pendingStateMutations.clear();
         currentTick = 0L;
     }
@@ -162,7 +184,7 @@ final class ChickenHostilityTask implements Listener {
             int processed = 0;
             int scanned = 0;
             int scanBudget = Math.max(maxProcessedChickensPerTick * 3, idleBucketModulo * 64);
-            while (processed < maxProcessedChickensPerTick && scanned < scanBudget && !tracker.isEmpty()) {
+            while (processed < maxProcessedChickensPerTick && scanned < scanBudget && tracker.hasTrackedChickens()) {
                 int chickenId = tracker.nextProcessingChickenId();
                 if (chickenId == Integer.MIN_VALUE) break;
                 scanned++;
@@ -211,7 +233,7 @@ final class ChickenHostilityTask implements Listener {
         int scanned = 0;
         int scanBudget = Math.max(maxProcessedChickensPerTick * 3, idleBucketModulo * 64);
 
-        while (processed < maxProcessedChickensPerTick && scanned < scanBudget && !tracker.isEmpty()) {
+        while (processed < maxProcessedChickensPerTick && scanned < scanBudget && tracker.hasTrackedChickens()) {
             int chickenId = tracker.nextProcessingChickenId();
             if (chickenId == Integer.MIN_VALUE) break;
             scanned++;
@@ -343,6 +365,7 @@ final class ChickenHostilityTask implements Listener {
                 return;
             }
             ChickenHostilityBrain createdBrain = new ChickenHostilityBrain(currentTick);
+            createdBrain.hostilityCause = HostilityCause.BABY_PROTECTION;
             setTarget(createdBrain, target);
             tracker.putBrain(chicken.getEntityId(), createdBrain);
             transition(chicken, createdBrain, ChickenHostilityState.ALERT);
@@ -549,6 +572,7 @@ final class ChickenHostilityTask implements Listener {
         if (brain.lastAttackTick != Long.MIN_VALUE && currentTick - brain.lastAttackTick < attackCooldownTicks) return;
 
         player.damage(damageScaler.resolveScaledDamage(chicken.getWorld()), chicken);
+        HostilityContextTracker.record(player.getUniqueId(), HostileSpecies.CHICKEN, brain.hostilityCause);
         brain.lastAttackTick = currentTick;
     }
 
@@ -610,7 +634,8 @@ final class ChickenHostilityTask implements Listener {
             Chicken chicken,
             Player aggressor,
             int aggressionDurationTicks,
-            boolean applyJoinCooldown
+            boolean applyJoinCooldown,
+            HostilityCause hostilityCause
     ) {
         if (chicken == null || !chicken.isValid() || chicken.isDead()) {
             return false;
@@ -662,6 +687,7 @@ final class ChickenHostilityTask implements Listener {
         boolean alreadyTargeting = aggressorUuid.equals(brain.targetUuid)
                 && brain.state != ChickenHostilityState.IDLE;
         setTarget(brain, aggressor, aggressionDurationTicks);
+        brain.hostilityCause = hostilityCause;
         brain.socialAlertOverrideEligibility = true;
         if (!alreadyTargeting) {
             transition(chicken, brain, ChickenHostilityState.ALERT);
@@ -737,12 +763,19 @@ final class ChickenHostilityTask implements Listener {
         );
         nearby.add(victimChicken);
         int victimChickenId = victimChicken.getEntityId();
-        enqueueStateMutation(() -> socialAlertService.emit(victimChickenId, aggressor, nearby, threatTimeoutTicks, currentTick));
+        enqueueStateMutation(() -> socialAlertService.emit(
+                victimChickenId,
+                aggressor,
+                nearby,
+                threatTimeoutTicks,
+                currentTick,
+                HostilityCause.HERD_RETALIATION_DAMAGE
+        ));
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     private void onEntityPickupItem(EntityPickupItemEvent event) {
-        if (!territorialPickupService.enabled()) {
+        if (territorialPickupService.isDisabled()) {
             return;
         }
         if (!(event.getEntity() instanceof Player player)) {
@@ -757,6 +790,14 @@ final class ChickenHostilityTask implements Listener {
 
         Item item = event.getItem();
         Material material = item.getItemStack().getType();
+        if (material == COOKED_MEAT) {
+            HostilityCause cookingCause = consumeCookValidation(player, item.getLocation(), COOKED_MEAT);
+            if (cookingCause == null) {
+                return;
+            }
+            enqueueStateMutation(() -> triggerCookedMeatAggression(player, item.getLocation(), cookingCause));
+            return;
+        }
         if (territorialPickupService.isNonTerritorialPickupMaterial(material)) {
             return;
         }
@@ -781,12 +822,138 @@ final class ChickenHostilityTask implements Listener {
         enqueueStateMutation(() -> territorialPickupService.recordPickup(player, material, pickedUpAmount, nearby, currentTick));
     }
 
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    private void onBlockCook(BlockCookEvent event) {
+        if (territorialPickupService.isDisabled()) {
+            return;
+        }
+        Material cookerType = event.getBlock().getType();
+        if (!isSupportedCooker(cookerType)) {
+            return;
+        }
+        if (event.getSource().getType() != RAW_MEAT) {
+            return;
+        }
+        World world = event.getBlock().getWorld();
+        if (activationPolicy.isWorldDisallowed(world) || activationPolicy.isPeacefulWorld(world)) {
+            return;
+        }
+        long tickSnapshot = currentTick;
+        enqueueStateMutation(() -> {
+            cookedBatchByCooker.put(
+                    blockKey(event.getBlock().getLocation()),
+                    new CookedBatchReady(COOKED_MEAT, tickSnapshot + COOK_VALIDATION_WINDOW_TICKS)
+            );
+            cleanupCookValidationState(tickSnapshot);
+        });
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    private void onFurnaceExtract(FurnaceExtractEvent event) {
+        if (territorialPickupService.isDisabled() || event.getItemType() != COOKED_MEAT) {
+            return;
+        }
+        Block block = event.getBlock();
+        if (!isSupportedCooker(block.getType())) {
+            return;
+        }
+        World world = block.getWorld();
+        if (activationPolicy.isWorldDisallowed(world) || activationPolicy.isPeacefulWorld(world)) {
+            return;
+        }
+        Player player = event.getPlayer();
+        if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) {
+            return;
+        }
+        Location outputLocation = block.getLocation().add(0.5D, 0.5D, 0.5D);
+        HostilityCause cookingCause = consumeCookValidation(player, outputLocation, COOKED_MEAT);
+        if (cookingCause == null) {
+            return;
+        }
+        enqueueStateMutation(() -> triggerCookedMeatAggression(player, outputLocation, cookingCause));
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    private void onInventoryClick(InventoryClickEvent event) {
+        if (territorialPickupService.isDisabled()) {
+            return;
+        }
+        if (!(event.getWhoClicked() instanceof Player player)) {
+            return;
+        }
+        InventoryType topType = event.getView().getTopInventory().getType();
+        if (topType != InventoryType.FURNACE && topType != InventoryType.SMOKER) {
+            return;
+        }
+        if (!(event.getView().getTopInventory().getHolder() instanceof org.bukkit.inventory.BlockInventoryHolder holder)) {
+            return;
+        }
+        ItemStack cursor = event.getCursor();
+        ItemStack current = event.getCurrentItem();
+        boolean placedRawOnInputSlot = event.getRawSlot() == 0 && cursor != null && cursor.getType() == RAW_MEAT;
+        boolean shiftMovedRaw = event.isShiftClick()
+                && event.getClickedInventory() != null
+                && event.getClickedInventory().getType() == InventoryType.PLAYER
+                && current != null
+                && current.getType() == RAW_MEAT;
+        if (!placedRawOnInputSlot && !shiftMovedRaw) {
+            return;
+        }
+        long tickSnapshot = currentTick;
+        enqueueStateMutation(() -> {
+            pendingCookIntentByPlayer.put(
+                    player.getUniqueId(),
+                    new PendingCookIntent(
+                            blockKey(holder.getBlock().getLocation()),
+                            tickSnapshot + COOK_VALIDATION_WINDOW_TICKS,
+                            resolveCookingCause(holder.getBlock().getType())
+                    )
+            );
+            cleanupCookValidationState(tickSnapshot);
+        });
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    private void onPlayerInteract(PlayerInteractEvent event) {
+        if (territorialPickupService.isDisabled()) {
+            return;
+        }
+        if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getClickedBlock() == null) {
+            return;
+        }
+        if (event.getHand() != EquipmentSlot.HAND) {
+            return;
+        }
+        Material blockType = event.getClickedBlock().getType();
+        if (blockType != Material.CAMPFIRE && blockType != Material.SOUL_CAMPFIRE) {
+            return;
+        }
+        ItemStack item = event.getItem();
+        if (item == null || item.getType() != RAW_MEAT) {
+            return;
+        }
+        Player player = event.getPlayer();
+        long tickSnapshot = currentTick;
+        enqueueStateMutation(() -> {
+            pendingCookIntentByPlayer.put(
+                    player.getUniqueId(),
+                    new PendingCookIntent(
+                            blockKey(event.getClickedBlock().getLocation()),
+                            tickSnapshot + COOK_VALIDATION_WINDOW_TICKS,
+                            HostilityCause.COOKING_CAMPFIRE
+                    )
+            );
+            cleanupCookValidationState(tickSnapshot);
+        });
+    }
+
     @EventHandler(priority = EventPriority.MONITOR)
     private void onPlayerQuit(PlayerQuitEvent event) {
         UUID playerId = event.getPlayer().getUniqueId();
         enqueueStateMutation(() -> {
             targetingService.removeGlobalCooldown(playerId);
             territorialPickupService.removePlayer(playerId);
+            pendingCookIntentByPlayer.remove(playerId);
         });
     }
 
@@ -820,7 +987,14 @@ final class ChickenHostilityTask implements Listener {
                     : chicken.getNearbyEntities(socialAlertService.radius(), socialAlertService.radius(), socialAlertService.radius());
             enqueueStateMutation(() -> {
                 if (killer != null) {
-                    socialAlertService.emit(chickenId, killer, nearby, threatTimeoutTicks, currentTick);
+                    socialAlertService.emit(
+                            chickenId,
+                            killer,
+                            nearby,
+                            threatTimeoutTicks,
+                            currentTick,
+                            HostilityCause.HERD_RETALIATION_NEARBY_KILL
+                    );
                 }
                 removeTrackedChicken(chickenId, chicken);
             });
@@ -890,4 +1064,128 @@ final class ChickenHostilityTask implements Listener {
             }
         });
     }
+
+    private Player findNearestValidPlayer(Location origin, List<Entity> nearby) {
+        Player nearest = null;
+        double bestDistanceSq = Double.MAX_VALUE;
+        for (Entity entity : nearby) {
+            if (!(entity instanceof Player candidate)) {
+                continue;
+            }
+            if (candidate.isDead() || !candidate.isOnline()) {
+                continue;
+            }
+            if (candidate.getGameMode() == GameMode.CREATIVE || candidate.getGameMode() == GameMode.SPECTATOR) {
+                continue;
+            }
+            double distanceSq = candidate.getLocation().distanceSquared(origin);
+            if (distanceSq >= bestDistanceSq) {
+                continue;
+            }
+            bestDistanceSq = distanceSq;
+            nearest = candidate;
+        }
+        return nearest;
+    }
+
+    private HostilityCause consumeCookValidation(Player player, Location outputLocation, Material cookedType) {
+        PendingCookIntent intent = pendingCookIntentByPlayer.get(player.getUniqueId());
+        if (intent == null || currentTick > intent.expiresAtTick()) {
+            return null;
+        }
+        String cookerKey = resolveCookerKey(outputLocation);
+        if (cookerKey == null) {
+            return null;
+        }
+        CookedBatchReady ready = cookedBatchByCooker.get(cookerKey);
+        if (ready == null || currentTick > ready.expiresAtTick() || ready.material() != cookedType) {
+            return null;
+        }
+        if (!intent.cookerKey().equals(cookerKey)) {
+            return null;
+        }
+        pendingCookIntentByPlayer.remove(player.getUniqueId());
+        cookedBatchByCooker.remove(cookerKey);
+        return intent.cookingCause();
+    }
+
+    private void triggerCookedMeatAggression(Player player, Location origin, HostilityCause cookingCause) {
+        World world = origin.getWorld();
+        if (world == null) {
+            return;
+        }
+        double radius = territorialPickupService.detectionRadius();
+        List<Entity> nearby = new ArrayList<>(world.getNearbyEntities(origin, radius, radius, radius));
+        Chicken firstRecruit = null;
+        for (Entity entity : nearby) {
+            if (!(entity instanceof Chicken chicken)) {
+                continue;
+            }
+            if (!tryRecruitChicken(chicken, player, threatTimeoutTicks, true, cookingCause)) {
+                continue;
+            }
+            if (firstRecruit == null) {
+                firstRecruit = chicken;
+            }
+        }
+        if (firstRecruit != null) {
+            socialAlertService.emit(
+                    firstRecruit.getEntityId(),
+                    player,
+                    nearby,
+                    threatTimeoutTicks,
+                    currentTick,
+                    cookingCause
+            );
+        }
+    }
+
+    private HostilityCause resolveCookingCause(Material cookerType) {
+        return switch (cookerType) {
+            case FURNACE -> HostilityCause.COOKING_FURNACE;
+            case SMOKER -> HostilityCause.COOKING_SMOKER;
+            case CAMPFIRE, SOUL_CAMPFIRE -> HostilityCause.COOKING_CAMPFIRE;
+            default -> HostilityCause.TERRITORIAL_PICKUP;
+        };
+    }
+
+    private String resolveCookerKey(Location location) {
+        String direct = blockKey(location);
+        if (cookedBatchByCooker.containsKey(direct)) {
+            return direct;
+        }
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                for (int dz = -1; dz <= 1; dz++) {
+                    String candidate = blockKey(location.clone().add(dx, dy, dz));
+                    if (cookedBatchByCooker.containsKey(candidate)) {
+                        return candidate;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private String blockKey(Location location) {
+        return location.getWorld().getUID() + ":" + location.getBlockX() + ":" + location.getBlockY() + ":" + location.getBlockZ();
+    }
+
+    private void cleanupCookValidationState(long tickSnapshot) {
+        pendingCookIntentByPlayer.entrySet().removeIf(entry -> tickSnapshot > entry.getValue().expiresAtTick());
+        cookedBatchByCooker.entrySet().removeIf(entry -> tickSnapshot > entry.getValue().expiresAtTick());
+    }
+
+    private boolean isSupportedCooker(Material material) {
+        return material == Material.FURNACE
+                || material == Material.SMOKER
+                || material == Material.CAMPFIRE
+                || material == Material.SOUL_CAMPFIRE;
+    }
+
+    private record PendingCookIntent(String cookerKey, long expiresAtTick, HostilityCause cookingCause) {}
+
+    private record CookedBatchReady(Material material, long expiresAtTick) {}
 }
+
+
