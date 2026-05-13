@@ -12,9 +12,22 @@ final class PlayerVisibilityService {
     private static final Set<String> VANISH_KEYS = Set.of(
             "vanished",
             "isVanished",
+            "vanish",
+            "isvanish",
             "essentials.vanish",
+            "essentials:vanish",
+            "essentialsx.vanish",
+            "essentialsx:vanish",
+            "cmivanish",
+            "cmi.vanish",
+            "staffmode",
+            "supervanish:vanished",
+            "sv.vanish",
             "premiumvanish",
-            "supervanish"
+            "premiumvanish:vanished",
+            "supervanish",
+            "staff.vanish",
+            "staff.vanished"
     );
 
     boolean isHidden(Player player, boolean checkPotion, boolean checkVanish) {
@@ -36,7 +49,12 @@ final class PlayerVisibilityService {
             }
         }
         for (String tag : player.getScoreboardTags()) {
-            if (tag.toLowerCase(Locale.ROOT).contains("vanish")) {
+            String normalized = tag.toLowerCase(Locale.ROOT);
+            if (normalized.contains("vanish")
+                    || normalized.contains("invisible")
+                    || normalized.contains("hidden")
+                    || normalized.equals("staff")
+                    || normalized.equals("staffmode")) {
                 return true;
             }
         }

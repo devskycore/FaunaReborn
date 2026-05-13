@@ -80,9 +80,7 @@ public final class TargetEligibilityService {
 
         if (eligible) {
             GameMode mode = player.getGameMode();
-            if (mode == GameMode.CREATIVE || mode == GameMode.SPECTATOR) {
-                eligible = false;
-            } else if (mode == GameMode.ADVENTURE && settings.ignore().adventure()) {
+            if (mode == GameMode.CREATIVE || mode == GameMode.SPECTATOR || mode == GameMode.ADVENTURE) {
                 eligible = false;
             }
         }
