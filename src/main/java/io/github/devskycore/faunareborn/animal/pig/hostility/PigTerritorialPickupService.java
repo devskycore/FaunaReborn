@@ -7,6 +7,7 @@ import org.bukkit.World;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
 
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +21,7 @@ final class PigTerritorialPickupService {
     private final PigAggressionController aggressionController;
     private final NaturalPigResolver naturalPigResolver;
     private final boolean requireLineOfSight;
+    private final WorldEnvironmentContextCache environmentCache;
     private final Map<UUID, TerritorialPickupCounter> counters = new HashMap<>();
 
     PigTerritorialPickupService(
@@ -27,13 +29,15 @@ final class PigTerritorialPickupService {
             PigSettings.SocialAlertSettings socialAlertSettings,
             PigAggressionController aggressionController,
             NaturalPigResolver naturalPigResolver,
-            boolean requireLineOfSight
+            boolean requireLineOfSight,
+            WorldEnvironmentContextCache environmentCache
     ) {
         this.settings = settings;
         this.socialAlertSettings = socialAlertSettings;
         this.aggressionController = aggressionController;
         this.naturalPigResolver = naturalPigResolver;
         this.requireLineOfSight = requireLineOfSight;
+        this.environmentCache = environmentCache;
     }
 
     boolean isNonTerritorialMaterial(Material material) {
@@ -241,6 +245,7 @@ final class PigTerritorialPickupService {
         }
     }
 }
+
 
 
 

@@ -14,6 +14,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionSettings;
 
 public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings> {
 
@@ -275,7 +276,8 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
                 socialAlert.joinCooldownTicks(),
                 socialAlert.maxResponders()
         );
-        return new PigSettings(moduleEnabled, rodProvocation, resourceProvocation, socialAlert, loadGlobalHostilitySettings());
+        return new PigSettings(moduleEnabled, rodProvocation, resourceProvocation, socialAlert, loadGlobalHostilitySettings(),
+                EnvironmentAggressionSettings.fromConfig(config, ""));
     }
 
     private PigSettings.GlobalHostilitySettings loadGlobalHostilitySettings() {
@@ -472,6 +474,7 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
         return Math.min(value, max);
     }
 }
+
 
 
 

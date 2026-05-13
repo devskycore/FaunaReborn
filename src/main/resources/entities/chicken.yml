@@ -95,3 +95,50 @@ chicken-hostility:
     social-propagation:
       # Uses the existing social-alert system and its responder/cooldown limits.
       enabled: true
+
+environment-modifiers:
+  enabled: true
+  debug: false
+  cache:
+    refresh-interval-seconds: 5
+  rain:
+    enabled: true
+    aggression-multiplier: 1.10
+    detection-radius-multiplier: 1.10
+    attack-damage-multiplier: 1.05
+    movement-speed-multiplier: 1.05
+    social-alert-multiplier: 1.10
+    pickup-requirement-multiplier: 0.90
+  thunderstorm:
+    enabled: true
+    aggression-multiplier: 1.22
+    detection-radius-multiplier: 1.18
+    attack-damage-multiplier: 1.10
+    movement-speed-multiplier: 1.08
+    attack-cooldown-multiplier: 0.92
+    social-alert-multiplier: 1.20
+    target-persistence-multiplier: 1.20
+    pickup-requirement-multiplier: 0.78
+    fearlessness: true
+  full-moon:
+    enabled: true
+    aggression-multiplier: 1.30
+    detection-radius-bonus: 1.5
+    attack-damage-multiplier: 1.10
+    movement-speed-multiplier: 1.06
+    social-alert-multiplier: 1.20
+    target-persistence-multiplier: 1.20
+    pickup-requirement-multiplier: 0.80
+  combinations:
+    night-rain:
+      enabled: true
+      aggression-multiplier: 1.12
+    night-thunderstorm:
+      enabled: true
+      aggression-multiplier: 1.30
+      detection-radius-multiplier: 1.20
+      attack-cooldown-multiplier: 0.88
+    night-full-moon:
+      enabled: true
+      aggression-multiplier: 1.35
+      social-alert-multiplier: 1.25

@@ -39,6 +39,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.projectiles.ProjectileSource;
+import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -68,7 +69,8 @@ final class CowMilkInteractionListener implements Listener {
             CowSettings.SocialAlertSettings socialAlertSettings,
             CowSettings.GlobalHostilitySettings global,
             CowMilkAggressionController aggressionController,
-            CowSettings.ResourceProvocationSettings resourceProvocationSettings
+            CowSettings.ResourceProvocationSettings resourceProvocationSettings,
+            WorldEnvironmentContextCache environmentCache
     ) {
         this.settings = settings;
         this.socialAlertSettings = socialAlertSettings;
@@ -81,7 +83,8 @@ final class CowMilkInteractionListener implements Listener {
                 socialAlertSettings,
                 aggressionController,
                 this::isNaturalCow,
-                settings.requireLineOfSight()
+                settings.requireLineOfSight(),
+                environmentCache
         );
         this.nonNaturalCowKey = new NamespacedKey(plugin, "non_natural_cow");
     }
@@ -97,8 +100,14 @@ final class CowMilkInteractionListener implements Listener {
         if (global.worldFilter().isWorldDisallowed(cow.getWorld().getName())) {
             return;
         }
+        if (cow.getWorld().getDifficulty() == Difficulty.PEACEFUL) {
+            return;
+        }
 
         Player player = event.getPlayer();
+        if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) {
+            return;
+        }
         PlayerInventory inventory = player.getInventory();
         if (inventory.getItemInMainHand().getType() != Material.BUCKET) {
             return;
@@ -174,7 +183,8 @@ final class CowMilkInteractionListener implements Listener {
         if (!(event.getEntity() instanceof Cow victimCow)) {
             return;
         }
-        if (global.worldFilter().isWorldDisallowed(victimCow.getWorld().getName())) {
+        if (global.worldFilter().isWorldDisallowed(victimCow.getWorld().getName())
+                || victimCow.getWorld().getDifficulty() == Difficulty.PEACEFUL) {
             return;
         }
         Player aggressor = resolveDamagingPlayer(event.getDamager());
@@ -519,3 +529,4 @@ final class CowMilkInteractionListener implements Listener {
 
     private record CookedBatchReady(Material material, long expiresAtTick) {}
 }
+

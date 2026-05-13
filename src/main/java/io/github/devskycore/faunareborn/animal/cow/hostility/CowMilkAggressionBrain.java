@@ -22,6 +22,7 @@ final class CowMilkAggressionBrain {
     long nextParticleTick;
     long warningUntilTick;
     long socialAlertBlockedUntilTick;
+    long stateStartedTick;
     HostilityCause hostilityCause;
     CowMilkAggressionState state;
 
@@ -31,7 +32,8 @@ final class CowMilkAggressionBrain {
         this.lastLineOfSightResult = true;
         this.lastMovementBaseValue = Double.NaN;
         this.socialAlertBlockedUntilTick = Long.MIN_VALUE;
+        this.stateStartedTick = 0L;
         this.hostilityCause = HostilityCause.DIRECT_ASSAULT;
-        this.state = CowMilkAggressionState.WARNING;
+        this.state = CowMilkAggressionState.IDLE;
     }
 }

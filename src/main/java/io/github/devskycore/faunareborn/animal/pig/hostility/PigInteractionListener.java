@@ -38,6 +38,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.projectiles.ProjectileSource;
+import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -67,7 +68,8 @@ final class PigInteractionListener implements Listener {
             PigSettings.SocialAlertSettings socialAlertSettings,
             PigSettings.GlobalHostilitySettings global,
             PigAggressionController aggressionController,
-            PigSettings.ResourceProvocationSettings resourceProvocationSettings
+            PigSettings.ResourceProvocationSettings resourceProvocationSettings,
+            WorldEnvironmentContextCache environmentCache
     ) {
         this.settings = settings;
         this.socialAlertSettings = socialAlertSettings;
@@ -80,7 +82,8 @@ final class PigInteractionListener implements Listener {
                 socialAlertSettings,
                 aggressionController,
                 this::isNaturalPig,
-                settings.requireLineOfSight()
+                settings.requireLineOfSight(),
+                environmentCache
         );
         this.nonNaturalPigKey = new NamespacedKey(plugin, "non_natural_pig");
     }
@@ -96,8 +99,14 @@ final class PigInteractionListener implements Listener {
         if (global.worldFilter().isWorldDisallowed(pig.getWorld().getName())) {
             return;
         }
+        if (pig.getWorld().getDifficulty() == Difficulty.PEACEFUL) {
+            return;
+        }
 
         Player player = event.getPlayer();
+        if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) {
+            return;
+        }
         if (player.getInventory().getItemInMainHand().getType() != Material.CARROT_ON_A_STICK) {
             return;
         }
@@ -166,7 +175,8 @@ final class PigInteractionListener implements Listener {
         if (!(event.getEntity() instanceof Pig victimPig)) {
             return;
         }
-        if (global.worldFilter().isWorldDisallowed(victimPig.getWorld().getName())) {
+        if (global.worldFilter().isWorldDisallowed(victimPig.getWorld().getName())
+                || victimPig.getWorld().getDifficulty() == Difficulty.PEACEFUL) {
             return;
         }
         Player aggressor = resolveDamagingPlayer(event.getDamager());
@@ -488,3 +498,4 @@ final class PigInteractionListener implements Listener {
 
     private record CookedBatchReady(Material material, long expiresAtTick) {}
 }
+

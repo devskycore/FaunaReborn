@@ -10,6 +10,7 @@ import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntIterator;
+import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import org.bukkit.Difficulty;
 import org.bukkit.GameMode;
 import org.bukkit.Particle;
@@ -21,6 +22,8 @@ import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
+import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
+import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionModifiers;
 
 import java.util.Locale;
 import java.util.Map;
@@ -40,12 +43,15 @@ final class PigAggressionController {
     private static final long TARGET_REFRESH_INTERVAL_TICKS = 10L;
     private static final long MOVEMENT_ATTRIBUTE_UPDATE_INTERVAL_TICKS = 5L;
     private static final double MOVEMENT_ATTRIBUTE_EPSILON = 0.0005D;
+    private static final int TARGET_REACTIVATION_COOLDOWN_TICKS = 20;
 
     private final SchedulerAdapter scheduler;
     private final boolean folia;
     private final Object stateLock = new Object();
     private final PigSettings.RodProvocationSettings settings;
     private final PigSettings.GlobalHostilitySettings global;
+    private final PigActivationPolicy activationPolicy;
+    private final WorldEnvironmentContextCache environmentCache;
     private final PigTargetingIndex targetingIndex = new PigTargetingIndex();
     private final Int2ObjectOpenHashMap<PigAggressionBrain> brains = new Int2ObjectOpenHashMap<>();
     private final Int2ObjectOpenHashMap<Pig> trackedPigs = new Int2ObjectOpenHashMap<>();
@@ -53,6 +59,7 @@ final class PigAggressionController {
     private final Map<UUID, Int2LongOpenHashMap> resourceTriggerCooldownUntilByPlayer = new java.util.HashMap<>();
     private final Int2DoubleOpenHashMap originalMovementSpeedByPigId = new Int2DoubleOpenHashMap();
     private final Int2LongOpenHashMap socialAlertCooldownUntilByPigId = new Int2LongOpenHashMap();
+    private final Object2LongOpenHashMap<UUID> targetReactivationCooldownUntil = new Object2LongOpenHashMap<>();
     private final Vector scratch = new Vector();
     private IntIterator processingCursor;
     private long currentTick;
@@ -61,14 +68,18 @@ final class PigAggressionController {
     PigAggressionController(
             SchedulerAdapter scheduler,
             PigSettings.RodProvocationSettings settings,
-            PigSettings.GlobalHostilitySettings global
+            PigSettings.GlobalHostilitySettings global,
+            WorldEnvironmentContextCache environmentCache
     ) {
         this.scheduler = scheduler;
         this.folia = RuntimePlatform.isFolia();
         this.settings = settings;
         this.global = global;
+        this.activationPolicy = new PigActivationPolicy(settings, global);
+        this.environmentCache = environmentCache;
         this.socialAlertCooldownUntilByPigId.defaultReturnValue(Long.MIN_VALUE);
         this.originalMovementSpeedByPigId.defaultReturnValue(Double.NaN);
+        this.targetReactivationCooldownUntil.defaultReturnValue(Long.MIN_VALUE);
     }
 
     void tick() {
@@ -83,6 +94,7 @@ final class PigAggressionController {
         currentTick++;
         cleanupMilkCooldownMap();
         cleanupResourceCooldownMap();
+        cleanupTargetCooldownMap();
         if (brains.isEmpty()) {
             return;
         }
@@ -126,15 +138,7 @@ final class PigAggressionController {
 
             processed++;
             applyVisualEffects(Pig, brain);
-            if (brain.state == PigAggressionState.WARNING) {
-                handleWarning(Pig, target, brain);
-                continue;
-            }
-
-            if (pursue(Pig, target, brain)) {
-                tryAttack(Pig, target, brain);
-                continue;
-            }
+            processState(Pig, target, brain);
 
             if (brain.targetUuid == null) {
                 removeAggressionState(PigId, Pig, brain, false);
@@ -150,6 +154,7 @@ final class PigAggressionController {
             tickSnapshot = currentTick;
             cleanupMilkCooldownMap();
             cleanupResourceCooldownMap();
+            cleanupTargetCooldownMap();
             if (brains.isEmpty()) {
                 return;
             }
@@ -213,15 +218,7 @@ final class PigAggressionController {
             }
 
             applyVisualEffects(Pig, brain);
-            if (brain.state == PigAggressionState.WARNING) {
-                handleWarning(Pig, target, brain);
-                return;
-            }
-
-            if (pursue(Pig, target, brain)) {
-                tryAttack(Pig, target, brain);
-                return;
-            }
+            processState(Pig, target, brain);
 
             if (brain.targetUuid == null) {
                 removeAggressionState(PigId, Pig, brain, false);
@@ -243,7 +240,7 @@ final class PigAggressionController {
             putCooldown(milkTriggerCooldownUntilByPlayer, playerId, PigId, currentTick + settings.rodTriggerCooldownTicks());
         }
 
-        activatePigAggression(Pig, aggressor, settings.aggressionDurationTicks(), HostilityCause.ROD_PROVOCATION);
+        activatePigAggression(Pig, aggressor, naturalPig, settings.aggressionDurationTicks(), HostilityCause.ROD_PROVOCATION);
     }
 
     boolean provokePigFromResources(
@@ -282,7 +279,7 @@ final class PigAggressionController {
         if (triggerCooldownTicks > 0) {
             putCooldown(resourceTriggerCooldownUntilByPlayer, playerId, PigId, currentTick + triggerCooldownTicks);
         }
-        return activatePigAggression(Pig, aggressor, aggressionDurationTicks, hostilityCause);
+        return activatePigAggression(Pig, aggressor, naturalPig, aggressionDurationTicks, hostilityCause);
     }
 
     void provokeNearbyPigsFromSocialAlert(
@@ -328,7 +325,7 @@ final class PigAggressionController {
             if (allyBrain != null && currentTick < allyBrain.socialAlertBlockedUntilTick) {
                 continue;
             }
-            if (!activatePigAggression(ally, aggressor, settings.aggressionDurationTicks(), hostilityCause)) {
+            if (!activatePigAggression(ally, aggressor, naturalPigPredicate.test(ally), settings.aggressionDurationTicks(), hostilityCause)) {
                 continue;
             }
             if (socialAlertSettings.joinCooldownTicks() > 0) {
@@ -349,29 +346,35 @@ final class PigAggressionController {
     }
 
     private boolean isProvocationBlocked(Pig Pig, boolean naturalPig) {
-        if (Pig == null || !Pig.isAdult()) {
+        if (Pig == null) {
             return true;
         }
         if (isWorldDisallowed(Pig.getWorld()) || Pig.getWorld().getDifficulty() == Difficulty.PEACEFUL) {
             return true;
         }
-        if (global.ignoreNamed() && Pig.customName() != null) {
-            return true;
-        }
-        if (global.onlyNatural() && !naturalPig) {
-            return true;
-        }
-        if (global.activationChance() < 1.0D && ThreadLocalRandom.current().nextDouble() > global.activationChance()) {
-            return true;
-        }
         ensureActivePigCachesFresh();
-        if (targetingIndex.activeInChunk(Pig) >= global.maxActiveHostilePerChunk()) {
+        int worldActives = targetingIndex.activeInWorld(Pig.getWorld().getUID());
+        int chunkActives = targetingIndex.activeInChunk(Pig);
+        PigAggressionBrain selfBrain = brains.get(Pig.getEntityId());
+        if (selfBrain != null
+                && selfBrain.state != PigAggressionState.IDLE
+                && selfBrain.targetUuid != null) {
+            worldActives = Math.max(0, worldActives - 1);
+            chunkActives = Math.max(0, chunkActives - 1);
+        }
+        if (chunkActives >= global.maxActiveHostilePerChunk()) {
             return true;
         }
-        return targetingIndex.activeInWorld(Pig.getWorld().getUID()) >= global.maxActiveHostilePerWorld();
+        return worldActives >= global.maxActiveHostilePerWorld();
     }
 
-    private boolean activatePigAggression(Pig Pig, Player aggressor, int aggressionDurationTicks, HostilityCause hostilityCause) {
+    private boolean activatePigAggression(
+            Pig Pig,
+            Player aggressor,
+            boolean naturalPig,
+            int aggressionDurationTicks,
+            HostilityCause hostilityCause
+    ) {
         int PigId = Pig.getEntityId();
         trackedPigs.put(PigId, Pig);
         PigAggressionBrain brain = brains.get(PigId);
@@ -381,6 +384,12 @@ final class PigAggressionController {
             resetProcessingCursor();
         }
         UUID nextTarget = aggressor.getUniqueId();
+        if (isTargetOnReactivationCooldown(nextTarget, brain)) {
+            return false;
+        }
+        if (activationPolicy.isActivationBlocked(Pig, aggressor, naturalPig(Pig, naturalPig))) {
+            return false;
+        }
         if (isRetargetBlocked(brain, nextTarget)) {
             return false;
         }
@@ -393,9 +402,10 @@ final class PigAggressionController {
         targetingIndex.replaceTarget(previousTarget, nextTarget);
         brain.targetUuid = nextTarget;
         brain.aggressionUntilTick = Math.max(brain.aggressionUntilTick, currentTick + Math.max(1, aggressionDurationTicks));
-        brain.forgetTargetAtTick = Math.max(brain.forgetTargetAtTick, currentTick + settings.forgetTargetAfterTicks());
+        int persistenceTicks = Math.max(1, (int) Math.round(settings.forgetTargetAfterTicks() * environmentCache.context(Pig.getWorld()).modifiers().targetPersistenceMultiplier()));
+        brain.forgetTargetAtTick = Math.max(brain.forgetTargetAtTick, currentTick + persistenceTicks);
         brain.warningUntilTick = currentTick + settings.warningDurationTicks();
-        brain.state = settings.warningDurationTicks() > 0 ? PigAggressionState.WARNING : PigAggressionState.CHASE;
+        transitionState(brain, settings.warningDurationTicks() > 0 ? PigAggressionState.ALERT : PigAggressionState.CHASE);
         brain.lastAttackTick = Long.MIN_VALUE;
         brain.lastAttackWallTimeMs = Long.MIN_VALUE;
         brain.nextChargeTick = currentTick + randomChargeDelay();
@@ -429,6 +439,7 @@ final class PigAggressionController {
         trackedPigs.remove(PigId);
         socialAlertCooldownUntilByPigId.remove(PigId);
         originalMovementSpeedByPigId.remove(PigId);
+        activationPolicy.forget(PigId);
         resetProcessingCursor();
         invalidateActivePigCache();
     }
@@ -470,7 +481,9 @@ final class PigAggressionController {
         milkTriggerCooldownUntilByPlayer.clear();
         resourceTriggerCooldownUntilByPlayer.clear();
         socialAlertCooldownUntilByPigId.clear();
+        targetReactivationCooldownUntil.clear();
         originalMovementSpeedByPigId.clear();
+        activationPolicy.clear();
         resetProcessingCursor();
         invalidateActivePigCache();
     }
@@ -479,14 +492,43 @@ final class PigAggressionController {
         return currentTick;
     }
 
-    private void handleWarning(Pig Pig, Player target, PigAggressionBrain brain) {
+    private void processState(Pig Pig, Player target, PigAggressionBrain brain) {
+        switch (brain.state) {
+            case IDLE -> transitionState(brain, PigAggressionState.ALERT);
+            case ALERT -> handleAlert(Pig, target, brain);
+            case CHASE -> handleChase(Pig, target, brain);
+            case ATTACK -> handleAttack(Pig, target, brain);
+        }
+    }
+
+    private void handleAlert(Pig Pig, Player target, PigAggressionBrain brain) {
         faceTarget(Pig, target);
         setAggressiveMovement(Pig, brain, 0.0D);
         if (currentTick < brain.warningUntilTick) {
             return;
         }
-        brain.state = PigAggressionState.CHASE;
+        transitionState(brain, PigAggressionState.CHASE);
         playChargeSound(Pig, target);
+    }
+
+    private void handleChase(Pig Pig, Player target, PigAggressionBrain brain) {
+        if (!pursue(Pig, target, brain)) {
+            return;
+        }
+        if (isWithinAttackWindow(Pig, target)) {
+            transitionState(brain, PigAggressionState.ATTACK);
+        }
+    }
+
+    private void handleAttack(Pig Pig, Player target, PigAggressionBrain brain) {
+        if (!isWithinAttackWindow(Pig, target)) {
+            transitionState(brain, PigAggressionState.CHASE);
+            return;
+        }
+        if (!tryAttack(Pig, target, brain)) {
+            return;
+        }
+        transitionState(brain, PigAggressionState.CHASE);
     }
 
     private boolean pursue(Pig Pig, Player target, PigAggressionBrain brain) {
@@ -498,7 +540,9 @@ final class PigAggressionController {
         }
 
         double distanceSq = distanceSq(Pig, target);
-        if (distanceSq > settings.detectionRangeSq() || Math.abs(Pig.getY() - target.getY()) > MAX_VERTICAL_GAP) {
+        EnvironmentAggressionModifiers env = environmentCache.context(Pig.getWorld()).modifiers();
+        double effectiveDetectionRangeSq = effectiveDetectionRangeSq(settings.detectionRange(), env);
+        if (distanceSq > effectiveDetectionRangeSq || Math.abs(Pig.getY() - target.getY()) > MAX_VERTICAL_GAP) {
             if (currentTick > brain.forgetTargetAtTick) {
                 calmDown(Pig, brain);
             }
@@ -536,18 +580,20 @@ final class PigAggressionController {
         return true;
     }
 
-    private void tryAttack(Pig Pig, Player target, PigAggressionBrain brain) {
+    private boolean tryAttack(Pig Pig, Player target, PigAggressionBrain brain) {
         if (!isWithinAttackWindow(Pig, target)) {
-            return;
+            return false;
         }
         long nowMs = System.currentTimeMillis();
-        long cooldownMs = Math.max(50L, (long) settings.attackCooldownTicks() * 50L);
+        long effectiveCooldownTicks = Math.max(1L, Math.round(settings.attackCooldownTicks() * environmentCache.context(Pig.getWorld()).modifiers().attackCooldownMultiplier()));
+        long cooldownMs = Math.max(50L, effectiveCooldownTicks * 50L);
         if (brain.lastAttackWallTimeMs != Long.MIN_VALUE && nowMs - brain.lastAttackWallTimeMs < cooldownMs) {
-            return;
+            return false;
         }
-        double finalDamage = settings.attackDamage() * resolveDamageMultiplier(Pig.getWorld());
+        double envDamageMultiplier = environmentCache.context(Pig.getWorld()).modifiers().attackDamageMultiplier();
+        double finalDamage = settings.attackDamage() * resolveDamageMultiplier(Pig.getWorld()) * envDamageMultiplier;
         if (finalDamage <= 0.0D) {
-            return;
+            return false;
         }
 
         brain.lastAttackTick = currentTick;
@@ -566,6 +612,7 @@ final class PigAggressionController {
             target.setVelocity(velocity);
         }
         playAttackSound(Pig, target);
+        return true;
     }
 
     private boolean isWithinAttackWindow(Pig Pig, Player target) {
@@ -607,7 +654,8 @@ final class PigAggressionController {
             originalBase = movement.getBaseValue();
             originalMovementSpeedByPigId.put(PigId, originalBase);
         }
-        double desired = originalBase * (1.0D + ((settings.speedMultiplier() - 1.0D) * Math.max(0.0D, intensity)));
+        double envSpeedMultiplier = environmentCache.context(Pig.getWorld()).modifiers().movementSpeedMultiplier();
+        double desired = originalBase * (1.0D + (((settings.speedMultiplier() * envSpeedMultiplier) - 1.0D) * Math.max(0.0D, intensity)));
         desired = Math.clamp(desired, 0.05D, 0.8D);
         if (Double.isNaN(brain.lastMovementBaseValue)
                 || Math.abs(brain.lastMovementBaseValue - desired) >= MOVEMENT_ATTRIBUTE_EPSILON) {
@@ -618,12 +666,23 @@ final class PigAggressionController {
     }
 
     private void calmDown(Pig Pig, PigAggressionBrain brain) {
+        UUID cooledTarget = brain.targetUuid;
         targetingIndex.replaceTarget(brain.targetUuid, null);
         Pig.setTarget(null);
         Pig.setAggressive(false);
         restorePigRuntimeState(Pig, brain);
         brain.targetUuid = null;
+        transitionState(brain, PigAggressionState.IDLE);
+        applyTargetReactivationCooldown(cooledTarget);
         invalidateActivePigCache();
+    }
+
+    private void transitionState(PigAggressionBrain brain, PigAggressionState nextState) {
+        if (brain.state == nextState) {
+            return;
+        }
+        brain.state = nextState;
+        brain.stateStartedTick = currentTick;
     }
 
     private boolean hasLineOfSight(Pig Pig, Player target, PigAggressionBrain brain) {
@@ -680,6 +739,13 @@ final class PigAggressionController {
         cleanupCooldownMap(resourceTriggerCooldownUntilByPlayer);
     }
 
+    private void cleanupTargetCooldownMap() {
+        if (targetReactivationCooldownUntil.isEmpty()) {
+            return;
+        }
+        targetReactivationCooldownUntil.object2LongEntrySet().removeIf(entry -> currentTick >= entry.getLongValue());
+    }
+
     private boolean isCooldownActive(Map<UUID, Int2LongOpenHashMap> cooldowns, UUID playerId, int PigId) {
         Int2LongOpenHashMap cooldownByPigId = cooldowns.get(playerId);
         return cooldownByPigId != null && currentTick < cooldownByPigId.get(PigId);
@@ -703,6 +769,30 @@ final class PigAggressionController {
                 iterator.remove();
             }
         }
+    }
+
+    private boolean isTargetOnReactivationCooldown(UUID targetUuid, PigAggressionBrain brain) {
+        if (targetUuid == null) {
+            return false;
+        }
+        if (brain != null && targetUuid.equals(brain.targetUuid)) {
+            return false;
+        }
+        return currentTick < targetReactivationCooldownUntil.getLong(targetUuid);
+    }
+
+    private void applyTargetReactivationCooldown(UUID targetUuid) {
+        if (targetUuid == null || TARGET_REACTIVATION_COOLDOWN_TICKS <= 0) {
+            return;
+        }
+        targetReactivationCooldownUntil.put(targetUuid, currentTick + TARGET_REACTIVATION_COOLDOWN_TICKS);
+    }
+
+    private boolean naturalPig(Pig pig, boolean providedNatural) {
+        if (!global.onlyNatural()) {
+            return true;
+        }
+        return pig != null && providedNatural;
     }
 
     private void playWarningAudio(Pig Pig, Player target) {
@@ -847,6 +937,7 @@ final class PigAggressionController {
         trackedPigs.remove(PigId);
         socialAlertCooldownUntilByPigId.remove(PigId);
         originalMovementSpeedByPigId.remove(PigId);
+        activationPolicy.forget(PigId);
         resetProcessingCursor();
         invalidateActivePigCache();
     }
@@ -882,6 +973,10 @@ final class PigAggressionController {
         rebuildActivePigCaches();
     }
 
+    private static double effectiveDetectionRangeSq(double baseDetectionRange, EnvironmentAggressionModifiers env) {
+        double effectiveRange = Math.max(1.0D, (baseDetectionRange * env.detectionRadiusMultiplier()) + env.detectionRadiusBonus());
+        return effectiveRange * effectiveRange;
+    }
     private void rebuildActivePigCaches() {
         targetingIndex.clear();
         for (Pig Pig : trackedPigs.values()) {
@@ -895,6 +990,8 @@ final class PigAggressionController {
     }
 
 }
+
+
 
 
 

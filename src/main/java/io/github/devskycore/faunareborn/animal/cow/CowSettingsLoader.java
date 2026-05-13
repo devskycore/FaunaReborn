@@ -14,6 +14,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionSettings;
 
 public final class CowSettingsLoader implements EntitySettingsLoader<CowSettings> {
 
@@ -275,7 +276,8 @@ public final class CowSettingsLoader implements EntitySettingsLoader<CowSettings
                 socialAlert.joinCooldownTicks(),
                 socialAlert.maxResponders()
         );
-        return new CowSettings(moduleEnabled, milkProvocation, resourceProvocation, socialAlert, loadGlobalHostilitySettings());
+        return new CowSettings(moduleEnabled, milkProvocation, resourceProvocation, socialAlert, loadGlobalHostilitySettings(),
+                EnvironmentAggressionSettings.fromConfig(config, ""));
     }
 
     private CowSettings.GlobalHostilitySettings loadGlobalHostilitySettings() {
@@ -472,3 +474,4 @@ public final class CowSettingsLoader implements EntitySettingsLoader<CowSettings
         return Math.min(value, max);
     }
 }
+

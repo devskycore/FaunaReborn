@@ -15,6 +15,7 @@ import org.bukkit.Difficulty;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.Map;
+import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionSettings;
 
 public final class ChickenHostilitySettingsLoader {
 
@@ -51,6 +52,7 @@ public final class ChickenHostilitySettingsLoader {
         WorldFilter worldFilter = worldFilterReader.readWorldFilter(config);
         NightBehaviorConfigValues nightBehavior = nightBehaviorReader.read(config);
         ItemPickupTerritorialityConfig itemPickupTerritoriality = itemPickupTerritorialityReader.read(config);
+        EnvironmentAggressionSettings environmentAggressionSettings = EnvironmentAggressionSettings.fromConfig(config, "");
         ConfigNumbers numbers = new ConfigNumbers(plugin);
         FileConfiguration globalConfig = plugin.getConfig();
         String visualRoot = "visual-effects";
@@ -166,8 +168,10 @@ public final class ChickenHostilitySettingsLoader {
                 damageScaling,
                 activation,
                 worldFilter,
-                itemPickupTerritoriality
+                itemPickupTerritoriality,
+                environmentAggressionSettings
         );
     }
 
 }
+

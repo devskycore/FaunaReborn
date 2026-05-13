@@ -4,13 +4,15 @@ import io.github.devskycore.faunareborn.config.common.WorldFilter;
 import io.github.devskycore.faunareborn.config.entity.EntitySettings;
 
 import java.util.Map;
+import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionSettings;
 
 public record PigSettings(
         boolean enabled,
         RodProvocationSettings rodProvocation,
         ResourceProvocationSettings resourceProvocation,
         SocialAlertSettings socialAlert,
-        GlobalHostilitySettings globalHostility
+        GlobalHostilitySettings globalHostility,
+        EnvironmentAggressionSettings environmentAggression
 ) implements EntitySettings {
 
     public record RodProvocationSettings(
@@ -98,4 +100,5 @@ public record PigSettings(
     ) {
     }
 }
+
 

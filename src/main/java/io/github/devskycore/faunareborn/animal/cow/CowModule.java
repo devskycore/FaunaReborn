@@ -19,7 +19,8 @@ public final class CowModule implements FaunaModule {
                     settings.milkProvocation(),
                     settings.resourceProvocation(),
                     settings.socialAlert(),
-                    settings.globalHostility()
+                    settings.globalHostility(),
+                    settings.environmentAggression()
             );
         }
     }
@@ -54,3 +55,4 @@ public final class CowModule implements FaunaModule {
         }
     }
 }
+

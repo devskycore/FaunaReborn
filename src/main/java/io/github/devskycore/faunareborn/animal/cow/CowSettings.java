@@ -4,13 +4,15 @@ import io.github.devskycore.faunareborn.config.common.WorldFilter;
 import io.github.devskycore.faunareborn.config.entity.EntitySettings;
 
 import java.util.Map;
+import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionSettings;
 
 public record CowSettings(
         boolean enabled,
         MilkProvocationSettings milkProvocation,
         ResourceProvocationSettings resourceProvocation,
         SocialAlertSettings socialAlert,
-        GlobalHostilitySettings globalHostility
+        GlobalHostilitySettings globalHostility,
+        EnvironmentAggressionSettings environmentAggression
 ) implements EntitySettings {
 
     public record MilkProvocationSettings(
@@ -98,3 +100,4 @@ public record CowSettings(
     ) {
     }
 }
+

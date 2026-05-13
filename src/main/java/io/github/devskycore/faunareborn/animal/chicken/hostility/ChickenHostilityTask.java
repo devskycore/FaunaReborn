@@ -106,7 +106,7 @@ final class ChickenHostilityTask implements Listener {
         this.retargetGraceTicks = combat.retargetGraceTicks();
         this.processingRadius = Math.max(combat.detectionRadius(), ChickenHostilityConstants.PLAYER_PROXIMITY_RADIUS);
 
-        this.worldNightStateCache = new WorldNightStateCache(plugin);
+        this.worldNightStateCache = new WorldNightStateCache(plugin, settings.environmentAggression());
         this.activationPolicy = new ActivationPolicy(plugin, settings.activation(), settings.worldFilter());
         this.targetingService = new ChickenTargetingService(plugin, tracker, activationPolicy, combat, limits);
         this.movementController = new MovementController(combat, settings.movement());

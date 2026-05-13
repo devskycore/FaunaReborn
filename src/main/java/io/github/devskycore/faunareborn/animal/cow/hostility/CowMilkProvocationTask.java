@@ -2,6 +2,8 @@ package io.github.devskycore.faunareborn.animal.cow.hostility;
 
 import io.github.devskycore.faunareborn.animal.cow.CowSettings;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
+import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionSettings;
+import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
 import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapter;
 import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapters;
 import io.github.devskycore.faunareborn.system.scheduler.TaskHandle;
@@ -15,6 +17,7 @@ public final class CowMilkProvocationTask {
     private final SchedulerAdapter scheduler;
     private final CowMilkAggressionController aggressionController;
     private final CowMilkInteractionListener interactionListener;
+    private final WorldEnvironmentContextCache environmentCache;
 
     private TaskHandle task;
 
@@ -23,18 +26,21 @@ public final class CowMilkProvocationTask {
             CowSettings.MilkProvocationSettings settings,
             CowSettings.ResourceProvocationSettings resourceSettings,
             CowSettings.SocialAlertSettings socialAlertSettings,
-            CowSettings.GlobalHostilitySettings globalSettings
+            CowSettings.GlobalHostilitySettings globalSettings,
+            EnvironmentAggressionSettings environmentSettings
     ) {
         this.plugin = plugin;
         this.scheduler = SchedulerAdapters.create(plugin);
-        this.aggressionController = new CowMilkAggressionController(scheduler, settings, globalSettings);
+        this.environmentCache = new WorldEnvironmentContextCache(plugin, environmentSettings);
+        this.aggressionController = new CowMilkAggressionController(scheduler, settings, globalSettings, environmentCache);
         this.interactionListener = new CowMilkInteractionListener(
                 plugin,
                 settings,
                 socialAlertSettings,
                 globalSettings,
                 aggressionController,
-                resourceSettings
+                resourceSettings,
+                environmentCache
         );
     }
 
@@ -42,6 +48,7 @@ public final class CowMilkProvocationTask {
         if (task != null) {
             return;
         }
+        environmentCache.start();
         plugin.getServer().getPluginManager().registerEvents(interactionListener, plugin);
         task = scheduler.runAtFixedRate(aggressionController::tick, 1L, TICK_RATE);
     }
@@ -54,5 +61,6 @@ public final class CowMilkProvocationTask {
         HandlerList.unregisterAll(interactionListener);
         interactionListener.clearState();
         aggressionController.clearAll();
+        environmentCache.stop();
     }
 }

@@ -23,6 +23,7 @@ final class PigAggressionBrain {
     long nextParticleTick;
     long warningUntilTick;
     long socialAlertBlockedUntilTick;
+    long stateStartedTick;
     HostilityCause hostilityCause;
     PigAggressionState state;
 
@@ -33,8 +34,9 @@ final class PigAggressionBrain {
         this.lastLineOfSightResult = true;
         this.lastMovementBaseValue = Double.NaN;
         this.socialAlertBlockedUntilTick = Long.MIN_VALUE;
+        this.stateStartedTick = 0L;
         this.hostilityCause = HostilityCause.DIRECT_ASSAULT;
-        this.state = PigAggressionState.WARNING;
+        this.state = PigAggressionState.IDLE;
     }
 }
 

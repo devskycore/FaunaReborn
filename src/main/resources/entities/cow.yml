@@ -76,3 +76,49 @@ cow-resource-provocation:
   trigger-cooldown-seconds: 2.5
   # Threat duration applied when resource provocation triggers.
   aggression-duration-seconds: 10.0
+
+environment-modifiers:
+  enabled: true
+  debug: false
+  cache:
+    refresh-interval-seconds: 5
+  rain:
+    enabled: true
+    aggression-multiplier: 1.10
+    detection-radius-multiplier: 1.08
+    attack-damage-multiplier: 1.05
+    movement-speed-multiplier: 1.04
+    social-alert-multiplier: 1.08
+    pickup-requirement-multiplier: 0.90
+  thunderstorm:
+    enabled: true
+    aggression-multiplier: 1.22
+    detection-radius-multiplier: 1.16
+    attack-damage-multiplier: 1.10
+    movement-speed-multiplier: 1.08
+    attack-cooldown-multiplier: 0.92
+    social-alert-multiplier: 1.20
+    target-persistence-multiplier: 1.20
+    pickup-requirement-multiplier: 0.78
+  full-moon:
+    enabled: true
+    aggression-multiplier: 1.28
+    detection-radius-bonus: 1.25
+    attack-damage-multiplier: 1.08
+    movement-speed-multiplier: 1.06
+    social-alert-multiplier: 1.18
+    target-persistence-multiplier: 1.18
+    pickup-requirement-multiplier: 0.82
+  combinations:
+    night-rain:
+      enabled: true
+      aggression-multiplier: 1.10
+    night-thunderstorm:
+      enabled: true
+      aggression-multiplier: 1.28
+      detection-radius-multiplier: 1.18
+      attack-cooldown-multiplier: 0.88
+    night-full-moon:
+      enabled: true
+      aggression-multiplier: 1.32
+      social-alert-multiplier: 1.24

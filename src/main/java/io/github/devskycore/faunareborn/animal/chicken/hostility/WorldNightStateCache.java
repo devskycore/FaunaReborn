@@ -1,87 +1,32 @@
 package io.github.devskycore.faunareborn.animal.chicken.hostility;
 
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
-import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
+import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionSettings;
+import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContext;
+import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
 import org.bukkit.World;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.HandlerList;
-import org.bukkit.event.Listener;
-import org.bukkit.event.world.WorldLoadEvent;
-import org.bukkit.event.world.WorldUnloadEvent;
 
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
+final class WorldNightStateCache {
 
-final class WorldNightStateCache implements Listener {
+    private final WorldEnvironmentContextCache delegate;
 
-    private static final long REFRESH_INTERVAL_TICKS = 60L;
-    private static final long NIGHT_START_TICK = 13000L;
-    private static final long NIGHT_END_TICK = 23000L;
-
-    private final FaunaRebornPlugin plugin;
-    private final Map<UUID, Boolean> nightByWorldId = new ConcurrentHashMap<>();
-
-    private ScheduledTask refreshTask;
-
-    WorldNightStateCache(FaunaRebornPlugin plugin) {
-        this.plugin = plugin;
+    WorldNightStateCache(FaunaRebornPlugin plugin, EnvironmentAggressionSettings settings) {
+        this.delegate = new WorldEnvironmentContextCache(plugin, settings);
     }
 
     void start() {
-        if (refreshTask != null) {
-            return;
-        }
-
-        plugin.getServer().getPluginManager().registerEvents(this, plugin);
-        refreshAllWorlds();
-        refreshTask = plugin.getServer()
-                .getGlobalRegionScheduler()
-                .runAtFixedRate(plugin, task -> refreshAllWorlds(), REFRESH_INTERVAL_TICKS, REFRESH_INTERVAL_TICKS);
+        delegate.start();
     }
 
     void stop() {
-        if (refreshTask != null) {
-            refreshTask.cancel();
-            refreshTask = null;
-        }
-        HandlerList.unregisterAll(this);
-        nightByWorldId.clear();
+        delegate.stop();
     }
 
     boolean isNight(World world) {
-        if (world == null) {
-            return false;
-        }
-        Boolean cached = nightByWorldId.get(world.getUID());
-        if (cached != null) {
-            return cached;
-        }
-        boolean night = computeNight(world);
-        nightByWorldId.put(world.getUID(), night);
-        return night;
+        return delegate.context(world).night();
     }
 
-    @EventHandler
-    private void onWorldLoad(WorldLoadEvent event) {
-        World world = event.getWorld();
-        nightByWorldId.put(world.getUID(), computeNight(world));
-    }
-
-    @EventHandler
-    private void onWorldUnload(WorldUnloadEvent event) {
-        nightByWorldId.remove(event.getWorld().getUID());
-    }
-
-    private void refreshAllWorlds() {
-        for (World world : plugin.getServer().getWorlds()) {
-            nightByWorldId.put(world.getUID(), computeNight(world));
-        }
-    }
-
-    private boolean computeNight(World world) {
-        long time = world.getTime();
-        return time >= NIGHT_START_TICK && time <= NIGHT_END_TICK;
+    WorldEnvironmentContext context(World world) {
+        return delegate.context(world);
     }
 }
-
