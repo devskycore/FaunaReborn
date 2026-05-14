@@ -1,0 +1,60 @@
+name: Feature request
+description: Propose an improvement for FaunaReborn.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggest a focused, practical improvement. Large proposals should be split into phases.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What pain point are you experiencing today?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe your preferred approach.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What other options did you evaluate?
+    validations:
+      required: false
+
+  - type: textarea
+    id: config_impact
+    attributes:
+      label: Configuration and compatibility impact
+      description: Mention expected config changes, defaults, or migration impact.
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Mockups, examples, references, related plugins, etc.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched for existing feature requests before submitting this one.
+          required: true
+        - label: This request is focused and actionable.
+          required: true
