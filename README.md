@@ -70,6 +70,8 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 | `/fauna entities` | Lists supported entities and enabled/disabled state. | `fauna.command.entities` |
 | `/fauna reload` | Reloads plugin configuration and modules. | `fauna.command.reload` (or `fauna.admin` / `fauna.*`) |
 | `/fauna gui` | Opens the FaunaReborn management GUI. | `fauna.command.gui` (or `fauna.admin` / `fauna.*`) |
+| `/fauna lang` | Opens the language selection menu (players) or prints usage in console. | `fauna.command.lang` (or `fauna.admin` / `fauna.*`) |
+| `/fauna lang <language>` | Changes plugin language at runtime (for example `en`, `es`). | `fauna.command.lang` (or `fauna.admin` / `fauna.*`) |
 
 ### Aliases
 - `/faunareborn`
@@ -90,6 +92,7 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 | `fauna.command.entities` | Allows viewing supported FaunaReborn entities. | `true` |
 | `fauna.command.reload` | Allows reloading configuration and modules. | `op` |
 | `fauna.command.gui` | Allows opening the admin GUI. | `op` |
+| `fauna.command.lang` | Allows changing plugin language at runtime. | `op` |
 
 ## Requirements
 
@@ -115,7 +118,7 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 ## Quick Configuration Notes
 
 - `global-enabled`: master switch.
-- `language.file`: selects the language file from `plugins/FaunaReborn/lang/` (for example `english.yml` or `spanish.yml`).
+- `language.file`: selects the language by code (for example `en` or `es`).
 - `world-filter`: global activation mode and world list.
 - `lod`: distance-based LOD tiers with hysteresis and per-tier tick cadence.
 - `targeting.scoring`: weighted target priority behavior.

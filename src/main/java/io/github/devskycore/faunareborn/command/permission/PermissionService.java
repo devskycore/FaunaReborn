@@ -36,6 +36,14 @@ public final class PermissionService {
         );
     }
 
+    public boolean canUseLang(CommandSender sender) {
+        return PermissionConstants.hasAny(sender,
+                PermissionConstants.COMMAND_LANG,
+                PermissionConstants.ADMIN,
+                PermissionConstants.WILDCARD
+        );
+    }
+
     public boolean canViewAdminHelp(CommandSender sender) {
         return PermissionConstants.hasAny(sender,
                 PermissionConstants.COMMAND_HELP_ADMIN,

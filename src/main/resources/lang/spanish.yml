@@ -28,6 +28,9 @@
     gui:
       usage: "/fauna gui"
       description: "Abre la GUI administrativa de FaunaReborn."
+    lang:
+      usage: "/fauna lang <idioma>"
+      description: "Cambia el idioma activo del plugin."
   help:
     none-available: "No hay comandos disponibles para ti."
     usage: "Usa: /fauna help [page]"
@@ -56,6 +59,11 @@
     started: "Recarga de FaunaReborn iniciada..."
     completed: "Recarga de FaunaReborn completada en {elapsedMillis} ms."
     failed: "La recarga de FaunaReborn falló. La configuración anterior sigue activa."
+  lang:
+    usage: "Uso: /fauna lang <idioma>"
+    available: "Idiomas disponibles: {languages}"
+    invalid: "El idioma '{language}' no existe. Disponibles: {languages}"
+    changed: "Idioma cambiado a {language}."
 
 gui:
   title:
@@ -70,6 +78,22 @@ gui:
     chicken: "POLLO"
     cow: "VACA"
     pig: "CERDO"
+  language:
+    title-main: "IDIOMA"
+    title-tail: "Seleccionar"
+    button-main: "IDIOMA"
+    button-tail: "Menu"
+    current-prefix: "Actual"
+    click-to-open: "Haz clic para cambiar el idioma"
+    status-label: "Estado"
+    selected: "SELECCIONADO"
+    available: "DISPONIBLE"
+    click-to-select: "Haz clic para seleccionar"
+    back-main: "VOLVER"
+    back-tail: "Menu Principal"
+    back-description: "Volver al panel de control"
+    back-click: "Haz clic para volver"
+    changed: "Idioma cambiado a {file}."
   toggle:
     click-to-toggle: "Haz clic para alternar la hostilidad"
     applying-update: "Aplicando actualización en tiempo de ejecución..."

@@ -28,6 +28,9 @@ commands:
     gui:
       usage: "/fauna gui"
       description: "Open the FaunaReborn admin GUI."
+    lang:
+      usage: "/fauna lang <language>"
+      description: "Change active plugin language."
   help:
     none-available: "No commands are available to you."
     usage: "Usage: /fauna help [page]"
@@ -56,6 +59,11 @@ commands:
     started: "FaunaReborn reload started..."
     completed: "FaunaReborn reload completed in {elapsedMillis} ms."
     failed: "FaunaReborn reload failed. Previous configuration is still active."
+  lang:
+    usage: "Usage: /fauna lang <language>"
+    available: "Available languages: {languages}"
+    invalid: "Language '{language}' not found. Available: {languages}"
+    changed: "Language changed to {language}."
 
 gui:
   title:
@@ -70,6 +78,22 @@ gui:
     chicken: "CHICKEN"
     cow: "COW"
     pig: "PIG"
+  language:
+    title-main: "LANGUAGE"
+    title-tail: "Select"
+    button-main: "LANGUAGE"
+    button-tail: "Menu"
+    current-prefix: "Current"
+    click-to-open: "Click to change language"
+    status-label: "Status"
+    selected: "SELECTED"
+    available: "AVAILABLE"
+    click-to-select: "Click to select"
+    back-main: "BACK"
+    back-tail: "Main Menu"
+    back-description: "Return to the control panel"
+    back-click: "Click to go back"
+    changed: "Language changed to {file}."
   toggle:
     click-to-toggle: "Click to toggle hostility"
     applying-update: "Applying runtime update..."

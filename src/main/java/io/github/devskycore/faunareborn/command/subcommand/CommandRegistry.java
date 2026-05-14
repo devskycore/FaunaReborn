@@ -107,8 +107,9 @@ public final class CommandRegistry {
             AboutCommand about,
             EntitiesCommand entities,
             ReloadCommand reload,
-            GuiCommand gui
+            GuiCommand gui,
+            LangCommand lang
     ) {
-        return List.of(help, version, about, entities, reload, gui);
+        return List.of(help, version, about, entities, reload, gui, lang);
     }
 }

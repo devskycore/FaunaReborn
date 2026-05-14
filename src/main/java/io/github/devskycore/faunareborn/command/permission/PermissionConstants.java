@@ -14,6 +14,7 @@ public final class PermissionConstants {
     public static final String COMMAND_ENTITIES = "fauna.command.entities";
     public static final String COMMAND_RELOAD = "fauna.command.reload";
     public static final String COMMAND_GUI = "fauna.command.gui";
+    public static final String COMMAND_LANG = "fauna.command.lang";
 
     private PermissionConstants() {
     }

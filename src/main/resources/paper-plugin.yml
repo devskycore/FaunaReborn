@@ -23,6 +23,7 @@ permissions:
       fauna.command.entities: true
       fauna.command.reload: true
       fauna.command.gui: true
+      fauna.command.lang: true
 
   fauna.admin:
     description: Grants access to FaunaReborn administrative commands.
@@ -30,6 +31,7 @@ permissions:
     children:
       fauna.command.reload: true
       fauna.command.gui: true
+      fauna.command.lang: true
 
   fauna.command.help:
     description: Allows viewing the FaunaReborn help menu.
@@ -57,4 +59,8 @@ permissions:
 
   fauna.command.gui:
     description: Allows opening the FaunaReborn admin GUI.
+    default: op
+
+  fauna.command.lang:
+    description: Allows changing FaunaReborn language at runtime.
     default: op

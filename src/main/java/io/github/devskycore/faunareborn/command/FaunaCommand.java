@@ -7,6 +7,7 @@ import io.github.devskycore.faunareborn.command.subcommand.CommandRegistry;
 import io.github.devskycore.faunareborn.command.subcommand.EntitiesCommand;
 import io.github.devskycore.faunareborn.command.subcommand.GuiCommand;
 import io.github.devskycore.faunareborn.command.subcommand.HelpCommand;
+import io.github.devskycore.faunareborn.command.subcommand.LangCommand;
 import io.github.devskycore.faunareborn.command.subcommand.ReloadCommand;
 import io.github.devskycore.faunareborn.command.subcommand.VersionCommand;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
@@ -38,7 +39,8 @@ public final class FaunaCommand implements BasicCommand {
                         new AboutCommand(language),
                         new EntitiesCommand(guiConfigService, language),
                         new ReloadCommand(plugin.reloadService()),
-                        new GuiCommand(mainGui, commandMessages)
+                        new GuiCommand(mainGui, commandMessages),
+                        new LangCommand(language, mainGui)
                 ),
                 permissionService,
                 commandMessages
