@@ -4,6 +4,7 @@ import io.github.devskycore.faunareborn.config.entity.EntitySettings;
 import io.github.devskycore.faunareborn.config.common.WorldFilter;
 import io.github.devskycore.faunareborn.config.common.TargetingSettings;
 import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionSettings;
+import io.github.devskycore.faunareborn.system.lod.LodSettings;
 import java.util.Map;
 import java.util.Objects;
 
@@ -19,7 +20,8 @@ public record ChickenHostilitySettings(
         WorldFilter worldFilter,
         TargetingSettings targeting,
         ItemPickupTerritorialityConfig itemPickupTerritoriality,
-        EnvironmentAggressionSettings environmentAggression
+        EnvironmentAggressionSettings environmentAggression,
+        LodSettings lod
 ) implements EntitySettings {
 
     public ChickenHostilitySettings {
@@ -34,6 +36,7 @@ public record ChickenHostilitySettings(
         Objects.requireNonNull(targeting, "targeting");
         Objects.requireNonNull(itemPickupTerritoriality, "itemPickupTerritoriality");
         Objects.requireNonNull(environmentAggression, "environmentAggression");
+        Objects.requireNonNull(lod, "lod");
     }
 
     public record Combat(

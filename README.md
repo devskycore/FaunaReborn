@@ -6,6 +6,8 @@ FaunaReborn is a premium-style Paper/Folia plugin that transforms chickens, cows
 
 ## About
 
+![About Banner](./assets/images/Banner_About.png)
+
 FaunaReborn is built for servers that want more tension, replayability and survival depth without replacing vanilla identity.
 
 - Native Paper support (`1.21+` API).
@@ -14,6 +16,8 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 - Production-focused config layout with world filtering and hard safety caps.
 
 ## Key Features
+
+![Features Banner](./assets/images/Banner_Features.png)
 
 ### Combat AI and Provocation Systems
 - **Chicken Hostility Engine** with multi-attacker control, threat decay, line-of-sight logic, and configurable movement behavior.
@@ -37,6 +41,7 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 - Ignore filters for adventure mode, invisibility, vanish and god-mode setups.
 
 ### Performance and Stability
+- Built-in LOD (Level of Detail) tiers with hysteresis and per-tier tick intervals.
 - Global/chunk processing caps to avoid spikes.
 - Tick-level processing limits.
 - Cache-based environment context updates.
@@ -48,6 +53,8 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 - Config-driven world filtering (`ALL`, `WHITELIST`, `BLACKLIST`).
 
 ## Commands
+
+![Commands Banner](./assets/images/Banner_Commands.png)
 
 | Command | Description | Permission |
 |---|---|---|
@@ -64,6 +71,8 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 - `/fr`
 
 ## Permissions
+
+![Permissions Banner](./assets/images/Banner_Permissions.png)
 
 | Permission | Description | Default |
 |---|---|---|
@@ -100,9 +109,62 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 
 - `global-enabled`: master switch.
 - `world-filter`: global activation mode and world list.
+- `lod`: distance-based LOD tiers with hysteresis and per-tier tick cadence.
 - `targeting.scoring`: weighted target priority behavior.
 - `activation.*`: natural-spawn and naming filters.
 - Entity files (`entities/*.yml`): species-specific aggression, social and environmental behavior.
+
+### LOD Presets
+
+Use one of the following `lod` blocks in `config.yml` depending on your server profile.
+
+#### SMP Balanced (Recommended)
+```yaml
+lod:
+  enabled: true
+  hysteresis-distance: 3.0
+  distances:
+    high: 14.0
+    medium: 28.0
+    low: 44.0
+  interval-ticks:
+    high: 1
+    medium: 2
+    low: 5
+    off: 10
+```
+
+#### Hardcore (More pressure, higher CPU cost)
+```yaml
+lod:
+  enabled: true
+  hysteresis-distance: 2.0
+  distances:
+    high: 18.0
+    medium: 34.0
+    low: 52.0
+  interval-ticks:
+    high: 1
+    medium: 2
+    low: 4
+    off: 8
+```
+
+#### Mega-Server (Best scalability)
+```yaml
+lod:
+  enabled: true
+  hysteresis-distance: 4.0
+  distances:
+    high: 10.0
+    medium: 22.0
+    low: 36.0
+  interval-ticks:
+    high: 2
+    medium: 4
+    low: 8
+    off: 14
+```
 
 ## Why Server Owners Choose FaunaReborn
 
@@ -116,6 +178,8 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 FaunaReborn is a configurable hostile-fauna combat plugin for Paper/Folia servers, featuring per-species AI modules, social propagation, weather/moon aggression scaling, GUI controls, and performance-focused safeguards.
 
 ## Support
+
+![Support Banner](./assets/images/Banner_Support.png)
 
 Use the repository channels according to purpose:
 

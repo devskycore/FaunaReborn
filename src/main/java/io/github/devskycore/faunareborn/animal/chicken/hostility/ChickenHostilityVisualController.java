@@ -6,6 +6,7 @@ import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
 import org.bukkit.entity.Chicken;
+import io.github.devskycore.faunareborn.system.lod.LodTier;
 
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -44,9 +45,9 @@ final class ChickenHostilityVisualController {
         this.soundVolume = (float) Math.clamp(soundVolume, MIN_VISUAL_VOLUME, MAX_VISUAL_VOLUME);
     }
 
-    void sync(int chickenId, Chicken chicken, ChickenHostilityBrain brain, long currentTick) {
+    void sync(int chickenId, Chicken chicken, ChickenHostilityBrain brain, long currentTick, LodTier lodTier) {
         if (brain != null && isAggressiveState(brain.state) && chicken.isValid() && !chicken.isDead()) {
-            activate(chickenId, chicken, currentTick);
+            activate(chickenId, chicken, currentTick, lodTier == null ? LodTier.HIGH : lodTier);
             return;
         }
 
@@ -110,31 +111,37 @@ final class ChickenHostilityVisualController {
             }
 
             VisualState visualState = entry.getValue();
+            if (visualState.lodTier == LodTier.OFF) {
+                continue;
+            }
             if (glowEnabled && !chicken.isGlowing()) {
                 chicken.setGlowing(true);
             }
 
-            if (particlesEnabled && currentTick >= visualState.nextParticleTick) {
+            if (particlesEnabled && visualState.lodTier != LodTier.LOW && currentTick >= visualState.nextParticleTick) {
                 spawnSubtleParticles(chicken);
-                visualState.nextParticleTick = currentTick + nextParticleIntervalTicks();
+                visualState.nextParticleTick = currentTick + nextParticleIntervalTicks(visualState.lodTier);
             }
 
-            if (soundEnabled && currentTick >= visualState.nextSoundTick) {
+            if (soundEnabled && visualState.lodTier == LodTier.HIGH && currentTick >= visualState.nextSoundTick) {
                 playSubtleSound(chicken);
-                visualState.nextSoundTick = currentTick + nextSoundIntervalTicks();
+                visualState.nextSoundTick = currentTick + nextSoundIntervalTicks(visualState.lodTier);
             }
         }
     }
 
-    private void activate(int chickenId, Chicken chicken, long currentTick) {
+    private void activate(int chickenId, Chicken chicken, long currentTick, LodTier lodTier) {
         VisualState visualState = activeVisuals.get(chickenId);
         if (visualState == null) {
             visualState = new VisualState(
                     chicken.isGlowing(),
-                    currentTick + Math.floorMod(chickenId, particlesIntervalTicks),
-                    currentTick + nextSoundIntervalTicks()
+                    currentTick + Math.floorMod(chickenId, Math.max(1, nextParticleIntervalTicks(lodTier))),
+                    currentTick + nextSoundIntervalTicks(lodTier),
+                    lodTier
             );
             activeVisuals.put(chickenId, visualState);
+        } else {
+            visualState.lodTier = lodTier;
         }
 
         if (glowEnabled && !chicken.isGlowing()) {
@@ -180,23 +187,34 @@ final class ChickenHostilityVisualController {
         );
     }
 
-    private int nextParticleIntervalTicks() {
-        return particlesIntervalTicks;
+    private int nextParticleIntervalTicks(LodTier lodTier) {
+        return switch (lodTier) {
+            case HIGH -> particlesIntervalTicks;
+            case MEDIUM -> Math.min(MAX_INTERVAL_TICKS, particlesIntervalTicks * 2);
+            case LOW -> Math.min(MAX_INTERVAL_TICKS, particlesIntervalTicks * 4);
+            case OFF -> MAX_INTERVAL_TICKS;
+        };
     }
 
-    private int nextSoundIntervalTicks() {
-        return soundIntervalTicks;
+    private int nextSoundIntervalTicks(LodTier lodTier) {
+        return switch (lodTier) {
+            case HIGH -> soundIntervalTicks;
+            case MEDIUM -> Math.min(MAX_INTERVAL_TICKS, soundIntervalTicks * 2);
+            case LOW, OFF -> MAX_INTERVAL_TICKS;
+        };
     }
 
     private static final class VisualState {
         private final boolean originallyGlowing;
         private long nextParticleTick;
         private long nextSoundTick;
+        private LodTier lodTier;
 
-        private VisualState(boolean originallyGlowing, long nextParticleTick, long nextSoundTick) {
+        private VisualState(boolean originallyGlowing, long nextParticleTick, long nextSoundTick, LodTier lodTier) {
             this.originallyGlowing = originallyGlowing;
             this.nextParticleTick = nextParticleTick;
             this.nextSoundTick = nextSoundTick;
+            this.lodTier = lodTier;
         }
     }
 }

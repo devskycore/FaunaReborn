@@ -13,11 +13,13 @@ import io.github.devskycore.faunareborn.config.common.WorldFilter;
 import io.github.devskycore.faunareborn.config.common.WorldFilterConfigReader;
 import io.github.devskycore.faunareborn.config.common.TargetingSettings;
 import io.github.devskycore.faunareborn.config.common.TargetingSettingsReader;
+import io.github.devskycore.faunareborn.config.common.LodSettingsReader;
 import org.bukkit.Difficulty;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.Map;
 import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionSettings;
+import io.github.devskycore.faunareborn.system.lod.LodSettings;
 
 public final class ChickenHostilitySettingsLoader {
 
@@ -32,6 +34,7 @@ public final class ChickenHostilitySettingsLoader {
     private final NightBehaviorConfigReader nightBehaviorReader;
     private final ItemPickupTerritorialityConfigReader itemPickupTerritorialityReader;
     private final TargetingSettingsReader targetingSettingsReader;
+    private final LodSettingsReader lodSettingsReader;
 
     public ChickenHostilitySettingsLoader(FaunaRebornPlugin plugin) {
         this.plugin = plugin;
@@ -45,6 +48,7 @@ public final class ChickenHostilitySettingsLoader {
         this.nightBehaviorReader = new NightBehaviorConfigReader(plugin);
         this.itemPickupTerritorialityReader = new ItemPickupTerritorialityConfigReader(plugin);
         this.targetingSettingsReader = new TargetingSettingsReader(plugin);
+        this.lodSettingsReader = new LodSettingsReader(plugin);
     }
 
     public ChickenHostilitySettings load(FileConfiguration globalConfig, FileConfiguration entityConfig) {
@@ -58,6 +62,7 @@ public final class ChickenHostilitySettingsLoader {
         ItemPickupTerritorialityConfig itemPickupTerritoriality = itemPickupTerritorialityReader.read(entityConfig);
         TargetingSettings targeting = targetingSettingsReader.read(globalConfig);
         EnvironmentAggressionSettings environmentAggressionSettings = EnvironmentAggressionSettings.fromConfig(entityConfig, "");
+        LodSettings lodSettings = lodSettingsReader.read(globalConfig, "lod");
         ConfigNumbers numbers = new ConfigNumbers(plugin);
         String visualRoot = "visual-effects";
 
@@ -174,7 +179,8 @@ public final class ChickenHostilitySettingsLoader {
                 worldFilter,
                 targeting,
                 itemPickupTerritoriality,
-                environmentAggressionSettings
+                environmentAggressionSettings,
+                lodSettings
         );
     }
 

@@ -20,7 +20,8 @@ public final class PigModule implements FaunaModule {
                     settings.resourceProvocation(),
                     settings.socialAlert(),
                     settings.globalHostility(),
-                    settings.environmentAggression()
+                    settings.environmentAggression(),
+                    settings.lod()
             );
         }
     }

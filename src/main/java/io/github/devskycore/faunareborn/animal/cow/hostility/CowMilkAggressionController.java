@@ -24,6 +24,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
 import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionModifiers;
+import io.github.devskycore.faunareborn.system.lod.LodResolver;
+import io.github.devskycore.faunareborn.system.lod.LodSettings;
+import io.github.devskycore.faunareborn.system.lod.LodTier;
 
 import java.util.Locale;
 import java.util.Map;
@@ -49,6 +52,7 @@ final class CowMilkAggressionController {
     private final Object stateLock = new Object();
     private final CowSettings.MilkProvocationSettings settings;
     private final CowSettings.GlobalHostilitySettings global;
+    private final LodSettings lodSettings;
     private final TargetEligibilityService targetEligibilityService;
     private final CowActivationPolicy activationPolicy;
     private final WorldEnvironmentContextCache environmentCache;
@@ -69,12 +73,14 @@ final class CowMilkAggressionController {
             SchedulerAdapter scheduler,
             CowSettings.MilkProvocationSettings settings,
             CowSettings.GlobalHostilitySettings global,
+            LodSettings lodSettings,
             WorldEnvironmentContextCache environmentCache
     ) {
         this.scheduler = scheduler;
         this.folia = RuntimePlatform.isFolia();
         this.settings = settings;
         this.global = global;
+        this.lodSettings = lodSettings;
         this.targetEligibilityService = new TargetEligibilityService(global.targeting());
         this.activationPolicy = new CowActivationPolicy(settings, global, targetEligibilityService);
         this.environmentCache = environmentCache;
@@ -136,10 +142,15 @@ final class CowMilkAggressionController {
                 removeAggressionState(cowId, cow, brain, true);
                 continue;
             }
+            if (currentTick < brain.nextProcessTick) {
+                continue;
+            }
 
             processed++;
+            updateLodState(cow, target, brain);
             applyVisualEffects(cow, brain);
             processState(cow, target, brain);
+            brain.nextProcessTick = currentTick + lodSettings.intervalFor(brain.lodTier);
 
             if (brain.targetUuid == null) {
                 removeAggressionState(cowId, cow, brain, false);
@@ -217,9 +228,14 @@ final class CowMilkAggressionController {
                 removeAggressionState(cowId, cow, brain, true);
                 return;
             }
+            if (currentTick < brain.nextProcessTick) {
+                return;
+            }
 
+            updateLodState(cow, target, brain);
             applyVisualEffects(cow, brain);
             processState(cow, target, brain);
+            brain.nextProcessTick = currentTick + lodSettings.intervalFor(brain.lodTier);
 
             if (brain.targetUuid == null) {
                 removeAggressionState(cowId, cow, brain, false);
@@ -875,7 +891,11 @@ final class CowMilkAggressionController {
             cow.setGlowing(true);
         }
 
-        if (visual.particlesEnabled() && visual.particlesIntervalTicks() > 0 && currentTick >= brain.nextParticleTick) {
+        if (brain.lodTier != LodTier.OFF
+                && brain.lodTier != LodTier.LOW
+                && visual.particlesEnabled()
+                && visual.particlesIntervalTicks() > 0
+                && currentTick >= brain.nextParticleTick) {
             int amount = Math.max(1, (int) Math.round(2.0D * visual.particlesIntensity()));
             cow.getWorld().spawnParticle(
                     Particle.ANGRY_VILLAGER,
@@ -888,7 +908,8 @@ final class CowMilkAggressionController {
                     0.25D,
                     0.0D
             );
-            brain.nextParticleTick = currentTick + visual.particlesIntervalTicks();
+            int intervalMultiplier = brain.lodTier == LodTier.MEDIUM ? 2 : 1;
+            brain.nextParticleTick = currentTick + (visual.particlesIntervalTicks() * intervalMultiplier);
         }
     }
 
@@ -981,6 +1002,12 @@ final class CowMilkAggressionController {
     private static double effectiveDetectionRangeSq(double baseDetectionRange, EnvironmentAggressionModifiers env) {
         double effectiveRange = Math.max(1.0D, (baseDetectionRange * env.detectionRadiusMultiplier()) + env.detectionRadiusBonus());
         return effectiveRange * effectiveRange;
+    }
+
+    private void updateLodState(Cow cow, Player target, CowMilkAggressionBrain brain) {
+        boolean forceHigh = brain.state == CowMilkAggressionState.ATTACK;
+        double distanceSq = distanceSq(cow, target);
+        brain.lodTier = LodResolver.resolveTier(lodSettings, brain.lodTier, distanceSq, forceHigh);
     }
     private void rebuildActiveCowCaches() {
         targetingIndex.clear();

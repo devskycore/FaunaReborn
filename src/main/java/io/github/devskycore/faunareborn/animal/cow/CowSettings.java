@@ -3,6 +3,7 @@ package io.github.devskycore.faunareborn.animal.cow;
 import io.github.devskycore.faunareborn.config.common.WorldFilter;
 import io.github.devskycore.faunareborn.config.common.TargetingSettings;
 import io.github.devskycore.faunareborn.config.entity.EntitySettings;
+import io.github.devskycore.faunareborn.system.lod.LodSettings;
 
 import java.util.Map;
 import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionSettings;
@@ -13,7 +14,8 @@ public record CowSettings(
         ResourceProvocationSettings resourceProvocation,
         SocialAlertSettings socialAlert,
         GlobalHostilitySettings globalHostility,
-        EnvironmentAggressionSettings environmentAggression
+        EnvironmentAggressionSettings environmentAggression,
+        LodSettings lod
 ) implements EntitySettings {
 
     public record MilkProvocationSettings(

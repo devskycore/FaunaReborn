@@ -1,6 +1,7 @@
 package io.github.devskycore.faunareborn.animal.pig.hostility;
 
 import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
+import io.github.devskycore.faunareborn.system.lod.LodTier;
 
 import java.util.UUID;
 
@@ -24,6 +25,8 @@ final class PigAggressionBrain {
     long warningUntilTick;
     long socialAlertBlockedUntilTick;
     long stateStartedTick;
+    long nextProcessTick;
+    LodTier lodTier;
     HostilityCause hostilityCause;
     PigAggressionState state;
 
@@ -35,6 +38,8 @@ final class PigAggressionBrain {
         this.lastMovementBaseValue = Double.NaN;
         this.socialAlertBlockedUntilTick = Long.MIN_VALUE;
         this.stateStartedTick = 0L;
+        this.nextProcessTick = 0L;
+        this.lodTier = LodTier.HIGH;
         this.hostilityCause = HostilityCause.DIRECT_ASSAULT;
         this.state = PigAggressionState.IDLE;
     }

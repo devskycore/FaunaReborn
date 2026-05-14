@@ -7,6 +7,7 @@ import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentConte
 import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapter;
 import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapters;
 import io.github.devskycore.faunareborn.system.scheduler.TaskHandle;
+import io.github.devskycore.faunareborn.system.lod.LodSettings;
 import org.bukkit.event.HandlerList;
 
 public final class CowMilkProvocationTask {
@@ -27,12 +28,13 @@ public final class CowMilkProvocationTask {
             CowSettings.ResourceProvocationSettings resourceSettings,
             CowSettings.SocialAlertSettings socialAlertSettings,
             CowSettings.GlobalHostilitySettings globalSettings,
-            EnvironmentAggressionSettings environmentSettings
+            EnvironmentAggressionSettings environmentSettings,
+            LodSettings lodSettings
     ) {
         this.plugin = plugin;
         this.scheduler = SchedulerAdapters.create(plugin);
         this.environmentCache = new WorldEnvironmentContextCache(plugin, environmentSettings);
-        this.aggressionController = new CowMilkAggressionController(scheduler, settings, globalSettings, environmentCache);
+        this.aggressionController = new CowMilkAggressionController(scheduler, settings, globalSettings, lodSettings, environmentCache);
         this.interactionListener = new CowMilkInteractionListener(
                 plugin,
                 settings,

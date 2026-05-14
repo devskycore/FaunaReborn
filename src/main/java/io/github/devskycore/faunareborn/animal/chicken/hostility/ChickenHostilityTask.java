@@ -12,8 +12,12 @@ import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapters;
 import io.github.devskycore.faunareborn.system.scheduler.TaskHandle;
 import io.github.devskycore.faunareborn.targeting.TargetEligibilityService;
 import io.github.devskycore.faunareborn.targeting.TargetScoringService;
+import io.github.devskycore.faunareborn.system.lod.LodResolver;
+import io.github.devskycore.faunareborn.system.lod.LodSettings;
+import io.github.devskycore.faunareborn.system.lod.LodTier;
 import io.papermc.paper.event.world.WorldDifficultyChangeEvent;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.bukkit.Difficulty;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -86,6 +90,8 @@ final class ChickenHostilityTask implements Listener {
     private final Map<String, CookedBatchReady> cookedBatchByCooker = new HashMap<>();
     private final Object stateLock = new Object();
     private final boolean folia;
+    private final LodSettings lodSettings;
+    private final Int2ObjectOpenHashMap<LodTier> lodTierByChickenId = new Int2ObjectOpenHashMap<>();
 
     private final int maxProcessedChickensPerTick;
     private final int attackCooldownTicks;
@@ -107,6 +113,7 @@ final class ChickenHostilityTask implements Listener {
         this.threatTimeoutTicks = combat.threatTimeoutTicks();
         this.retargetGraceTicks = combat.retargetGraceTicks();
         this.processingRadius = Math.max(combat.detectionRadius(), ChickenHostilityConstants.PLAYER_PROXIMITY_RADIUS);
+        this.lodSettings = settings.lod();
 
         this.worldNightStateCache = new WorldNightStateCache(plugin, settings.environmentAggression());
         this.targetEligibilityService = new TargetEligibilityService(settings.targeting());
@@ -159,6 +166,7 @@ final class ChickenHostilityTask implements Listener {
         HandlerList.unregisterAll(this);
 
         visualController.clearAll(tracker.trackedChickens());
+        lodTierByChickenId.clear();
         tracker.clear();
         activationPolicy.clear();
         targetEligibilityService.clearExpired(Long.MAX_VALUE);
@@ -211,7 +219,6 @@ final class ChickenHostilityTask implements Listener {
                     }
                 } else {
                     if (currentTick < brain.nextProcessTick) continue;
-                    brain.nextProcessTick = currentTick + ACTIVE_TICK_INTERVAL;
                 }
                 toProcess.add(chickenId);
                 processed++;
@@ -265,11 +272,10 @@ final class ChickenHostilityTask implements Listener {
                     continue;
             } else {
                 if (currentTick < brain.nextProcessTick) continue;
-                brain.nextProcessTick = currentTick + ACTIVE_TICK_INTERVAL;
             }
 
             processChicken(chicken, chickenId, brain);
-            visualController.sync(chickenId, chicken, tracker.brain(chickenId), currentTick);
+            visualController.sync(chickenId, chicken, tracker.brain(chickenId), currentTick, lodTierByChickenId.get(chickenId));
             processed++;
         }
 
@@ -291,7 +297,7 @@ final class ChickenHostilityTask implements Listener {
             }
             ChickenHostilityBrain brain = tracker.brain(chickenId);
             processChicken(chicken, chickenId, brain);
-            visualController.sync(chickenId, chicken, tracker.brain(chickenId), currentTick);
+            visualController.sync(chickenId, chicken, tracker.brain(chickenId), currentTick, lodTierByChickenId.get(chickenId));
         }
     }
 
@@ -327,9 +333,11 @@ final class ChickenHostilityTask implements Listener {
             if (!isEligiblePassive(chicken, nearby)) {
                 return;
             }
+            lodTierByChickenId.put(chickenId, LodTier.HIGH);
             handleIdle(chicken, null, nearby);
             return;
         }
+        updateLod(chickenId, chicken, brain, nearby);
         boolean requireBabyNearby = !brain.socialAlertOverrideEligibility;
         if (isIneligible(chicken, brain, nearby, requireBabyNearby, true)) {
             clearTargetAndIdle(chicken, brain);
@@ -342,6 +350,37 @@ final class ChickenHostilityTask implements Listener {
             case CHASE -> handleChase(chicken, brain, nearby);
             case ATTACK -> handleAttack(chicken, brain);
         }
+        applyNextProcessTick(brain, lodTierByChickenId.get(chickenId));
+    }
+
+    private void updateLod(int chickenId, Chicken chicken, ChickenHostilityBrain brain, List<Entity> nearby) {
+        boolean forceHigh = brain.state != ChickenHostilityState.IDLE;
+        double nearestPlayerDistanceSq = nearestPlayerDistanceSq(chicken, nearby, lodSettings.lowDistanceSq());
+        LodTier nextTier = LodResolver.resolveTier(lodSettings, lodTierByChickenId.get(chickenId), nearestPlayerDistanceSq, forceHigh);
+        lodTierByChickenId.put(chickenId, nextTier);
+    }
+
+    private static double nearestPlayerDistanceSq(Chicken chicken, List<Entity> nearby, double fallbackDistanceSq) {
+        double best = fallbackDistanceSq + 1.0D;
+        for (Entity entity : nearby) {
+            if (!(entity instanceof Player player)) {
+                continue;
+            }
+            double distanceSq = HostilityDistances.distanceSq(chicken, player);
+            if (distanceSq < best) {
+                best = distanceSq;
+            }
+        }
+        return best;
+    }
+
+    private void applyNextProcessTick(ChickenHostilityBrain brain, LodTier tier) {
+        if (brain == null) {
+            return;
+        }
+        LodTier effectiveTier = tier == null ? LodTier.HIGH : tier;
+        int interval = lodSettings.intervalFor(effectiveTier);
+        brain.nextProcessTick = currentTick + Math.max(ACTIVE_TICK_INTERVAL, interval);
     }
 
     private boolean isIneligible(
@@ -599,6 +638,7 @@ final class ChickenHostilityTask implements Listener {
         tracker.removeBrain(chickenId);
         activationPolicy.forget(chickenId);
         visualController.deactivate(chickenId, chicken);
+        lodTierByChickenId.remove(chickenId);
     }
 
     private void enqueueStateMutation(Runnable mutation) {

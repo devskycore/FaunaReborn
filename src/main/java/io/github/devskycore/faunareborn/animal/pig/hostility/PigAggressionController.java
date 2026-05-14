@@ -24,6 +24,9 @@ import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
 import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionModifiers;
+import io.github.devskycore.faunareborn.system.lod.LodResolver;
+import io.github.devskycore.faunareborn.system.lod.LodSettings;
+import io.github.devskycore.faunareborn.system.lod.LodTier;
 
 import java.util.Locale;
 import java.util.Map;
@@ -50,6 +53,7 @@ final class PigAggressionController {
     private final Object stateLock = new Object();
     private final PigSettings.RodProvocationSettings settings;
     private final PigSettings.GlobalHostilitySettings global;
+    private final LodSettings lodSettings;
     private final TargetEligibilityService targetEligibilityService;
     private final PigActivationPolicy activationPolicy;
     private final WorldEnvironmentContextCache environmentCache;
@@ -70,12 +74,14 @@ final class PigAggressionController {
             SchedulerAdapter scheduler,
             PigSettings.RodProvocationSettings settings,
             PigSettings.GlobalHostilitySettings global,
+            LodSettings lodSettings,
             WorldEnvironmentContextCache environmentCache
     ) {
         this.scheduler = scheduler;
         this.folia = RuntimePlatform.isFolia();
         this.settings = settings;
         this.global = global;
+        this.lodSettings = lodSettings;
         this.targetEligibilityService = new TargetEligibilityService(global.targeting());
         this.activationPolicy = new PigActivationPolicy(settings, global, targetEligibilityService);
         this.environmentCache = environmentCache;
@@ -137,10 +143,15 @@ final class PigAggressionController {
                 removeAggressionState(PigId, Pig, brain, true);
                 continue;
             }
+            if (currentTick < brain.nextProcessTick) {
+                continue;
+            }
 
             processed++;
+            updateLodState(Pig, target, brain);
             applyVisualEffects(Pig, brain);
             processState(Pig, target, brain);
+            brain.nextProcessTick = currentTick + lodSettings.intervalFor(brain.lodTier);
 
             if (brain.targetUuid == null) {
                 removeAggressionState(PigId, Pig, brain, false);
@@ -218,9 +229,14 @@ final class PigAggressionController {
                 removeAggressionState(PigId, Pig, brain, true);
                 return;
             }
+            if (currentTick < brain.nextProcessTick) {
+                return;
+            }
 
+            updateLodState(Pig, target, brain);
             applyVisualEffects(Pig, brain);
             processState(Pig, target, brain);
+            brain.nextProcessTick = currentTick + lodSettings.intervalFor(brain.lodTier);
 
             if (brain.targetUuid == null) {
                 removeAggressionState(PigId, Pig, brain, false);
@@ -882,7 +898,11 @@ final class PigAggressionController {
             Pig.setGlowing(true);
         }
 
-        if (visual.particlesEnabled() && visual.particlesIntervalTicks() > 0 && currentTick >= brain.nextParticleTick) {
+        if (brain.lodTier != LodTier.OFF
+                && brain.lodTier != LodTier.LOW
+                && visual.particlesEnabled()
+                && visual.particlesIntervalTicks() > 0
+                && currentTick >= brain.nextParticleTick) {
             int amount = Math.max(1, (int) Math.round(2.0D * visual.particlesIntensity()));
             Pig.getWorld().spawnParticle(
                     Particle.ANGRY_VILLAGER,
@@ -895,7 +915,8 @@ final class PigAggressionController {
                     0.25D,
                     0.0D
             );
-            brain.nextParticleTick = currentTick + visual.particlesIntervalTicks();
+            int intervalMultiplier = brain.lodTier == LodTier.MEDIUM ? 2 : 1;
+            brain.nextParticleTick = currentTick + (visual.particlesIntervalTicks() * intervalMultiplier);
         }
     }
 
@@ -988,6 +1009,12 @@ final class PigAggressionController {
     private static double effectiveDetectionRangeSq(double baseDetectionRange, EnvironmentAggressionModifiers env) {
         double effectiveRange = Math.max(1.0D, (baseDetectionRange * env.detectionRadiusMultiplier()) + env.detectionRadiusBonus());
         return effectiveRange * effectiveRange;
+    }
+
+    private void updateLodState(Pig pig, Player target, PigAggressionBrain brain) {
+        boolean forceHigh = brain.state == PigAggressionState.ATTACK;
+        double distanceSq = distanceSq(pig, target);
+        brain.lodTier = LodResolver.resolveTier(lodSettings, brain.lodTier, distanceSq, forceHigh);
     }
     private void rebuildActivePigCaches() {
         targetingIndex.clear();

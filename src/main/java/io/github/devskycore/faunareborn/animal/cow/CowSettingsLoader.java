@@ -6,6 +6,7 @@ import io.github.devskycore.faunareborn.config.common.WorldFilter;
 import io.github.devskycore.faunareborn.config.common.WorldFilterConfigReader;
 import io.github.devskycore.faunareborn.config.common.TargetingSettingsReader;
 import io.github.devskycore.faunareborn.config.common.TargetingSettings;
+import io.github.devskycore.faunareborn.config.common.LodSettingsReader;
 import io.github.devskycore.faunareborn.config.entity.EntitySettingsLoader;
 import io.github.devskycore.faunareborn.config.entity.EntityType;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionSettings;
+import io.github.devskycore.faunareborn.system.lod.LodSettings;
 
 public final class CowSettingsLoader implements EntitySettingsLoader<CowSettings> {
 
@@ -24,12 +26,14 @@ public final class CowSettingsLoader implements EntitySettingsLoader<CowSettings
     private final ConfigNumbers numbers;
     private final WorldFilterConfigReader worldFilterConfigReader;
     private final TargetingSettingsReader targetingSettingsReader;
+    private final LodSettingsReader lodSettingsReader;
 
     public CowSettingsLoader(FaunaRebornPlugin plugin) {
         this.plugin = plugin;
         this.numbers = new ConfigNumbers(plugin);
         this.worldFilterConfigReader = new WorldFilterConfigReader(plugin);
         this.targetingSettingsReader = new TargetingSettingsReader(plugin);
+        this.lodSettingsReader = new LodSettingsReader(plugin);
     }
 
     @Override
@@ -280,8 +284,9 @@ public final class CowSettingsLoader implements EntitySettingsLoader<CowSettings
                 socialAlert.joinCooldownTicks(),
                 socialAlert.maxResponders()
         );
+        LodSettings lodSettings = lodSettingsReader.read(globalConfig, "lod");
         return new CowSettings(moduleEnabled, milkProvocation, resourceProvocation, socialAlert, loadGlobalHostilitySettings(globalConfig),
-                EnvironmentAggressionSettings.fromConfig(entityConfig, ""));
+                EnvironmentAggressionSettings.fromConfig(entityConfig, ""), lodSettings);
     }
 
     private CowSettings.GlobalHostilitySettings loadGlobalHostilitySettings(FileConfiguration globalConfig) {

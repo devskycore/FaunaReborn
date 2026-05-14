@@ -9,6 +9,21 @@ world-filter:
   mode: ALL # ALL | WHITELIST | BLACKLIST
   worlds: []
 
+lod:
+  enabled: true
+  # Prevents rapid tier thrashing near boundaries.
+  hysteresis-distance: 3.0
+  distances:
+    # Distance from nearest player (blocks) used for tiering.
+    high: 14.0
+    medium: 28.0
+    low: 44.0
+  interval-ticks:
+    high: 1
+    medium: 2
+    low: 5
+    off: 10
+
 targeting:
   ignore:
     adventure: true
