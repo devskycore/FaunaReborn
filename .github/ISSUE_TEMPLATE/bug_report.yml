@@ -1,0 +1,89 @@
+name: Bug report
+description: Report a reproducible bug in FaunaReborn.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please provide complete and reproducible details.
+
+  - type: input
+    id: plugin_version
+    attributes:
+      label: FaunaReborn version
+      placeholder: e.g. 1.0.0
+    validations:
+      required: true
+
+  - type: input
+    id: server_software
+    attributes:
+      label: Server software and build
+      placeholder: e.g. Paper 1.21.1 build 145
+    validations:
+      required: true
+
+  - type: input
+    id: java_version
+    attributes:
+      label: Java version
+      placeholder: e.g. Temurin 21.0.3
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Provide exact steps so we can reproduce the behavior.
+      placeholder: |
+        1. Configure ...
+        2. Run command ...
+        3. Interact with ...
+        4. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs and stack traces
+      description: Paste only the relevant section.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant configuration snippets
+      description: Include only keys related to the issue.
+      render: yaml
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched for duplicate issues before opening this report.
+          required: true
+        - label: I provided enough detail for someone else to reproduce this bug.
+          required: true
