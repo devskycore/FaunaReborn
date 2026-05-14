@@ -14,9 +14,11 @@ public final class CommandRegistry {
 
     private final Map<String, FaunaSubcommand> subcommands;
     private final PermissionService permissions;
+    private final CommandMessages commandMessages;
 
-    public CommandRegistry(List<FaunaSubcommand> commandList, PermissionService permissions) {
+    public CommandRegistry(List<FaunaSubcommand> commandList, PermissionService permissions, CommandMessages commandMessages) {
         this.permissions = permissions;
+        this.commandMessages = commandMessages;
         Map<String, FaunaSubcommand> byName = new LinkedHashMap<>();
         for (FaunaSubcommand subcommand : commandList) {
             byName.put(subcommand.info().name().toLowerCase(Locale.ROOT), subcommand);
@@ -29,7 +31,7 @@ public final class CommandRegistry {
             FaunaSubcommand help = subcommands.get("help");
             if (help != null) {
                 if (!help.canAccess(sender, permissions)) {
-                    CommandMessages.sendNoPermission(sender);
+                    commandMessages.sendNoPermission(sender);
                     return;
                 }
                 help.execute(sender, new String[0]);
@@ -40,12 +42,12 @@ public final class CommandRegistry {
         String key = args[0].toLowerCase(Locale.ROOT);
         FaunaSubcommand subcommand = subcommands.get(key);
         if (subcommand == null) {
-            CommandMessages.sendUnknownCommand(sender);
+            commandMessages.sendUnknownCommand(sender);
             return;
         }
 
         if (!subcommand.canAccess(sender, permissions)) {
-            CommandMessages.sendNoPermission(sender);
+            commandMessages.sendNoPermission(sender);
             return;
         }
 

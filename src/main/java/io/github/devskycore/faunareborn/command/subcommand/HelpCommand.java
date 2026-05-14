@@ -2,6 +2,10 @@ package io.github.devskycore.faunareborn.command.subcommand;
 
 import io.github.devskycore.faunareborn.command.permission.PermissionConstants;
 import io.github.devskycore.faunareborn.command.permission.PermissionService;
+import io.github.devskycore.faunareborn.command.message.CommandMessages;
+import io.github.devskycore.faunareborn.lang.LanguageManager;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
@@ -19,10 +23,14 @@ public final class HelpCommand implements FaunaSubcommand {
     private static final int PAGE_SIZE = 4;
 
     private final PermissionService permissions;
+    private final CommandMessages commandMessages;
+    private final LanguageManager language;
     private CommandRegistry registry;
 
-    public HelpCommand(PermissionService permissions) {
+    public HelpCommand(PermissionService permissions, CommandMessages commandMessages, LanguageManager language) {
         this.permissions = permissions;
+        this.commandMessages = commandMessages;
+        this.language = language;
     }
 
     public void bindRegistry(CommandRegistry registry) {
@@ -43,8 +51,8 @@ public final class HelpCommand implements FaunaSubcommand {
         boolean includeAdmin = permissions.canViewAdminHelp(sender);
         List<FaunaSubcommand> visible = registry.visibleCommands(sender, includeAdmin);
         if (visible.isEmpty()) {
-            sender.sendMessage(io.github.devskycore.faunareborn.command.message.CommandMessages.prefix()
-                    .append(net.kyori.adventure.text.Component.text("No commands are available to you.", net.kyori.adventure.text.format.NamedTextColor.RED)));
+            sender.sendMessage(commandMessages.prefix()
+                    .append(Component.text(language.text("commands.help.none-available", "No commands are available to you."), NamedTextColor.RED)));
             return;
         }
 
@@ -52,16 +60,20 @@ public final class HelpCommand implements FaunaSubcommand {
         if (args.length > 0) {
             requestedPage = parsePage(args[0]);
             if (requestedPage < 1) {
-                sender.sendMessage(io.github.devskycore.faunareborn.command.message.CommandMessages.prefix()
-                        .append(net.kyori.adventure.text.Component.text("Usage: /fauna help [page]", net.kyori.adventure.text.format.NamedTextColor.RED)));
+                sender.sendMessage(commandMessages.prefix()
+                        .append(Component.text(language.text("commands.help.usage", "Usage: /fauna help [page]"), NamedTextColor.RED)));
                 return;
             }
         }
 
         int totalPages = Math.max(1, (int) Math.ceil((double) visible.size() / PAGE_SIZE));
         if (requestedPage > totalPages) {
-            sender.sendMessage(io.github.devskycore.faunareborn.command.message.CommandMessages.prefix()
-                    .append(net.kyori.adventure.text.Component.text("Page out of range. Available pages: 1-" + totalPages + ".", net.kyori.adventure.text.format.NamedTextColor.RED)));
+            sender.sendMessage(commandMessages.prefix()
+                    .append(Component.text(
+                            language.text("commands.help.page-out-of-range", "Page out of range. Available pages: 1-{totalPages}.")
+                                    .replace("{totalPages}", String.valueOf(totalPages)),
+                            NamedTextColor.RED
+                    )));
             return;
         }
 
@@ -69,16 +81,28 @@ public final class HelpCommand implements FaunaSubcommand {
         int to = Math.min(from + PAGE_SIZE, visible.size());
         List<FaunaSubcommand> pageItems = visible.subList(from, to);
 
-        sender.sendMessage(io.github.devskycore.faunareborn.command.message.CommandMessages.prefix()
-                .append(net.kyori.adventure.text.Component.text("Commands (" + requestedPage + "/" + totalPages + ")", net.kyori.adventure.text.format.NamedTextColor.GREEN)));
+        sender.sendMessage(commandMessages.prefix()
+                .append(Component.text(
+                        language.text("commands.help.header", "Commands ({page}/{totalPages})")
+                                .replace("{page}", String.valueOf(requestedPage))
+                                .replace("{totalPages}", String.valueOf(totalPages)),
+                        NamedTextColor.GREEN
+                )));
         for (FaunaSubcommand subcommand : pageItems) {
-            sender.sendMessage(net.kyori.adventure.text.Component.text(" - ", net.kyori.adventure.text.format.NamedTextColor.DARK_GRAY)
-                    .append(net.kyori.adventure.text.Component.text(subcommand.info().usage(), net.kyori.adventure.text.format.NamedTextColor.AQUA))
-                    .append(net.kyori.adventure.text.Component.text("  " + subcommand.info().description(), net.kyori.adventure.text.format.NamedTextColor.GRAY)));
+            String commandName = subcommand.info().name();
+            String usage = language.text("commands.meta." + commandName + ".usage", subcommand.info().usage());
+            String description = language.text("commands.meta." + commandName + ".description", subcommand.info().description());
+            sender.sendMessage(Component.text(" - ", NamedTextColor.DARK_GRAY)
+                    .append(Component.text(usage, NamedTextColor.AQUA))
+                    .append(Component.text("  " + description, NamedTextColor.GRAY)));
         }
         if (requestedPage < totalPages) {
-            sender.sendMessage(io.github.devskycore.faunareborn.command.message.CommandMessages.prefix()
-                    .append(net.kyori.adventure.text.Component.text("Tip: /fauna help " + (requestedPage + 1), net.kyori.adventure.text.format.NamedTextColor.GRAY)));
+            sender.sendMessage(commandMessages.prefix()
+                    .append(Component.text(
+                            language.text("commands.help.next-page-tip", "Tip: /fauna help {nextPage}")
+                                    .replace("{nextPage}", String.valueOf(requestedPage + 1)),
+                            NamedTextColor.GRAY
+                    )));
         }
     }
 

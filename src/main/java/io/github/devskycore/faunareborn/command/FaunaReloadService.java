@@ -39,12 +39,18 @@ public final class FaunaReloadService {
 
     public void reload(CommandSender sender) {
         if (!inProgress.compareAndSet(false, true)) {
-            sender.sendMessage("FaunaReborn reload is already in progress.");
+            sender.sendMessage(plugin.languageManager().text(
+                    "commands.reload.already-in-progress",
+                    "FaunaReborn reload is already in progress."
+            ));
             return;
         }
 
         final long startedAt = System.nanoTime();
-        sender.sendMessage("FaunaReborn reload started...");
+        sender.sendMessage(plugin.languageManager().text(
+                "commands.reload.started",
+                "FaunaReborn reload started..."
+        ));
 
         ensureConfigFilesExist();
 
@@ -54,17 +60,32 @@ public final class FaunaReloadService {
                     try {
                         if (throwable != null) {
                             logReloadFailure("Configuration validation failed.", throwable);
-                            sender.sendMessage("FaunaReborn reload failed. Previous configuration is still active.");
+                            sender.sendMessage(plugin.languageManager().text(
+                                    "commands.reload.failed",
+                                    "FaunaReborn reload failed. Previous configuration is still active."
+                            ));
                             return;
                         }
 
                         boolean applied = applyCandidate(candidate);
                         long elapsedMillis = elapsedMillis(startedAt);
                         if (applied) {
-                            sender.sendMessage("FaunaReborn reload completed in " + elapsedMillis + " ms.");
-                            plugin.getLogger().info("Hot reload completed in " + elapsedMillis + " ms.");
+                            plugin.languageManager().reload();
+                            sender.sendMessage(plugin.languageManager().text(
+                                    "commands.reload.completed",
+                                    "FaunaReborn reload completed in {elapsedMillis} ms.",
+                                    java.util.Map.of("elapsedMillis", String.valueOf(elapsedMillis))
+                            ));
+                            plugin.getLogger().info(plugin.languageManager().text(
+                                    "logs.reload.hot-reload-complete",
+                                    "Hot reload completed in {elapsedMillis} ms.",
+                                    java.util.Map.of("elapsedMillis", String.valueOf(elapsedMillis))
+                            ));
                         } else {
-                            sender.sendMessage("FaunaReborn reload failed. Previous configuration is still active.");
+                            sender.sendMessage(plugin.languageManager().text(
+                                    "commands.reload.failed",
+                                    "FaunaReborn reload failed. Previous configuration is still active."
+                            ));
                         }
                     } finally {
                         inProgress.set(false);
@@ -79,7 +100,10 @@ public final class FaunaReloadService {
             PluginConfigManager configManager = new PluginConfigManager(plugin, featureRegistry.createSettingsLoaders(plugin));
             return configManager.load(globalConfig);
         } catch (Throwable throwable) {
-            throw new IllegalStateException("Failed to parse one or more YAML configuration files.", throwable);
+            throw new IllegalStateException(plugin.languageManager().text(
+                    "logs.reload.failed-to-parse-yaml",
+                    "Failed to parse one or more YAML configuration files."
+            ), throwable);
         }
     }
 
@@ -89,7 +113,7 @@ public final class FaunaReloadService {
         HostilityDeathMessageListener oldListener = plugin.deathMessageListener();
 
         ModuleManager newManager = new ModuleManager(plugin, featureRegistry.createModules(plugin, candidate));
-        HostilityDeathMessageListener newListener = new HostilityDeathMessageListener();
+        HostilityDeathMessageListener newListener = new HostilityDeathMessageListener(plugin.languageManager());
 
         try {
             if (oldManager != null) {
@@ -105,7 +129,14 @@ public final class FaunaReloadService {
             plugin.setDeathMessageListener(newListener);
             return true;
         } catch (Throwable applyFailure) {
-            plugin.getLogger().log(Level.SEVERE, "Failed while applying reloaded runtime. Rolling back previous runtime.", applyFailure);
+            plugin.getLogger().log(
+                    Level.SEVERE,
+                    plugin.languageManager().text(
+                            "logs.reload.apply-failed",
+                            "Failed while applying reloaded runtime. Rolling back previous runtime."
+                    ),
+                    applyFailure
+            );
             rollbackRuntime(oldManager, oldListener);
             return false;
         }
@@ -122,7 +153,14 @@ public final class FaunaReloadService {
                 plugin.setDeathMessageListener(oldListener);
             }
         } catch (Throwable rollbackFailure) {
-            plugin.getLogger().log(Level.SEVERE, "Rollback failed. Manual intervention may be required.", rollbackFailure);
+            plugin.getLogger().log(
+                    Level.SEVERE,
+                    plugin.languageManager().text(
+                            "logs.reload.rollback-failed",
+                            "Rollback failed. Manual intervention may be required."
+                    ),
+                    rollbackFailure
+            );
         }
     }
 
@@ -147,7 +185,7 @@ public final class FaunaReloadService {
     }
 
     private void logReloadFailure(String message, Throwable throwable) {
-        plugin.getLogger().log(Level.SEVERE, message, throwable);
+        plugin.getLogger().log(Level.SEVERE, plugin.languageManager().text("logs.reload.validation-failed", message), throwable);
     }
 
     private long elapsedMillis(long startedAt) {

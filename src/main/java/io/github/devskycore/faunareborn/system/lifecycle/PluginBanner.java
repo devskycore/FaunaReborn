@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import org.bukkit.plugin.java.JavaPlugin;
+import io.github.devskycore.faunareborn.lang.LanguageManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,29 +17,29 @@ public final class PluginBanner {
 
     private PluginBanner() {}
 
-    public static void printEnable(JavaPlugin plugin) {
+    public static void printEnable(JavaPlugin plugin, LanguageManager language) {
         final String version = plugin.getPluginMeta().getVersion();
         final String mcVersion = plugin.getServer().getMinecraftVersion();
 
         List<Component> lines = new ArrayList<>();
 
         lines.add(center(SEPARATOR, SECONDARY));
-        lines.add(center("FAUNAREBORN", PRIMARY));
-        lines.add(center("Version > " + version, SECONDARY));
-        lines.add(center("MC > " + mcVersion, SECONDARY));
+        lines.add(center(language.text("banner.title", "FAUNAREBORN"), PRIMARY));
+        lines.add(center(language.text("banner.version-line", "Version > {version}").replace("{version}", version), SECONDARY));
+        lines.add(center(language.text("banner.mc-line", "MC > {minecraftVersion}").replace("{minecraftVersion}", mcVersion), SECONDARY));
         lines.add(center(SEPARATOR, SECONDARY));
 
         send(lines, plugin);
     }
 
-    public static void printDisable(JavaPlugin plugin) {
+    public static void printDisable(JavaPlugin plugin, LanguageManager language) {
         final String version = plugin.getPluginMeta().getVersion();
 
         List<Component> lines = new ArrayList<>();
 
         lines.add(center(SEPARATOR, SECONDARY));
-        lines.add(center("FAUNAREBORN", PRIMARY));
-        lines.add(center("Version > " + version, SECONDARY));
+        lines.add(center(language.text("banner.title", "FAUNAREBORN"), PRIMARY));
+        lines.add(center(language.text("banner.version-line", "Version > {version}").replace("{version}", version), SECONDARY));
         lines.add(center(SEPARATOR, SECONDARY));
 
         send(lines, plugin);

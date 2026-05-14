@@ -894,7 +894,11 @@ final class ChickenHostilityTask implements Listener {
         enqueueStateMutation(() -> {
             cookedBatchByCooker.put(
                     blockKey(event.getBlock().getLocation()),
-                    new CookedBatchReady(COOKED_MEAT, tickSnapshot + COOK_VALIDATION_WINDOW_TICKS)
+                    new CookedBatchReady(
+                            COOKED_MEAT,
+                            tickSnapshot + COOK_VALIDATION_WINDOW_TICKS,
+                            resolveCookingCause(cookerType)
+                    )
             );
             cleanupCookValidationState(tickSnapshot);
         });
@@ -918,7 +922,12 @@ final class ChickenHostilityTask implements Listener {
             return;
         }
         Location outputLocation = block.getLocation().add(0.5D, 0.5D, 0.5D);
-        HostilityCause cookingCause = consumeCookValidation(player, outputLocation, COOKED_MEAT);
+        HostilityCause cookingCause = consumeCookValidation(
+                player,
+                outputLocation,
+                COOKED_MEAT,
+                resolveCookingCause(block.getType())
+        );
         if (cookingCause == null) {
             return;
         }
@@ -1138,10 +1147,16 @@ final class ChickenHostilityTask implements Listener {
     }
 
     private HostilityCause consumeCookValidation(Player player, Location outputLocation, Material cookedType) {
+        return consumeCookValidation(player, outputLocation, cookedType, null);
+    }
+
+    private HostilityCause consumeCookValidation(
+            Player player,
+            Location outputLocation,
+            Material cookedType,
+            HostilityCause fallbackCause
+    ) {
         PendingCookIntent intent = pendingCookIntentByPlayer.get(player.getUniqueId());
-        if (intent == null || currentTick > intent.expiresAtTick()) {
-            return null;
-        }
         String cookerKey = resolveCookerKey(outputLocation);
         if (cookerKey == null) {
             return null;
@@ -1150,12 +1165,13 @@ final class ChickenHostilityTask implements Listener {
         if (ready == null || currentTick > ready.expiresAtTick() || ready.material() != cookedType) {
             return null;
         }
-        if (!intent.cookerKey().equals(cookerKey)) {
-            return null;
+        if (intent != null && currentTick <= intent.expiresAtTick() && intent.cookerKey().equals(cookerKey)) {
+            pendingCookIntentByPlayer.remove(player.getUniqueId());
+            cookedBatchByCooker.remove(cookerKey);
+            return intent.cookingCause();
         }
-        pendingCookIntentByPlayer.remove(player.getUniqueId());
         cookedBatchByCooker.remove(cookerKey);
-        return intent.cookingCause();
+        return ready.cookingCause() == null ? fallbackCause : ready.cookingCause();
     }
 
     private void triggerCookedMeatAggression(Player player, Location origin, HostilityCause cookingCause) {
@@ -1234,7 +1250,7 @@ final class ChickenHostilityTask implements Listener {
 
     private record PendingCookIntent(String cookerKey, long expiresAtTick, HostilityCause cookingCause) {}
 
-    private record CookedBatchReady(Material material, long expiresAtTick) {}
+    private record CookedBatchReady(Material material, long expiresAtTick, HostilityCause cookingCause) {}
 }
 
 

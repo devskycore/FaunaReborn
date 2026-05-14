@@ -1,0 +1,173 @@
+﻿commands:
+  common:
+    prefix: "FaunaReborn"
+    no-permission: "No tienes permiso para usar este comando."
+    player-only: "Este comando solo puede ser ejecutado por un jugador."
+    unknown-subcommand: "Subcomando desconocido. Usa /fauna help."
+    state:
+      enabled: "activado"
+      disabled: "desactivado"
+      enabled-title: "Activado"
+      disabled-title: "Desactivado"
+  meta:
+    help:
+      usage: "/fauna help [page]"
+      description: "Muestra los comandos disponibles."
+    version:
+      usage: "/fauna version"
+      description: "Muestra detalles de versión del plugin."
+    about:
+      usage: "/fauna about"
+      description: "Explica qué hace FaunaReborn."
+    entities:
+      usage: "/fauna entities"
+      description: "Lista entidades soportadas y su estado actual."
+    reload:
+      usage: "/fauna reload"
+      description: "Recarga configuraciones y módulos."
+    gui:
+      usage: "/fauna gui"
+      description: "Abre la GUI administrativa de FaunaReborn."
+  help:
+    none-available: "No hay comandos disponibles para ti."
+    usage: "Usa: /fauna help [page]"
+    page-out-of-range: "Página no encontrada. Páginas disponibles: 1-{totalPages}."
+    header: "Comandos ({page}/{totalPages})"
+    next-page-tip: "Consejo: /fauna help {nextPage}"
+  about:
+    title: "FaunaReborn"
+    tagline: "La naturaleza contraataca."
+    line1: "Convierte animales pasivos en amenazas inteligentes y configurables."
+    line2: "Incluye ajustes por entidad, controles en tiempo real, procesamiento optimizado y sistemas de comportamiento avanzados."
+  entities:
+    header: "Entidades soportadas"
+  version:
+    header: "Versión de FaunaReborn"
+    unknown-author: "Desconocido"
+    name-label: "Nombre"
+    version-label: "Versión"
+    authors-label: "Autores"
+    minecraft-label: "Minecraft"
+    server-label: "Servidor"
+    status-label: "Estado"
+    status-running: "En ejecución"
+  reload:
+    already-in-progress: "La recarga de FaunaReborn ya está en progreso."
+    started: "Recarga de FaunaReborn iniciada..."
+    completed: "Recarga de FaunaReborn completada en {elapsedMillis} ms."
+    failed: "La recarga de FaunaReborn falló. La configuración anterior sigue activa."
+
+gui:
+  title:
+    main: "FaunaReborn"
+    panel: "Ajustes"
+  common:
+    settings: "Configuración"
+    status: "Estado"
+    enabled: "ACTIVADO"
+    disabled: "DESACTIVADO"
+  entities:
+    chicken: "POLLO"
+    cow: "VACA"
+    pig: "CERDO"
+  toggle:
+    click-to-toggle: "Haz clic para alternar la hostilidad"
+    applying-update: "Aplicando actualización en tiempo de ejecución..."
+    done: "Listo"
+  reload:
+    title-main: "RECARGAR"
+    title-tail: "Archivos"
+    applies-manual: "Aplica cambios manuales"
+    click-to-reload: "Haz clic para recargar archivos"
+    syncing-files: "Sincronizando los últimos cambios de archivos..."
+    please-wait-tick: "Espera 1 tick"
+  close:
+    title-main: "CERRAR"
+    title-tail: "Menú"
+    exit-panel: "Salir de este panel de control"
+    click-to-close: "Haz clic para cerrar el menú"
+  feedback:
+    failed-update-state: "No se pudo actualizar el estado del módulo para "
+    failed-runtime-update: "Falló la actualización en tiempo de ejecución para "
+    failed-runtime-update-suffix: ". Usa recarga."
+    toggle-set-to: " ahora está "
+    dot: "."
+
+death:
+  common:
+    died: " murió "
+    dot: "."
+  species:
+    pig:
+      singular: "CERDO"
+      plural: "CERDOS"
+    cow:
+      singular: "VACA"
+      plural: "VACAS"
+    chicken:
+      singular: "POLLO"
+      plural: "POLLOS"
+  cause:
+    rod:
+      prefix: "después de "
+      hook-action: "atrapar"
+      middle: " al "
+    milking:
+      prefix: "después de "
+      action: "ordenar"
+      middle: " a la "
+    territorial:
+      prefix: "después de "
+      action: "invadir"
+      middle: " territorio de "
+      suffix: "."
+    cooking:
+      prefix: "por "
+      action: "enfurecer"
+      furnace-suffix: " con un horno."
+      smoker-suffix: " con un ahumador."
+      campfire-suffix: " con una fogata."
+    herd-damage:
+      prefix: "después de "
+      action: "golpear"
+      middle: " a la manada equivocada de "
+    herd-nearby:
+      prefix: "mientras intentaba escapar de "
+      action: ""
+    baby:
+      prefix: "después de "
+      action: "amenazar"
+      middle: " a una cría de "
+  direct:
+    pig:
+      prefix: "después de ser "
+      action: "destrozado"
+      middle: " por un "
+    cow:
+      prefix: "después de ser "
+      action: "pisoteado"
+      middle: " por una "
+    chicken:
+      prefix: "después de ser "
+      action: "picoteado hasta morir"
+      middle: " por un "
+
+banner:
+  title: "FAUNAREBORN"
+  version-line: "Versión > {version}"
+  mc-line: "MC > {minecraftVersion}"
+
+lifecycle:
+  enabled-in: "Plugin habilitado en "
+  disabled-in: "Plugin deshabilitado en "
+
+logs:
+  startup:
+    folia-detected: "Runtime Folia detectado. Activando rutas del scheduler para Folia."
+    failed: "No se pudo preparar el arranque del plugin."
+  reload:
+    hot-reload-complete: "Recarga completada en {elapsedMillis} ms."
+    failed-to-parse-yaml: "No se pudo analizar uno o más archivos YAML de configuración."
+    apply-failed: "Falló al aplicar la configuración actualizada. Revirtiendo a la configuración anterior."
+    rollback-failed: "La recuperación falló. Puede requerirse intervención manual."
+    validation-failed: "La validación de configuración falló."

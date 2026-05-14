@@ -7,6 +7,7 @@ import io.github.devskycore.faunareborn.config.entity.EntityType;
 import io.github.devskycore.faunareborn.gui.EntityModuleToggle;
 import io.github.devskycore.faunareborn.gui.FaunaMainGui;
 import io.github.devskycore.faunareborn.gui.PluginGuiConfigService;
+import io.github.devskycore.faunareborn.lang.LanguageManager;
 import io.github.devskycore.faunareborn.module.ModuleManager;
 import io.github.devskycore.faunareborn.system.lifecycle.PluginBanner;
 import io.github.devskycore.faunareborn.system.lifecycle.PluginLifecycleLogger;
@@ -20,10 +21,13 @@ public final class FaunaRebornPlugin extends JavaPlugin {
     private ModuleManager moduleManager;
     private HostilityDeathMessageListener deathMessageListener;
     private FaunaReloadService reloadService;
+    private LanguageManager languageManager;
 
     @Override
     public void onEnable() {
         final long startedAt = System.nanoTime();
+        this.languageManager = new LanguageManager(this);
+        this.languageManager.reload();
 
         boolean startupOk = new StartupOrchestrator(this).run();
         if (!startupOk || !isEnabled()) {
@@ -31,8 +35,8 @@ public final class FaunaRebornPlugin extends JavaPlugin {
         }
 
         registerCommands();
-        PluginBanner.printEnable(this);
-        PluginLifecycleLogger.onEnable(this, startedAt);
+        PluginBanner.printEnable(this, languageManager());
+        PluginLifecycleLogger.onEnable(this, languageManager(), startedAt);
     }
 
     @Override
@@ -41,8 +45,8 @@ public final class FaunaRebornPlugin extends JavaPlugin {
 
         new ShutdownOrchestrator(this).run();
 
-        PluginBanner.printDisable(this);
-        PluginLifecycleLogger.onDisable(this, startedAt);
+        PluginBanner.printDisable(this, languageManager());
+        PluginLifecycleLogger.onDisable(this, languageManager(), startedAt);
     }
 
     public ModuleManager moduleManager() {
@@ -68,6 +72,10 @@ public final class FaunaRebornPlugin extends JavaPlugin {
         return reloadService;
     }
 
+    public LanguageManager languageManager() {
+        return languageManager;
+    }
+
     private void registerCommands() {
         PluginGuiConfigService guiConfigService = createGuiConfigService();
         FaunaMainGui mainGui = new FaunaMainGui(this, guiConfigService, reloadService());
@@ -76,7 +84,7 @@ public final class FaunaRebornPlugin extends JavaPlugin {
                 "fauna",
                 "Main command for FaunaReborn.",
                 java.util.List.of("faunareborn", "fr"),
-                new FaunaCommand(this, mainGui, guiConfigService)
+                new FaunaCommand(this, mainGui, guiConfigService, languageManager())
         );
     }
 

@@ -52,6 +52,11 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 - Live **reload workflow** without restarting the server.
 - Config-driven world filtering (`ALL`, `WHITELIST`, `BLACKLIST`).
 
+### Internationalization (i18n)
+- Built-in i18n system with configurable language selection via `config.yml` (`language.file`).
+- Ships with ready-to-use language files in `lang/` (`english.yml`, `spanish.yml`).
+- Commands, GUI labels, and runtime feedback/messages are localized.
+
 ## Commands
 
 ![Commands Banner](./assets/images/Banner_Commands.png)
@@ -103,11 +108,14 @@ FaunaReborn is built for servers that want more tension, replayability and survi
    - `plugins/FaunaReborn/entities/chicken.yml`
    - `plugins/FaunaReborn/entities/cow.yml`
    - `plugins/FaunaReborn/entities/pig.yml`
+   - `plugins/FaunaReborn/lang/english.yml`
+   - `plugins/FaunaReborn/lang/spanish.yml`
 5. Run `/fauna reload` or restart.
 
 ## Quick Configuration Notes
 
 - `global-enabled`: master switch.
+- `language.file`: selects the language file from `plugins/FaunaReborn/lang/` (for example `english.yml` or `spanish.yml`).
 - `world-filter`: global activation mode and world list.
 - `lod`: distance-based LOD tiers with hysteresis and per-tier tick cadence.
 - `targeting.scoring`: weighted target priority behavior.
@@ -198,11 +206,6 @@ Contributions are welcome and reviewed in detail by the maintainer.
 - Read the contribution guide first: [CONTRIBUTING.md](./CONTRIBUTING.md)
 - Use the provided issue forms and pull request template for consistency.
 - Keep changes focused, validated, and production-safe (Paper/Folia compatibility and performance-aware behavior).
-
-## Security
-
-Do **not** disclose vulnerabilities publicly first.
-Please report security issues privately to the maintainer.
 
 ## License
 

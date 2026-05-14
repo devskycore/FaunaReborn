@@ -1,0 +1,173 @@
+commands:
+  common:
+    prefix: "FaunaReborn"
+    no-permission: "You do not have permission to use this command."
+    player-only: "This command can only be executed by a player."
+    unknown-subcommand: "Unknown subcommand. Use /fauna help."
+    state:
+      enabled: "enabled"
+      disabled: "disabled"
+      enabled-title: "Enabled"
+      disabled-title: "Disabled"
+  meta:
+    help:
+      usage: "/fauna help [page]"
+      description: "Show available commands."
+    version:
+      usage: "/fauna version"
+      description: "Show plugin and runtime version details."
+    about:
+      usage: "/fauna about"
+      description: "Learn what FaunaReborn does."
+    entities:
+      usage: "/fauna entities"
+      description: "List supported entities and current state."
+    reload:
+      usage: "/fauna reload"
+      description: "Reload configuration and modules."
+    gui:
+      usage: "/fauna gui"
+      description: "Open the FaunaReborn admin GUI."
+  help:
+    none-available: "No commands are available to you."
+    usage: "Usage: /fauna help [page]"
+    page-out-of-range: "Page out of range. Available pages: 1-{totalPages}."
+    header: "Commands ({page}/{totalPages})"
+    next-page-tip: "Hint: /fauna help {nextPage}"
+  about:
+    title: "FaunaReborn"
+    tagline: "Nature fights back."
+    line1: "Turns passive animals into intelligent, configurable threats."
+    line2: "Includes per-entity settings, runtime controls, optimized processing, and advanced behavior systems."
+  entities:
+    header: "Supported Entities"
+  version:
+    header: "FaunaReborn Version"
+    unknown-author: "Unknown"
+    name-label: "Name"
+    version-label: "Version"
+    authors-label: "Authors"
+    minecraft-label: "Minecraft"
+    server-label: "Server"
+    status-label: "Status"
+    status-running: "Running"
+  reload:
+    already-in-progress: "FaunaReborn reload is already in progress."
+    started: "FaunaReborn reload started..."
+    completed: "FaunaReborn reload completed in {elapsedMillis} ms."
+    failed: "FaunaReborn reload failed. Previous configuration is still active."
+
+gui:
+  title:
+    main: "FaunaReborn"
+    panel: "Control Panel"
+  common:
+    settings: "Settings"
+    status: "Status"
+    enabled: "ENABLED"
+    disabled: "DISABLED"
+  entities:
+    chicken: "CHICKEN"
+    cow: "COW"
+    pig: "PIG"
+  toggle:
+    click-to-toggle: "Click to toggle hostility"
+    applying-update: "Applying runtime update..."
+    done: "Done"
+  reload:
+    title-main: "RELOAD"
+    title-tail: "Files"
+    applies-manual: "Applies manual changes"
+    click-to-reload: "Click to reload files"
+    syncing-files: "Syncing latest file changes..."
+    please-wait-tick: "Please wait 1 tick"
+  close:
+    title-main: "CLOSE"
+    title-tail: "Menu"
+    exit-panel: "Exit this control panel"
+    click-to-close: "Click to close menu"
+  feedback:
+    failed-update-state: "Failed to update module state for "
+    failed-runtime-update: "Runtime update failed for "
+    failed-runtime-update-suffix: ". Use reload."
+    toggle-set-to: " set to "
+    dot: "."
+
+death:
+  common:
+    died: " died "
+    dot: "."
+  species:
+    pig:
+      singular: "PIG"
+      plural: "PIGS"
+    cow:
+      singular: "COW"
+      plural: "COWS"
+    chicken:
+      singular: "CHICKEN"
+      plural: "CHICKENS"
+  cause:
+    rod:
+      prefix: "after "
+      hook-action: "hooking"
+      middle: " the wrong "
+    milking:
+      prefix: "after "
+      action: "milking"
+      middle: " the wrong "
+    territorial:
+      prefix: "after "
+      action: "trespassing"
+      middle: " into "
+      suffix: " territory."
+    cooking:
+      prefix: "by "
+      action: "angering"
+      furnace-suffix: " with a furnace."
+      smoker-suffix: " with a smoker."
+      campfire-suffix: " with a campfire."
+    herd-damage:
+      prefix: "after "
+      action: "striking"
+      middle: " the wrong herd of "
+    herd-nearby:
+      prefix: "while trying to escape "
+      action: "enraged"
+    baby:
+      prefix: "after "
+      action: "threatening"
+      middle: " a baby "
+  direct:
+    pig:
+      prefix: "after being "
+      action: "mauled"
+      middle: " by a hostile "
+    cow:
+      prefix: "after being "
+      action: "trampled"
+      middle: " by an enraged "
+    chicken:
+      prefix: "after being "
+      action: "pecked apart"
+      middle: " by a hostile "
+
+banner:
+  title: "FAUNAREBORN"
+  version-line: "Version > {version}"
+  mc-line: "MC > {minecraftVersion}"
+
+lifecycle:
+  enabled-in: "Plugin enabled in "
+  disabled-in: "Plugin disabled in "
+
+logs:
+  startup:
+    folia-detected: "Folia runtime detected. Enabling Folia scheduler pathways."
+    failed: "Failed to prepare plugin startup."
+  reload:
+    hot-reload-complete: "Hot reload completed in {elapsedMillis} ms."
+    failed-to-parse-yaml: "Failed to parse one or more YAML configuration files."
+    apply-failed: "Failed while applying reloaded runtime. Rolling back previous runtime."
+    rollback-failed: "Rollback failed. Manual intervention may be required."
+    validation-failed: "Configuration validation failed."

@@ -2,6 +2,7 @@ package io.github.devskycore.faunareborn.command.subcommand;
 
 import io.github.devskycore.faunareborn.command.permission.PermissionConstants;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
+import io.github.devskycore.faunareborn.lang.LanguageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
@@ -19,9 +20,11 @@ public final class VersionCommand implements FaunaSubcommand {
     );
 
     private final FaunaRebornPlugin plugin;
+    private final LanguageManager language;
 
-    public VersionCommand(FaunaRebornPlugin plugin) {
+    public VersionCommand(FaunaRebornPlugin plugin, LanguageManager language) {
         this.plugin = plugin;
+        this.language = language;
     }
 
     @Override
@@ -32,14 +35,14 @@ public final class VersionCommand implements FaunaSubcommand {
     @Override
     public void execute(CommandSender sender, String[] args) {
         List<String> authors = plugin.getDescription().getAuthors();
-        String authorText = authors.isEmpty() ? "Unknown" : String.join(", ", authors);
+        String authorText = authors.isEmpty() ? language.text("commands.version.unknown-author", "Unknown") : String.join(", ", authors);
 
-        sender.sendMessage(Component.text("FaunaReborn Version", NamedTextColor.GREEN));
-        sender.sendMessage(Component.text(" - Name: ", NamedTextColor.DARK_GRAY).append(Component.text(plugin.getDescription().getName(), NamedTextColor.WHITE)));
-        sender.sendMessage(Component.text(" - Version: ", NamedTextColor.DARK_GRAY).append(Component.text(plugin.getDescription().getVersion(), NamedTextColor.WHITE)));
-        sender.sendMessage(Component.text(" - Authors: ", NamedTextColor.DARK_GRAY).append(Component.text(authorText, NamedTextColor.WHITE)));
-        sender.sendMessage(Component.text(" - Minecraft: ", NamedTextColor.DARK_GRAY).append(Component.text(plugin.getServer().getMinecraftVersion(), NamedTextColor.WHITE)));
-        sender.sendMessage(Component.text(" - Server: ", NamedTextColor.DARK_GRAY).append(Component.text(plugin.getServer().getName() + " " + plugin.getServer().getVersion(), NamedTextColor.WHITE)));
-        sender.sendMessage(Component.text(" - Status: ", NamedTextColor.DARK_GRAY).append(Component.text("Running", NamedTextColor.GREEN)));
+        sender.sendMessage(Component.text(language.text("commands.version.header", "FaunaReborn Version"), NamedTextColor.GREEN));
+        sender.sendMessage(Component.text(" - " + language.text("commands.version.name-label", "Name") + ": ", NamedTextColor.DARK_GRAY).append(Component.text(plugin.getDescription().getName(), NamedTextColor.WHITE)));
+        sender.sendMessage(Component.text(" - " + language.text("commands.version.version-label", "Version") + ": ", NamedTextColor.DARK_GRAY).append(Component.text(plugin.getDescription().getVersion(), NamedTextColor.WHITE)));
+        sender.sendMessage(Component.text(" - " + language.text("commands.version.authors-label", "Authors") + ": ", NamedTextColor.DARK_GRAY).append(Component.text(authorText, NamedTextColor.WHITE)));
+        sender.sendMessage(Component.text(" - " + language.text("commands.version.minecraft-label", "Minecraft") + ": ", NamedTextColor.DARK_GRAY).append(Component.text(plugin.getServer().getMinecraftVersion(), NamedTextColor.WHITE)));
+        sender.sendMessage(Component.text(" - " + language.text("commands.version.server-label", "Server") + ": ", NamedTextColor.DARK_GRAY).append(Component.text(plugin.getServer().getName() + " " + plugin.getServer().getVersion(), NamedTextColor.WHITE)));
+        sender.sendMessage(Component.text(" - " + language.text("commands.version.status-label", "Status") + ": ", NamedTextColor.DARK_GRAY).append(Component.text(language.text("commands.version.status-running", "Running"), NamedTextColor.GREEN)));
     }
 }

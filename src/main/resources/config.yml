@@ -1,6 +1,11 @@
 config-version: 1
 global-enabled: true
 
+language:
+  # Language file name located in plugins/FaunaReborn/lang/
+  # Example: english.yml, spanish.yml, portuguese.yml
+  file: english.yml
+
 # Global world filter for entity hostility modules.
 # ALL: enabled in every world.
 # WHITELIST: enabled only in listed worlds.

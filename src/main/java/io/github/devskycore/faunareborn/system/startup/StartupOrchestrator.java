@@ -29,7 +29,10 @@ public final class StartupOrchestrator {
     public boolean run() {
         try {
             if (RuntimePlatform.isFolia()) {
-                plugin.getLogger().info("Folia runtime detected. Enabling Folia scheduler pathways.");
+                plugin.getLogger().info(plugin.languageManager().text(
+                        "logs.startup.folia-detected",
+                        "Folia runtime detected. Enabling Folia scheduler pathways."
+                ));
             }
 
             FaunaFeatureRegistry featureRegistry = FaunaFeatureRegistry.defaults();
@@ -42,13 +45,17 @@ public final class StartupOrchestrator {
             if (plugin.deathMessageListener() != null) {
                 HandlerList.unregisterAll(plugin.deathMessageListener());
             }
-            HostilityDeathMessageListener deathMessageListener = new HostilityDeathMessageListener();
+            HostilityDeathMessageListener deathMessageListener = new HostilityDeathMessageListener(plugin.languageManager());
             plugin.getServer().getPluginManager().registerEvents(deathMessageListener, plugin);
             plugin.setDeathMessageListener(deathMessageListener);
             plugin.setModuleManager(moduleManager);
             return true;
         } catch (Throwable throwable) {
-            plugin.getLogger().log(Level.SEVERE, "Failed to prepare plugin startup.", throwable);
+            plugin.getLogger().log(
+                    Level.SEVERE,
+                    plugin.languageManager().text("logs.startup.failed", "Failed to prepare plugin startup."),
+                    throwable
+            );
             if (disablePluginOnFailure) {
                 disablePluginSafely();
             }

@@ -1,5 +1,6 @@
 package io.github.devskycore.faunareborn.combat.deathmessage;
 
+import io.github.devskycore.faunareborn.lang.LanguageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
@@ -19,6 +20,11 @@ public final class HostilityDeathMessageListener implements Listener {
     private static final NamedTextColor EMPHASIS_COLOR = NamedTextColor.RED;
     private static final TextColor MOB_GRADIENT_START = TextColor.color(0xFF5555);
     private static final TextColor MOB_GRADIENT_END = TextColor.color(0xAA0000);
+    private final LanguageManager language;
+
+    public HostilityDeathMessageListener(LanguageManager language) {
+        this.language = language;
+    }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     private void onPlayerDeath(PlayerDeathEvent event) {
@@ -48,7 +54,7 @@ public final class HostilityDeathMessageListener implements Listener {
 
     private Component buildMessage(String playerName, HostileSpecies species, HostilityCause cause) {
         return Component.text(playerName, PLAYER_COLOR)
-                .append(Component.text(" died ", MESSAGE_COLOR))
+                .append(Component.text(t("death.common.died", " died "), MESSAGE_COLOR))
                 .append(detailComponent(species, cause));
     }
 
@@ -56,88 +62,88 @@ public final class HostilityDeathMessageListener implements Listener {
         Component hostileName = hostileName(species);
         Component hostilePlural = hostilePlural(species);
         return switch (cause) {
-            case ROD_PROVOCATION -> base("after ")
-                    .append(emphasis("hooking"))
-                    .append(base(" the wrong "))
+            case ROD_PROVOCATION -> base(t("death.cause.rod.prefix", "after "))
+                    .append(emphasis(t("death.cause.rod.hook-action", "hooking")))
+                    .append(base(t("death.cause.rod.middle", " the wrong ")))
                     .append(hostileName)
-                    .append(base("."));
-            case MILKING_PROVOCATION -> base("after ")
-                    .append(emphasis("milking"))
-                    .append(base(" the wrong "))
+                    .append(base(t("death.common.dot", ".")));
+            case MILKING_PROVOCATION -> base(t("death.cause.milking.prefix", "after "))
+                    .append(emphasis(t("death.cause.milking.action", "milking")))
+                    .append(base(t("death.cause.milking.middle", " the wrong ")))
                     .append(hostileName)
-                    .append(base("."));
-            case TERRITORIAL_PICKUP -> base("after ")
-                    .append(emphasis("trespassing"))
-                    .append(base(" into "))
+                    .append(base(t("death.common.dot", ".")));
+            case TERRITORIAL_PICKUP -> base(t("death.cause.territorial.prefix", "after "))
+                    .append(emphasis(t("death.cause.territorial.action", "trespassing")))
+                    .append(base(t("death.cause.territorial.middle", " into ")))
                     .append(hostilePlural)
-                    .append(base(" territory."));
-            case COOKING_FURNACE -> base("by ")
-                    .append(emphasis("angering"))
+                    .append(base(t("death.cause.territorial.suffix", " territory.")));
+            case COOKING_FURNACE -> base(t("death.cause.cooking.prefix", "by "))
+                    .append(emphasis(t("death.cause.cooking.action", "angering")))
                     .append(base(" "))
                     .append(hostilePlural)
-                    .append(base(" with a furnace."));
-            case COOKING_SMOKER -> base("by ")
-                    .append(emphasis("angering"))
+                    .append(base(t("death.cause.cooking.furnace-suffix", " with a furnace.")));
+            case COOKING_SMOKER -> base(t("death.cause.cooking.prefix", "by "))
+                    .append(emphasis(t("death.cause.cooking.action", "angering")))
                     .append(base(" "))
                     .append(hostilePlural)
-                    .append(base(" with a smoker."));
-            case COOKING_CAMPFIRE -> base("by ")
-                    .append(emphasis("angering"))
+                    .append(base(t("death.cause.cooking.smoker-suffix", " with a smoker.")));
+            case COOKING_CAMPFIRE -> base(t("death.cause.cooking.prefix", "by "))
+                    .append(emphasis(t("death.cause.cooking.action", "angering")))
                     .append(base(" "))
                     .append(hostilePlural)
-                    .append(base(" with a campfire."));
-            case HERD_RETALIATION_DAMAGE -> base("after ")
-                    .append(emphasis("striking"))
-                    .append(base(" the wrong herd of "))
+                    .append(base(t("death.cause.cooking.campfire-suffix", " with a campfire.")));
+            case HERD_RETALIATION_DAMAGE -> base(t("death.cause.herd-damage.prefix", "after "))
+                    .append(emphasis(t("death.cause.herd-damage.action", "striking")))
+                    .append(base(t("death.cause.herd-damage.middle", " the wrong herd of ")))
                     .append(hostilePlural)
-                    .append(base("."));
-            case HERD_RETALIATION_NEARBY_KILL -> base("while trying to escape ")
-                    .append(emphasis("enraged"))
+                    .append(base(t("death.common.dot", ".")));
+            case HERD_RETALIATION_NEARBY_KILL -> base(t("death.cause.herd-nearby.prefix", "while trying to escape "))
+                    .append(emphasis(t("death.cause.herd-nearby.action", "enraged")))
                     .append(base(" "))
                     .append(hostilePlural)
-                    .append(base("."));
-            case BABY_PROTECTION -> base("after ")
-                    .append(emphasis("threatening"))
-                    .append(base(" a baby "))
+                    .append(base(t("death.common.dot", ".")));
+            case BABY_PROTECTION -> base(t("death.cause.baby.prefix", "after "))
+                    .append(emphasis(t("death.cause.baby.action", "threatening")))
+                    .append(base(t("death.cause.baby.middle", " a baby ")))
                     .append(hostileName)
-                    .append(base("."));
+                    .append(base(t("death.common.dot", ".")));
             case DIRECT_ASSAULT -> directAssaultText(species, hostileName);
         };
     }
 
     private Component directAssaultText(HostileSpecies species, Component hostileName) {
         return switch (species) {
-            case PIG -> base("after being ")
-                    .append(emphasis("mauled"))
-                    .append(base(" by a hostile "))
+            case PIG -> base(t("death.direct.pig.prefix", "after being "))
+                    .append(emphasis(t("death.direct.pig.action", "mauled")))
+                    .append(base(t("death.direct.pig.middle", " by a hostile ")))
                     .append(hostileName)
-                    .append(base("."));
-            case COW -> base("after being ")
-                    .append(emphasis("trampled"))
-                    .append(base(" by an enraged "))
+                    .append(base(t("death.common.dot", ".")));
+            case COW -> base(t("death.direct.cow.prefix", "after being "))
+                    .append(emphasis(t("death.direct.cow.action", "trampled")))
+                    .append(base(t("death.direct.cow.middle", " by an enraged ")))
                     .append(hostileName)
-                    .append(base("."));
-            case CHICKEN -> base("after being ")
-                    .append(emphasis("pecked apart"))
-                    .append(base(" by a hostile "))
+                    .append(base(t("death.common.dot", ".")));
+            case CHICKEN -> base(t("death.direct.chicken.prefix", "after being "))
+                    .append(emphasis(t("death.direct.chicken.action", "pecked apart")))
+                    .append(base(t("death.direct.chicken.middle", " by a hostile ")))
                     .append(hostileName)
-                    .append(base("."));
+                    .append(base(t("death.common.dot", ".")));
         };
     }
 
     private Component hostileName(HostileSpecies species) {
         return switch (species) {
-            case PIG -> gradientUppercase("PIG");
-            case COW -> gradientUppercase("COW");
-            case CHICKEN -> gradientUppercase("CHICKEN");
+            case PIG -> gradientUppercase(t("death.species.pig.singular", "PIG"));
+            case COW -> gradientUppercase(t("death.species.cow.singular", "COW"));
+            case CHICKEN -> gradientUppercase(t("death.species.chicken.singular", "CHICKEN"));
         };
     }
 
     private Component hostilePlural(HostileSpecies species) {
         return switch (species) {
-            case PIG -> gradientUppercase("PIGS");
-            case COW -> gradientUppercase("COWS");
-            case CHICKEN -> gradientUppercase("CHICKENS");
+            case PIG -> gradientUppercase(t("death.species.pig.plural", "PIGS"));
+            case COW -> gradientUppercase(t("death.species.cow.plural", "COWS"));
+            case CHICKEN -> gradientUppercase(t("death.species.chicken.plural", "CHICKENS"));
         };
     }
 
@@ -167,5 +173,9 @@ public final class HostilityDeathMessageListener implements Listener {
 
     private int lerp(int start, int end, float ratio) {
         return Math.round(start + ((end - start) * ratio));
+    }
+
+    private String t(String path, String fallback) {
+        return language.text(path, fallback);
     }
 }

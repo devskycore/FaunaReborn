@@ -18,9 +18,11 @@ public final class GuiCommand implements FaunaSubcommand {
     );
 
     private final FaunaMainGui mainGui;
+    private final CommandMessages commandMessages;
 
-    public GuiCommand(FaunaMainGui mainGui) {
+    public GuiCommand(FaunaMainGui mainGui, CommandMessages commandMessages) {
         this.mainGui = mainGui;
+        this.commandMessages = commandMessages;
     }
 
     @Override
@@ -36,7 +38,7 @@ public final class GuiCommand implements FaunaSubcommand {
     @Override
     public void execute(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
-            CommandMessages.sendPlayerOnly(sender);
+            commandMessages.sendPlayerOnly(sender);
             return;
         }
         mainGui.open(player);

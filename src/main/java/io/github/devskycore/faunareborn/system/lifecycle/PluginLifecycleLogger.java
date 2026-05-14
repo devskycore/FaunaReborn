@@ -1,5 +1,6 @@
 package io.github.devskycore.faunareborn.system.lifecycle;
 
+import io.github.devskycore.faunareborn.lang.LanguageManager;
 import java.util.concurrent.TimeUnit;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -9,18 +10,18 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class PluginLifecycleLogger {
     private PluginLifecycleLogger() {}
 
-    public static void onEnable(final JavaPlugin plugin, final long startedAtNanos) {
+    public static void onEnable(final JavaPlugin plugin, final LanguageManager language, final long startedAtNanos) {
         final ConsoleCommandSender console = plugin.getServer().getConsoleSender();
         console.sendMessage(Component.text("[Status] ", NamedTextColor.DARK_GRAY)
-                .append(Component.text("Plugin enabled in ", NamedTextColor.GRAY))
+                .append(Component.text(language.text("lifecycle.enabled-in", "Plugin enabled in "), NamedTextColor.GRAY))
                 .append(Component.text(elapsedMillis(startedAtNanos) + " ms", NamedTextColor.GREEN))
                 .append(Component.text(".", NamedTextColor.GRAY)));
     }
 
-    public static void onDisable(final JavaPlugin plugin, final long startedAtNanos) {
+    public static void onDisable(final JavaPlugin plugin, final LanguageManager language, final long startedAtNanos) {
         final ConsoleCommandSender console = plugin.getServer().getConsoleSender();
         console.sendMessage(Component.text("[Status] ", NamedTextColor.DARK_GRAY)
-                .append(Component.text("Plugin disabled in ", NamedTextColor.GRAY))
+                .append(Component.text(language.text("lifecycle.disabled-in", "Plugin disabled in "), NamedTextColor.GRAY))
                 .append(Component.text(elapsedMillis(startedAtNanos) + " ms", NamedTextColor.RED))
                 .append(Component.text(".", NamedTextColor.GRAY)));
     }
