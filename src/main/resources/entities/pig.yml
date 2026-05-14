@@ -1,7 +1,23 @@
+# =============================================================================
+# Quick Guide (Entities)
+# =============================================================================
+# - Use true/false for booleans.
+# - Use decimals for multipliers, cooldowns, and distances.
+# - Keep 2-space indentation under each parent key.
+# - Keep key names exactly as provided by the plugin.
+# - Tuning tip: values ending in "-multiplier" scale behavior intensity.
+
+# =============================================================================
+# Pig Module
+# =============================================================================
 pig:
   enabled: true
 
+# =============================================================================
+# Pig Hostility
+# =============================================================================
 pig-hostility:
+  # Coordinates nearby pigs to react together.
   social-alert:
     enabled: true
     radius: 14.0
@@ -14,6 +30,9 @@ pig-hostility:
       by-damage-to-pig: true
       by-nearby-pig-death: true
 
+# =============================================================================
+# Rod Provocation
+# =============================================================================
 pig-rod-provocation:
   enabled: true
   aggression-duration-seconds: 6.0
@@ -41,6 +60,9 @@ pig-rod-provocation:
     warning-enabled: true
     stomp-enabled: true
 
+# =============================================================================
+# Resource Provocation
+# =============================================================================
 pig-resource-provocation:
   enabled: true
   thresholds:
@@ -58,6 +80,9 @@ pig-resource-provocation:
   trigger-cooldown-seconds: 2.5
   aggression-duration-seconds: 10.0
 
+# =============================================================================
+# Environment Modifiers
+# =============================================================================
 environment-modifiers:
   enabled: true
   debug: false

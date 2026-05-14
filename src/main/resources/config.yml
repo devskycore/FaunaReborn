@@ -1,25 +1,48 @@
+# =============================================================================
+# Quick Guide
+# =============================================================================
+# - Use true/false for booleans.
+# - Use decimals for numeric multipliers and distances (e.g., 1.0, 14.0).
+# - Use [] for lists (example: worlds: [world, world_nether]).
+# - Use {} for key/value maps (example: world-multipliers: {world_nether: 1.15}).
+# - Keep 2-space indentation under each parent key.
+# - Keep section names and key names exactly as provided.
+
+# =============================================================================
+# Core
+# =============================================================================
 config-version: 1
 global-enabled: true
 
+# =============================================================================
+# Language
+# =============================================================================
 language:
-  # Language code loaded from plugins/FaunaReborn/lang/
-  # Examples: en, es
+  # Language code loaded from plugins/FaunaReborn/lang/.
+  # Examples: en, es, pt.
   file: en
 
-# Global world filter for entity hostility modules.
+# =============================================================================
+# World Filter
+# =============================================================================
+# Global world filter for hostility modules.
 # ALL: enabled in every world.
 # WHITELIST: enabled only in listed worlds.
 # BLACKLIST: enabled in every world except listed worlds.
 world-filter:
-  mode: ALL # ALL | WHITELIST | BLACKLIST
+  mode: ALL # Accepted values: ALL | WHITELIST | BLACKLIST.
+  # Worlds used by WHITELIST/BLACKLIST mode.
   worlds: []
 
+# =============================================================================
+# Level of Detail (LOD)
+# =============================================================================
 lod:
   enabled: true
-  # Prevents rapid tier thrashing near boundaries.
+  # Prevents rapid tier switching near distance boundaries.
   hysteresis-distance: 3.0
   distances:
-    # Distance from nearest player (blocks) used for tiering.
+    # Distance from nearest player (in blocks) used for tiering.
     high: 14.0
     medium: 28.0
     low: 44.0
@@ -29,6 +52,9 @@ lod:
     low: 5
     off: 10
 
+# =============================================================================
+# Targeting
+# =============================================================================
 targeting:
   ignore:
     adventure: true
@@ -37,48 +63,67 @@ targeting:
     god-mode: true
   scoring:
     enabled: true
+    # Higher value prioritizes lower-health targets more strongly.
     health-weight: 1.25
+    # Higher value prioritizes closer targets more strongly.
     distance-weight: 1.0
+    # Higher value prioritizes targets with current threat.
     current-threat-weight: 0.75
+    # Bonus applied when line of sight is clear.
     line-of-sight-bonus: 0.35
     retarget-cooldown-seconds: 2.5
     require-multiple-candidates: true
 
+# =============================================================================
+# Damage Scaling
+# =============================================================================
 damage-scaling:
   difficulty-multipliers:
     peaceful: 0.0
     easy: 0.95
     normal: 1.0
     hard: 1.15
-  # Per-world extra multipliers (world name -> multiplier).
+  # Extra per-world multipliers (world name -> multiplier).
   # Example:
   # world_nether: 1.15
   world-multipliers: {}
 
+# =============================================================================
+# Activation
+# =============================================================================
 activation:
-  chance: 1.0 # 1.0 = 100%
+  chance: 1.0 # Activation chance from 0.0 to 1.0 (1.0 = 100%).
   only-natural: true
   ignore-named: true
 
-# Hard caps for active hostile entities (non-IDLE) to protect server performance.
+# =============================================================================
+# Performance Caps
+# =============================================================================
+# Hard caps for active hostile entities (non-IDLE) to protect performance.
 max-active-hostile-chickens-per-chunk: 8
 max-active-hostile-chickens-per-world: 200
-# Hard cap of hostile entities processed each tick (global) to prevent lag spikes.
+# Hard global cap of hostile entities processed per tick to prevent spikes.
 max-processed-chickens-per-tick: 240
 
+# =============================================================================
+# Night Behavior
+# =============================================================================
 night-behavior:
   enabled: true
   damage:
     enabled: true
     multiplier: 1.2
 
+# =============================================================================
+# Visual Effects
+# =============================================================================
 visual-effects:
   glow:
     enabled: true
   particles:
     enabled: true
     interval-ticks: 8
-    # Relative particle amount/intensity.
+    # Relative particle amount/intensity multiplier.
     intensity: 1.0
   sound:
     enabled: true

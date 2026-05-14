@@ -1,5 +1,18 @@
+# =============================================================================
+# Quick Guide (Lang)
+# =============================================================================
+# - Keep placeholders like {language}, {totalPages}, {elapsedMillis} unchanged.
+# - Keep commands and slash syntax unchanged (example: /fauna help [page]).
+# - Keep 2-space indentation under each parent key.
+# - Keep key names exactly as provided by the plugin.
+# - Translate only values inside quotes.
+
+# =============================================================================
+# Commands
+# =============================================================================
 commands:
   common:
+    # Keep this short for chat and GUI readability.
     prefix: "FaunaReborn"
     no-permission: "You do not have permission to use this command."
     player-only: "This command can only be executed by a player."
@@ -61,10 +74,15 @@ commands:
     failed: "FaunaReborn reload failed. Previous configuration is still active."
   lang:
     usage: "Usage: /fauna lang <language>"
+    # Keep placeholders like {languages} unchanged.
     available: "Available languages: {languages}"
     invalid: "Language '{language}' not found. Available: {languages}"
+    # Keep placeholders like {language} unchanged.
     changed: "Language changed to {language}."
 
+# =============================================================================
+# GUI
+# =============================================================================
 gui:
   title:
     main: "FaunaReborn"
@@ -87,13 +105,16 @@ gui:
     click-to-open: "Click to change language"
     status-label: "Status"
     selected: "SELECTED"
+    # Keep placeholders like {languages} unchanged.
     available: "AVAILABLE"
     click-to-select: "Click to select"
     back-main: "BACK"
     back-tail: "Main Menu"
     back-description: "Return to the control panel"
     back-click: "Click to go back"
+    # Keep placeholders like {language} unchanged.
     changed: "Language changed to {file}."
+    already-selected: "The plugin language is already set to {file}."
   toggle:
     click-to-toggle: "Click to toggle hostility"
     applying-update: "Applying runtime update..."
@@ -117,6 +138,9 @@ gui:
     toggle-set-to: " set to "
     dot: "."
 
+# =============================================================================
+# Death Messages
+# =============================================================================
 death:
   common:
     died: " died "
@@ -176,15 +200,24 @@ death:
       action: "pecked apart"
       middle: " by a hostile "
 
+# =============================================================================
+# Banner
+# =============================================================================
 banner:
   title: "FAUNAREBORN"
   version-line: "Version > {version}"
   mc-line: "MC > {minecraftVersion}"
 
+# =============================================================================
+# Lifecycle
+# =============================================================================
 lifecycle:
   enabled-in: "Plugin enabled in "
   disabled-in: "Plugin disabled in "
 
+# =============================================================================
+# Logs
+# =============================================================================
 logs:
   startup:
     folia-detected: "Folia runtime detected. Enabling Folia scheduler pathways."

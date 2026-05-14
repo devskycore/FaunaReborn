@@ -16,8 +16,10 @@ public final class LanguageManager {
 
     private static final String DEFAULT_LANGUAGE_CODE = "en";
     private static final String SPANISH_LANGUAGE_CODE = "es";
+    private static final String PORTUGUESE_LANGUAGE_CODE = "pt";
     private static final String DEFAULT_LANGUAGE_FILE = "english.yml";
     private static final String SPANISH_LANGUAGE_FILE = "spanish.yml";
+    private static final String PORTUGUESE_LANGUAGE_FILE = "portuguese.yml";
     private static final String LANGUAGE_CONFIG_PATH = "language.file";
 
     private final FaunaRebornPlugin plugin;
@@ -38,6 +40,7 @@ public final class LanguageManager {
 
         saveResourceIfAbsent("lang/" + DEFAULT_LANGUAGE_FILE);
         saveResourceIfAbsent("lang/" + SPANISH_LANGUAGE_FILE);
+        saveResourceIfAbsent("lang/" + PORTUGUESE_LANGUAGE_FILE);
         File englishFile = new File(languageDirectory, DEFAULT_LANGUAGE_FILE);
         defaultLanguage = YamlConfiguration.loadConfiguration(englishFile);
 
@@ -61,6 +64,9 @@ public final class LanguageManager {
         }
         if (new File(languageDirectory, SPANISH_LANGUAGE_FILE).exists()) {
             languages.add(SPANISH_LANGUAGE_CODE);
+        }
+        if (new File(languageDirectory, PORTUGUESE_LANGUAGE_FILE).exists()) {
+            languages.add(PORTUGUESE_LANGUAGE_CODE);
         }
         if (languages.isEmpty()) {
             return List.of(DEFAULT_LANGUAGE_CODE);
@@ -139,6 +145,13 @@ public final class LanguageManager {
         if (trimmed.equals("spanish") || trimmed.equals("espanol") || trimmed.equals("español")) {
             return SPANISH_LANGUAGE_CODE;
         }
+        if (trimmed.equals("portuguese")
+                || trimmed.equals("portugues")
+                || trimmed.equals("português")
+                || trimmed.equals("pt-br")
+                || trimmed.equals("pt_br")) {
+            return PORTUGUESE_LANGUAGE_CODE;
+        }
         return trimmed;
     }
 
@@ -147,6 +160,7 @@ public final class LanguageManager {
         return switch (normalizedCode) {
             case DEFAULT_LANGUAGE_CODE -> DEFAULT_LANGUAGE_FILE;
             case SPANISH_LANGUAGE_CODE -> SPANISH_LANGUAGE_FILE;
+            case PORTUGUESE_LANGUAGE_CODE -> PORTUGUESE_LANGUAGE_FILE;
             default -> normalizedCode + ".yml";
         };
     }

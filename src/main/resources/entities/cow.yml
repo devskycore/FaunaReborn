@@ -1,8 +1,24 @@
+# =============================================================================
+# Quick Guide (Entities)
+# =============================================================================
+# - Use true/false for booleans.
+# - Use decimals for multipliers, cooldowns, and distances.
+# - Keep 2-space indentation under each parent key.
+# - Keep key names exactly as provided by the plugin.
+# - Tuning tip: values ending in "-multiplier" scale behavior intensity.
+
+# =============================================================================
+# Cow Module
+# =============================================================================
 cow:
   # Scaffold module for upcoming cow behavior.
   enabled: true
 
+# =============================================================================
+# Cow Hostility
+# =============================================================================
 cow-hostility:
+  # Coordinates nearby cows to react together.
   social-alert:
     enabled: true
     radius: 14.0
@@ -15,6 +31,9 @@ cow-hostility:
       by-damage-to-cow: true
       by-nearby-cow-death: true
 
+# =============================================================================
+# Milk Provocation
+# =============================================================================
 cow-milk-provocation:
   enabled: true
 
@@ -54,6 +73,9 @@ cow-milk-provocation:
     warning-enabled: true
     stomp-enabled: true
 
+# =============================================================================
+# Resource Provocation
+# =============================================================================
 cow-resource-provocation:
   enabled: true
   thresholds:
@@ -77,6 +99,9 @@ cow-resource-provocation:
   # Threat duration applied when resource provocation triggers.
   aggression-duration-seconds: 10.0
 
+# =============================================================================
+# Environment Modifiers
+# =============================================================================
 environment-modifiers:
   enabled: true
   debug: false

@@ -37,6 +37,7 @@ public final class FaunaMainGui implements Listener {
     private static final int[] TOGGLE_SLOTS = {20, 22, 24, 33};
     private static final int LANGUAGE_GUI_SIZE = 27;
     private static final int LANGUAGE_ENGLISH_SLOT = 11;
+    private static final int LANGUAGE_PORTUGUESE_SLOT = 13;
     private static final int LANGUAGE_SPANISH_SLOT = 15;
     private static final int LANGUAGE_BACK_SLOT = 22;
 
@@ -212,6 +213,10 @@ public final class FaunaMainGui implements Listener {
             applyLanguageSelection(clicker, "en");
             return;
         }
+        if (slot == LANGUAGE_PORTUGUESE_SLOT) {
+            applyLanguageSelection(clicker, "pt");
+            return;
+        }
         if (slot == LANGUAGE_SPANISH_SLOT) {
             applyLanguageSelection(clicker, "es");
         }
@@ -253,7 +258,8 @@ public final class FaunaMainGui implements Listener {
             inventory.setItem(i, frame);
         }
         inventory.setItem(LANGUAGE_ENGLISH_SLOT, createLanguageOptionItem("ENGLISH", "en", Material.WHITE_BANNER));
-        inventory.setItem(LANGUAGE_SPANISH_SLOT, createLanguageOptionItem("ESPANOL", "es", Material.RED_BANNER));
+        inventory.setItem(LANGUAGE_PORTUGUESE_SLOT, createLanguageOptionItem("PORTUGUÊS", "pt", Material.GREEN_BANNER));
+        inventory.setItem(LANGUAGE_SPANISH_SLOT, createLanguageOptionItem("ESPAÑOL", "es", Material.RED_BANNER));
         inventory.setItem(LANGUAGE_BACK_SLOT, createLanguageBackItem());
         return inventory;
     }
@@ -485,6 +491,17 @@ public final class FaunaMainGui implements Listener {
     }
 
     private void applyLanguageSelection(HumanEntity clicker, String languageCode) {
+        if (activeLanguageCode().equalsIgnoreCase(languageCode)) {
+            clicker.sendMessage(Component.text(
+                    plugin.languageManager().text("gui.language.already-selected", "The plugin language is already set to {file}.", java.util.Map.of("file", languageCode)),
+                    NamedTextColor.YELLOW
+            ).decoration(TextDecoration.ITALIC, false));
+            if (clicker instanceof Player player) {
+                player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, SoundCategory.MASTER, 0.5f, 0.95f);
+            }
+            clicker.openInventory(buildLanguageInventory());
+            return;
+        }
         plugin.languageManager().switchLanguage(languageCode);
         clicker.sendMessage(Component.text(
                 plugin.languageManager().text("gui.language.changed", "Language changed to {file}.", java.util.Map.of("file", languageCode)),

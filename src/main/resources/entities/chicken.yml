@@ -1,3 +1,15 @@
+# =============================================================================
+# Quick Guide (Entities)
+# =============================================================================
+# - Use true/false for booleans.
+# - Use decimals for multipliers, cooldowns, and distances (e.g., 1.0, 9.5).
+# - Keep 2-space indentation under each parent key.
+# - Keep key names exactly as provided by the plugin.
+# - Tuning tip: values ending in "-multiplier" scale behavior intensity.
+
+# =============================================================================
+# Chicken Hostility
+# =============================================================================
 chicken-hostility:
   enabled: true
 
@@ -22,6 +34,7 @@ chicken-hostility:
   # If a target stays out of line-of-sight for this many seconds, chase is canceled.
   no-line-of-sight-reset-seconds: 1.75
 
+  # Coordinates nearby chickens to react together.
   social-alert:
     enabled: true
     triggers:
@@ -73,6 +86,7 @@ chicken-hostility:
       # Jump triggers when target is at least this many blocks higher.
       trigger-height-delta: 0.6
 
+  # Territorial reaction to resource pickups near chickens.
   item-pickup-territoriality:
     enabled: true
     thresholds:
@@ -96,6 +110,9 @@ chicken-hostility:
       # Uses the existing social-alert system and its responder/cooldown limits.
       enabled: true
 
+# =============================================================================
+# Environment Modifiers
+# =============================================================================
 environment-modifiers:
   enabled: true
   debug: false

@@ -94,12 +94,6 @@ When opening an issue, include as much detail as possible:
 
 Bug reports without reproduction steps may be delayed until more information is provided.
 
-## Security
-
-Do not disclose vulnerabilities publicly first.
-If you discover a security issue, report it privately to the maintainer.
-(Recommended: add a `SECURITY.md` with a dedicated contact channel.)
-
 ## License
 
 By contributing, you agree that your contributions are licensed under the same MIT License used by this repository.
