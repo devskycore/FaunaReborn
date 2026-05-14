@@ -117,7 +117,28 @@ FaunaReborn is a configurable hostile-fauna combat plugin for Paper/Folia server
 
 ## Support
 
-For support, updates, and issue tracking, use your official distribution channel and repository release page.
+Use the repository channels according to purpose:
+
+- **Bug reports**: [Issues](https://github.com/devskycore/FaunaReborn/issues/new/choose)
+- **Feature requests**: [Issues](https://github.com/devskycore/FaunaReborn/issues/new/choose)
+- **Questions and setup help**: [Discussions (Q&A)](https://github.com/devskycore/FaunaReborn/discussions)
+- **Project updates and announcements**: [Discussions (Announcements)](https://github.com/devskycore/FaunaReborn/discussions)
+
+Please follow the pinned discussion:
+- [How to Use Issues vs Discussions](https://github.com/devskycore/FaunaReborn/discussions)
+
+## Contributing
+
+Contributions are welcome and reviewed in detail by the maintainer.
+
+- Read the contribution guide first: [CONTRIBUTING.md](./CONTRIBUTING.md)
+- Use the provided issue forms and pull request template for consistency.
+- Keep changes focused, validated, and production-safe (Paper/Folia compatibility and performance-aware behavior).
+
+## Security
+
+Do **not** disclose vulnerabilities publicly first.
+Please report security issues privately to the maintainer.
 
 ## License
 
