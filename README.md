@@ -200,6 +200,12 @@ Use the repository channels according to purpose:
 - **Questions and setup help**: [Discussions (Q&A)](https://github.com/devskycore/FaunaReborn/discussions)
 - **Project updates and announcements**: [Discussions (Announcements)](https://github.com/devskycore/FaunaReborn/discussions)
 
+### Discord Server Support
+
+![Discord Server Support](./assets/images/Discord_Server_Support.png)
+
+- **Discord support server**: [Join Discord](https://discord.gg/GvbxzTz88x)
+
 Please follow the pinned discussion:
 - [How to Use Issues vs Discussions](https://github.com/devskycore/FaunaReborn/discussions)
 
