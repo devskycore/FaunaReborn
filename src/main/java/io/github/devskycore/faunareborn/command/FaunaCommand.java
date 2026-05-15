@@ -56,8 +56,12 @@ public final class FaunaCommand implements CommandExecutor, TabCompleter {
             @NotNull String label,
             @NotNull String[] args
     ) {
-        registry.execute(sender, args);
+        execute(sender, args);
         return true;
+    }
+
+    public void execute(@NotNull CommandSender sender, @NotNull String[] args) {
+        registry.execute(sender, args);
     }
 
     @Override
@@ -67,6 +71,10 @@ public final class FaunaCommand implements CommandExecutor, TabCompleter {
             @NotNull String alias,
             @NotNull String[] args
     ) {
+        return suggest(sender, args);
+    }
+
+    public @NotNull List<String> suggest(@NotNull CommandSender sender, @NotNull String[] args) {
         List<String> suggestions = registry.suggest(sender, args);
         return suggestions.isEmpty() ? Collections.emptyList() : List.copyOf(suggestions);
     }

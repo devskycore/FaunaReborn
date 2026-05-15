@@ -1,5 +1,6 @@
 package io.github.devskycore.faunareborn.core;
 
+import io.github.devskycore.faunareborn.command.CommandCompatibilityRegistrar;
 import io.github.devskycore.faunareborn.command.FaunaCommand;
 import io.github.devskycore.faunareborn.command.FaunaReloadService;
 import io.github.devskycore.faunareborn.combat.deathmessage.HostilityDeathMessageListener;
@@ -14,7 +15,6 @@ import io.github.devskycore.faunareborn.system.lifecycle.PluginLifecycleLogger;
 import io.github.devskycore.faunareborn.system.shutdown.ShutdownOrchestrator;
 import io.github.devskycore.faunareborn.system.startup.StartupOrchestrator;
 import org.bukkit.Material;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class FaunaRebornPlugin extends JavaPlugin {
@@ -82,14 +82,7 @@ public final class FaunaRebornPlugin extends JavaPlugin {
         FaunaMainGui mainGui = new FaunaMainGui(this, guiConfigService, reloadService());
         getServer().getPluginManager().registerEvents(mainGui, this);
         FaunaCommand faunaCommand = new FaunaCommand(this, mainGui, guiConfigService, languageManager());
-        PluginCommand command = getCommand("fauna");
-        if (command == null) {
-            getLogger().severe("Command 'fauna' is not declared in paper-plugin.yml. Disabling plugin.");
-            getServer().getPluginManager().disablePlugin(this);
-            return;
-        }
-        command.setExecutor(faunaCommand);
-        command.setTabCompleter(faunaCommand);
+        CommandCompatibilityRegistrar.register(this, faunaCommand);
     }
 
     private PluginGuiConfigService createGuiConfigService() {

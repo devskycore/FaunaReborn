@@ -108,7 +108,7 @@ FaunaReborn is built against Paper API `1.21.11`, but runtime behavior depends o
 | Paper version | Status | Notes |
 |---|---|---|
 | `1.20.x` and below | Not supported | Plugin targets the `1.21` API. |
-| `1.21`, `1.21.1`, `1.21.3` | Supported | Uses classic command registration (`paper-plugin.yml` + `getCommand(...)`). |
+| `1.21`, `1.21.1`, `1.21.3` | Experimental | Compatibility path exists, but not considered production-stable yet. |
 | `1.21.4` to `1.21.7` | Supported | Uses compatibility fallback for world difficulty changes (polling hook). |
 | `1.21.8`, `1.21.9`, `1.21.10`, `1.21.11` | Fully supported | Stable operation, no known class compatibility issues. |
 | `1.26.1.2` | Supported | Compatible and supported. |
