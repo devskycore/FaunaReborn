@@ -202,7 +202,7 @@ Use the repository channels according to purpose:
 
 ### Discord Server Support
 
-![Discord Server Support](./assets/images/Discord_Server_Support.png)
+[![Discord Server Support](./assets/images/Discord_Server_Support.png)](https://discord.gg/GvbxzTz88x)
 
 - **Discord support server**: [Join Discord](https://discord.gg/GvbxzTz88x)
 
