@@ -7,11 +7,12 @@ import io.github.devskycore.faunareborn.config.entity.EntityType;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
 import io.github.devskycore.faunareborn.module.FaunaFeatureRegistry;
 import io.github.devskycore.faunareborn.module.ModuleManager;
+import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapter;
+import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapters;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.HandlerList;
-import org.bukkit.scheduler.BukkitScheduler;
 
 import java.io.File;
 import java.util.concurrent.CompletableFuture;
@@ -26,6 +27,7 @@ public final class FaunaReloadService {
     private final FaunaRebornPlugin plugin;
     private final AtomicBoolean inProgress = new AtomicBoolean(false);
     private final ExecutorService reloadExecutor;
+    private final SchedulerAdapter scheduler;
 
     public FaunaReloadService(FaunaRebornPlugin plugin) {
         this.plugin = plugin;
@@ -35,6 +37,7 @@ public final class FaunaReloadService {
             return thread;
         };
         this.reloadExecutor = Executors.newSingleThreadExecutor(threadFactory);
+        this.scheduler = SchedulerAdapters.create(plugin);
     }
 
     public void reload(CommandSender sender) {
@@ -180,8 +183,12 @@ public final class FaunaReloadService {
     }
 
     private void scheduleOnMainThread(Runnable action) {
-        BukkitScheduler scheduler = plugin.getServer().getScheduler();
-        scheduler.runTask(plugin, action);
+        try {
+            scheduler.runNextTick(action);
+        } catch (Throwable throwable) {
+            inProgress.set(false);
+            logReloadFailure("Failed to schedule reload apply task on server thread.", throwable);
+        }
     }
 
     private void logReloadFailure(String message, Throwable throwable) {
