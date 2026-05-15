@@ -2,6 +2,8 @@ package io.github.devskycore.faunareborn.animal.chicken.hostility;
 
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import io.github.devskycore.faunareborn.animal.chicken.config.ChickenHostilitySettings;
+import io.github.devskycore.faunareborn.animal.chicken.compat.DifficultyCompatibilityFactory;
+import io.github.devskycore.faunareborn.animal.chicken.compat.DifficultyCompatibilityHook;
 import io.github.devskycore.faunareborn.combat.deathmessage.HostileSpecies;
 import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
 import io.github.devskycore.faunareborn.combat.deathmessage.HostilityContextTracker;
@@ -15,7 +17,6 @@ import io.github.devskycore.faunareborn.targeting.TargetScoringService;
 import io.github.devskycore.faunareborn.system.lod.LodResolver;
 import io.github.devskycore.faunareborn.system.lod.LodSettings;
 import io.github.devskycore.faunareborn.system.lod.LodTier;
-import io.papermc.paper.event.world.WorldDifficultyChangeEvent;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.bukkit.Difficulty;
@@ -92,6 +93,7 @@ final class ChickenHostilityTask implements Listener {
     private final boolean folia;
     private final LodSettings lodSettings;
     private final Int2ObjectOpenHashMap<LodTier> lodTierByChickenId = new Int2ObjectOpenHashMap<>();
+    private final DifficultyCompatibilityHook difficultyCompatibilityHook;
 
     private final int maxProcessedChickensPerTick;
     private final int attackCooldownTicks;
@@ -147,12 +149,14 @@ final class ChickenHostilityTask implements Listener {
                 settings.visuals().soundIntervalTicks(),
                 settings.visuals().soundVolume()
         );
+        this.difficultyCompatibilityHook = DifficultyCompatibilityFactory.create(plugin, this::handleWorldSetPeaceful);
     }
 
     void start() {
         if (task != null) return;
 
         plugin.getServer().getPluginManager().registerEvents(this, plugin);
+        difficultyCompatibilityHook.start();
         worldNightStateCache.start();
         trackLoadedChickens();
         task = scheduler.runAtFixedRate(this::tick, 1L, TICK_RATE);
@@ -161,6 +165,7 @@ final class ChickenHostilityTask implements Listener {
     void stop() {
         if (task != null) task.cancel();
         task = null;
+        difficultyCompatibilityHook.stop();
         worldNightStateCache.stop();
 
         HandlerList.unregisterAll(this);
@@ -1103,13 +1108,7 @@ final class ChickenHostilityTask implements Listener {
         });
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    private void onWorldDifficultyChange(WorldDifficultyChangeEvent event) {
-        if (event.getDifficulty() != Difficulty.PEACEFUL) {
-            return;
-        }
-
-        World world = event.getWorld();
+    private void handleWorldSetPeaceful(World world) {
         enqueueStateMutation(() -> {
             for (var iterator = tracker.trackedChickens().int2ObjectEntrySet().fastIterator(); iterator.hasNext(); ) {
                 Int2ObjectMap.Entry<Chicken> entry = iterator.next();

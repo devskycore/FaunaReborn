@@ -14,16 +14,16 @@ import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
 import io.github.devskycore.faunareborn.gui.FaunaMainGui;
 import io.github.devskycore.faunareborn.gui.PluginGuiConfigService;
 import io.github.devskycore.faunareborn.lang.LanguageManager;
-import io.papermc.paper.command.brigadier.BasicCommand;
-import io.papermc.paper.command.brigadier.CommandSourceStack;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.jspecify.annotations.NonNull;
+import org.bukkit.command.TabCompleter;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public final class FaunaCommand implements BasicCommand {
+public final class FaunaCommand implements CommandExecutor, TabCompleter {
 
     private final CommandRegistry registry;
 
@@ -50,20 +50,24 @@ public final class FaunaCommand implements BasicCommand {
     }
 
     @Override
-    public void execute(@NonNull CommandSourceStack source, String[] args) {
-        final CommandSender sender = source.getSender();
+    public boolean onCommand(
+            @NotNull CommandSender sender,
+            @NotNull Command command,
+            @NotNull String label,
+            @NotNull String[] args
+    ) {
         registry.execute(sender, args);
+        return true;
     }
 
     @Override
-    public @NonNull Collection<String> suggest(@NonNull CommandSourceStack source, String[] args) {
-        final CommandSender sender = source.getSender();
+    public @NotNull List<String> onTabComplete(
+            @NotNull CommandSender sender,
+            @NotNull Command command,
+            @NotNull String alias,
+            @NotNull String[] args
+    ) {
         List<String> suggestions = registry.suggest(sender, args);
         return suggestions.isEmpty() ? Collections.emptyList() : List.copyOf(suggestions);
-    }
-
-    @Override
-    public @NonNull String permission() {
-        return "";
     }
 }

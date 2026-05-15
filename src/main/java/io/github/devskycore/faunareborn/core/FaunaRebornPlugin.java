@@ -14,6 +14,7 @@ import io.github.devskycore.faunareborn.system.lifecycle.PluginLifecycleLogger;
 import io.github.devskycore.faunareborn.system.shutdown.ShutdownOrchestrator;
 import io.github.devskycore.faunareborn.system.startup.StartupOrchestrator;
 import org.bukkit.Material;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class FaunaRebornPlugin extends JavaPlugin {
@@ -80,12 +81,15 @@ public final class FaunaRebornPlugin extends JavaPlugin {
         PluginGuiConfigService guiConfigService = createGuiConfigService();
         FaunaMainGui mainGui = new FaunaMainGui(this, guiConfigService, reloadService());
         getServer().getPluginManager().registerEvents(mainGui, this);
-        registerCommand(
-                "fauna",
-                "Main command for FaunaReborn.",
-                java.util.List.of("faunareborn", "fr"),
-                new FaunaCommand(this, mainGui, guiConfigService, languageManager())
-        );
+        FaunaCommand faunaCommand = new FaunaCommand(this, mainGui, guiConfigService, languageManager());
+        PluginCommand command = getCommand("fauna");
+        if (command == null) {
+            getLogger().severe("Command 'fauna' is not declared in paper-plugin.yml. Disabling plugin.");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+        command.setExecutor(faunaCommand);
+        command.setTabCompleter(faunaCommand);
     }
 
     private PluginGuiConfigService createGuiConfigService() {

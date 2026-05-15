@@ -10,6 +10,13 @@ load: POSTWORLD
 authors: [ DevSkyCore ]
 website: https://github.com/devskycore
 
+commands:
+  fauna:
+    description: Main command for FaunaReborn.
+    aliases: [ faunareborn, fr ]
+    permission: fauna.command.help
+    usage: "/fauna help"
+
 permissions:
   fauna.*:
     description: Grants access to all FaunaReborn commands.

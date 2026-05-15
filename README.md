@@ -101,6 +101,22 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 - **Folia**: Supported
 - **Dependencies**: None required
 
+## Version Compatibility
+
+FaunaReborn is built against Paper API `1.21.11`, but runtime behavior depends on the exact Paper subversion.
+
+| Paper version | Status | Notes |
+|---|---|---|
+| `1.20.x` and below | Not supported | Plugin targets the `1.21` API. |
+| `1.21`, `1.21.1`, `1.21.3` | Supported | Uses classic command registration (`paper-plugin.yml` + `getCommand(...)`). |
+| `1.21.4` to `1.21.7` | Supported | Uses compatibility fallback for world difficulty changes (polling hook). |
+| `1.21.8`, `1.21.9`, `1.21.10`, `1.21.11` | Fully supported | Stable operation, no known class compatibility issues. |
+| `1.26.1.2` | Supported | Compatible and supported. |
+
+Notes:
+- On `1.21.4` to `1.21.7`, you may see a one-time startup warning indicating the compatibility fallback hook is active.
+- If you want the recommended production setup, use Paper `1.21.8+` (preferably `1.21.11`).
+
 ## Installation
 
 1. Stop your server.
