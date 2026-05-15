@@ -1,6 +1,7 @@
 package io.github.devskycore.faunareborn.animal.cow.hostility;
 
 import io.github.devskycore.faunareborn.animal.cow.CowSettings;
+import io.github.devskycore.faunareborn.animal.common.settings.SharedVisualEffectsSettings;
 import io.github.devskycore.faunareborn.combat.deathmessage.HostileSpecies;
 import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
 import io.github.devskycore.faunareborn.combat.deathmessage.HostilityContextTracker;
@@ -20,6 +21,7 @@ import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Cow;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
 import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
@@ -318,7 +320,7 @@ final class CowMilkAggressionController {
     void provokeNearbyCowsFromSocialAlert(
             Cow emitter,
             Player aggressor,
-            java.util.List<org.bukkit.entity.Entity> nearbyEntities,
+            List<Entity> nearbyEntities,
             CowSettings.SocialAlertSettings socialAlertSettings,
             java.util.function.Predicate<Cow> naturalCowPredicate,
             HostilityCause hostilityCause
@@ -886,7 +888,7 @@ final class CowMilkAggressionController {
     }
 
     private void applyVisualEffects(Cow cow, CowMilkAggressionBrain brain) {
-        CowSettings.VisualEffectsSettings visual = global.visualEffects();
+        SharedVisualEffectsSettings visual = global.visualEffects();
         if (visual.glowEnabled() && !cow.isGlowing()) {
             cow.setGlowing(true);
         }
@@ -977,7 +979,7 @@ final class CowMilkAggressionController {
     }
 
     private long nextParticleTick(int cowId) {
-        CowSettings.VisualEffectsSettings visual = global.visualEffects();
+        SharedVisualEffectsSettings visual = global.visualEffects();
         if (!visual.particlesEnabled() || visual.particlesIntervalTicks() <= 0) {
             return Long.MAX_VALUE;
         }
@@ -1022,6 +1024,7 @@ final class CowMilkAggressionController {
     }
 
 }
+
 
 
 

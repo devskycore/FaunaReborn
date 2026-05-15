@@ -1,5 +1,6 @@
 package io.github.devskycore.faunareborn.animal.pig.hostility;
 
+import io.github.devskycore.faunareborn.animal.common.settings.SharedVisualEffectsSettings;
 import io.github.devskycore.faunareborn.animal.pig.PigSettings;
 import io.github.devskycore.faunareborn.combat.deathmessage.HostileSpecies;
 import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
@@ -19,6 +20,7 @@ import org.bukkit.SoundCategory;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Player;
 import org.bukkit.util.Vector;
@@ -307,7 +309,7 @@ final class PigAggressionController {
     void provokeNearbyPigsFromSocialAlert(
             Pig emitter,
             Player aggressor,
-            java.util.List<org.bukkit.entity.Entity> nearbyEntities,
+            List<Entity> nearbyEntities,
             PigSettings.SocialAlertSettings socialAlertSettings,
             java.util.function.Predicate<Pig> naturalPigPredicate,
             HostilityCause hostilityCause
@@ -893,7 +895,7 @@ final class PigAggressionController {
     }
 
     private void applyVisualEffects(Pig Pig, PigAggressionBrain brain) {
-        PigSettings.VisualEffectsSettings visual = global.visualEffects();
+        SharedVisualEffectsSettings visual = global.visualEffects();
         if (visual.glowEnabled() && !Pig.isGlowing()) {
             Pig.setGlowing(true);
         }
@@ -984,7 +986,7 @@ final class PigAggressionController {
     }
 
     private long nextParticleTick(int PigId) {
-        PigSettings.VisualEffectsSettings visual = global.visualEffects();
+        SharedVisualEffectsSettings visual = global.visualEffects();
         if (!visual.particlesEnabled() || visual.particlesIntervalTicks() <= 0) {
             return Long.MAX_VALUE;
         }
@@ -1029,6 +1031,7 @@ final class PigAggressionController {
     }
 
 }
+
 
 
 
