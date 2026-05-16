@@ -4,6 +4,7 @@ import io.github.devskycore.faunareborn.command.CommandCompatibilityRegistrar;
 import io.github.devskycore.faunareborn.command.FaunaCommand;
 import io.github.devskycore.faunareborn.command.FaunaReloadService;
 import io.github.devskycore.faunareborn.combat.deathmessage.HostilityDeathMessageListener;
+import io.github.devskycore.faunareborn.config.ConfigMigrationService;
 import io.github.devskycore.faunareborn.config.entity.EntityType;
 import io.github.devskycore.faunareborn.gui.EntityModuleToggle;
 import io.github.devskycore.faunareborn.gui.FaunaMainGui;
@@ -14,6 +15,8 @@ import io.github.devskycore.faunareborn.system.lifecycle.PluginBanner;
 import io.github.devskycore.faunareborn.system.lifecycle.PluginLifecycleLogger;
 import io.github.devskycore.faunareborn.system.shutdown.ShutdownOrchestrator;
 import io.github.devskycore.faunareborn.system.startup.StartupOrchestrator;
+import io.github.devskycore.faunareborn.system.update.GitHubUpdateChecker;
+import io.github.devskycore.faunareborn.system.update.UpdateNotifyListener;
 import org.bukkit.Material;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -23,10 +26,14 @@ public final class FaunaRebornPlugin extends JavaPlugin {
     private HostilityDeathMessageListener deathMessageListener;
     private FaunaReloadService reloadService;
     private LanguageManager languageManager;
+    private ConfigMigrationService configMigrationService;
+    private GitHubUpdateChecker updateChecker;
 
     @Override
     public void onEnable() {
         final long startedAt = System.nanoTime();
+        this.configMigrationService = new ConfigMigrationService(this);
+        this.configMigrationService.migrateIfNeeded();
         this.languageManager = new LanguageManager(this);
         this.languageManager.reload();
 
@@ -36,6 +43,7 @@ public final class FaunaRebornPlugin extends JavaPlugin {
         }
 
         registerCommands();
+        setupUpdateChecker();
         PluginBanner.printEnable(this, languageManager());
         PluginLifecycleLogger.onEnable(this, languageManager(), startedAt);
     }
@@ -45,6 +53,9 @@ public final class FaunaRebornPlugin extends JavaPlugin {
         final long startedAt = System.nanoTime();
 
         new ShutdownOrchestrator(this).run();
+        if (updateChecker != null) {
+            updateChecker.shutdown();
+        }
 
         PluginBanner.printDisable(this, languageManager());
         PluginLifecycleLogger.onDisable(this, languageManager(), startedAt);
@@ -77,12 +88,25 @@ public final class FaunaRebornPlugin extends JavaPlugin {
         return languageManager;
     }
 
+    public ConfigMigrationService configMigrationService() {
+        if (configMigrationService == null) {
+            configMigrationService = new ConfigMigrationService(this);
+        }
+        return configMigrationService;
+    }
+
     private void registerCommands() {
         PluginGuiConfigService guiConfigService = createGuiConfigService();
         FaunaMainGui mainGui = new FaunaMainGui(this, guiConfigService, reloadService());
         getServer().getPluginManager().registerEvents(mainGui, this);
         FaunaCommand faunaCommand = new FaunaCommand(this, mainGui, guiConfigService, languageManager());
         CommandCompatibilityRegistrar.register(this, faunaCommand);
+    }
+
+    private void setupUpdateChecker() {
+        this.updateChecker = new GitHubUpdateChecker(this);
+        getServer().getPluginManager().registerEvents(new UpdateNotifyListener(updateChecker), this);
+        updateChecker.checkNowAsync();
     }
 
     private PluginGuiConfigService createGuiConfigService() {

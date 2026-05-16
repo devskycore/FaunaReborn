@@ -36,9 +36,10 @@ public final class FaunaMainGui implements Listener {
     private static final int CLOSE_SLOT = 53;
     private static final int[] TOGGLE_SLOTS = {20, 22, 24, 33};
     private static final int LANGUAGE_GUI_SIZE = 27;
-    private static final int LANGUAGE_ENGLISH_SLOT = 11;
-    private static final int LANGUAGE_PORTUGUESE_SLOT = 13;
-    private static final int LANGUAGE_SPANISH_SLOT = 15;
+    private static final int LANGUAGE_ENGLISH_SLOT = 10;
+    private static final int LANGUAGE_PORTUGUESE_SLOT = 12;
+    private static final int LANGUAGE_SPANISH_SLOT = 14;
+    private static final int LANGUAGE_ITALIAN_SLOT = 16;
     private static final int LANGUAGE_BACK_SLOT = 22;
 
     private final FaunaRebornPlugin plugin;
@@ -73,7 +74,7 @@ public final class FaunaMainGui implements Listener {
     }
 
     public void openLanguageSelector(Player player) {
-        if (!permissionService.canUseGui(player)) {
+        if (!permissionService.canUseLang(player)) {
             commandMessages.sendNoPermission(player);
             return;
         }
@@ -100,7 +101,7 @@ public final class FaunaMainGui implements Listener {
         }
 
         HumanEntity clicker = event.getWhoClicked();
-        if (!permissionService.canUseGui(clicker)) {
+        if (!permissionService.canUseLang(clicker)) {
             commandMessages.sendNoPermission(clicker);
             clicker.closeInventory();
             return;
@@ -219,6 +220,10 @@ public final class FaunaMainGui implements Listener {
         }
         if (slot == LANGUAGE_SPANISH_SLOT) {
             applyLanguageSelection(clicker, "es");
+            return;
+        }
+        if (slot == LANGUAGE_ITALIAN_SLOT) {
+            applyLanguageSelection(clicker, "it");
         }
     }
 
@@ -260,6 +265,7 @@ public final class FaunaMainGui implements Listener {
         inventory.setItem(LANGUAGE_ENGLISH_SLOT, createLanguageOptionItem("ENGLISH", "en", Material.WHITE_BANNER));
         inventory.setItem(LANGUAGE_PORTUGUESE_SLOT, createLanguageOptionItem("PORTUGUÊS", "pt", Material.GREEN_BANNER));
         inventory.setItem(LANGUAGE_SPANISH_SLOT, createLanguageOptionItem("ESPAÑOL", "es", Material.RED_BANNER));
+        inventory.setItem(LANGUAGE_ITALIAN_SLOT, createLanguageOptionItem("ITALIANO", "it", Material.LIME_BANNER));
         inventory.setItem(LANGUAGE_BACK_SLOT, createLanguageBackItem());
         return inventory;
     }
@@ -306,8 +312,14 @@ public final class FaunaMainGui implements Listener {
                         .decorate(TextDecoration.BOLD)
         ));
         lore.add(Component.empty());
+        String toggleActionKey = enabled
+                ? "gui.toggle.click-to-disable"
+                : "gui.toggle.click-to-enable";
+        String toggleActionFallback = enabled
+                ? "Click to disable hostility"
+                : "Click to enable hostility";
         lore.add(Component.text("(!) ", NamedTextColor.YELLOW).append(
-                Component.text(language.text("gui.toggle.click-to-toggle", "Click to toggle hostility"), NamedTextColor.GRAY)
+                Component.text(language.text(toggleActionKey, toggleActionFallback), NamedTextColor.GRAY)
         ));
         lore = lore.stream().map(line -> line.decoration(TextDecoration.ITALIC, false)).toList();
         meta.lore(lore);

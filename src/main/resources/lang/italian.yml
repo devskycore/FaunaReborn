@@ -1,0 +1,226 @@
+# =============================================================================
+# Guida Rapida (Lingua)
+# =============================================================================
+# - Mantieni invariati i placeholder come {language}, {totalPages}, {elapsedMillis}.
+# - Mantieni invariati i comandi e la sintassi slash (esempio: /fauna help [page]).
+# - Mantieni 2 spazi di indentazione sotto ogni chiave padre.
+# - Mantieni i nomi delle chiavi esattamente come forniti dal plugin.
+# - Traduci solo i valori tra virgolette.
+
+# =============================================================================
+# Comandi
+# =============================================================================
+commands:
+  common:
+    prefix: "FaunaReborn"
+    no-permission: "Non hai il permesso per usare questo comando."
+    player-only: "Questo comando può essere eseguito solo da un giocatore."
+    unknown-subcommand: "Sottocomando sconosciuto. Usa /fauna help."
+    state:
+      enabled: "abilitato"
+      disabled: "disabilitato"
+      enabled-title: "Abilitato"
+      disabled-title: "Disabilitato"
+  meta:
+    help:
+      usage: "/fauna help [page]"
+      description: "Mostra i comandi disponibili."
+    version:
+      usage: "/fauna version"
+      description: "Mostra dettagli su versione del plugin e runtime."
+    about:
+      usage: "/fauna about"
+      description: "Scopri cosa fa FaunaReborn."
+    entities:
+      usage: "/fauna entities"
+      description: "Elenca le entità supportate e il loro stato attuale."
+    reload:
+      usage: "/fauna reload"
+      description: "Ricarica configurazione e moduli."
+    gui:
+      usage: "/fauna gui"
+      description: "Apri la GUI admin di FaunaReborn."
+    lang:
+      usage: "/fauna lang <language>"
+      description: "Cambia la lingua attiva del plugin."
+  help:
+    none-available: "Non hai comandi disponibili."
+    usage: "Uso: /fauna help [page]"
+    page-out-of-range: "Pagina fuori intervallo. Pagine disponibili: 1-{totalPages}."
+    header: "Comandi ({page}/{totalPages})"
+    next-page-tip: "Suggerimento: /fauna help {nextPage}"
+  about:
+    title: "FaunaReborn"
+    tagline: "La natura reagisce."
+    line1: "Trasforma animali passivi in minacce intelligenti e configurabili."
+    line2: "Include impostazioni per entità, controlli runtime, elaborazione ottimizzata e sistemi di comportamento avanzati."
+  entities:
+    header: "Entità Supportate"
+  version:
+    header: "Versione FaunaReborn"
+    unknown-author: "Sconosciuto"
+    name-label: "Nome"
+    version-label: "Versione"
+    authors-label: "Autori"
+    minecraft-label: "Minecraft"
+    server-label: "Server"
+    status-label: "Stato"
+    status-running: "In esecuzione"
+  reload:
+    already-in-progress: "La ricarica di FaunaReborn è già in corso."
+    started: "Ricarica di FaunaReborn avviata..."
+    completed: "Ricarica di FaunaReborn completata in {elapsedMillis} ms."
+    failed: "Ricarica di FaunaReborn non riuscita. La configurazione precedente è ancora attiva."
+  lang:
+    usage: "Uso: /fauna lang <language>"
+    available: "Lingue disponibili: {languages}"
+    invalid: "Lingua '{language}' non trovata. Disponibili: {languages}"
+    changed: "Lingua cambiata in {language}."
+
+# =============================================================================
+# GUI
+# =============================================================================
+gui:
+  title:
+    main: "FaunaReborn"
+    panel: "Impostazioni"
+  common:
+    settings: "Impostazioni"
+    status: "Stato"
+    enabled: "ATTIVO"
+    disabled: "DISATTIVO"
+  entities:
+    chicken: "POLLO"
+    cow: "MUCCA"
+    pig: "MAIALE"
+  language:
+    title-main: "LINGUA"
+    title-tail: "Seleziona"
+    button-main: "LINGUA"
+    button-tail: "Menu"
+    current-prefix: "Attuale"
+    click-to-open: "Clicca per cambiare lingua"
+    status-label: "Stato"
+    selected: "SELEZIONATA"
+    available: "DISPONIBILE"
+    click-to-select: "Clicca per selezionare"
+    back-main: "INDIETRO"
+    back-tail: "Menu Principale"
+    back-description: "Torna al pannello di controllo"
+    back-click: "Clicca per tornare indietro"
+    changed: "Lingua cambiata in {file}."
+    already-selected: "La lingua del plugin è già impostata su {file}."
+  toggle:
+    click-to-enable: "Clicca per attivare l'ostilità"
+    click-to-disable: "Clicca per disattivare l'ostilità"
+    applying-update: "Applicazione aggiornamento runtime..."
+    done: "Fatto"
+  reload:
+    title-main: "RICARICA"
+    title-tail: "File"
+    applies-manual: "Applica modifiche manuali"
+    click-to-reload: "Clicca per ricaricare i file"
+    syncing-files: "Sincronizzazione ultime modifiche..."
+    please-wait-tick: "Attendi 1 tick"
+  close:
+    title-main: "CHIUDI"
+    title-tail: "Menu"
+    exit-panel: "Esci da questo pannello di controllo"
+    click-to-close: "Clicca per chiudere il menu"
+  feedback:
+    failed-update-state: "Impossibile aggiornare lo stato del modulo per "
+    failed-runtime-update: "Aggiornamento runtime non riuscito per "
+    failed-runtime-update-suffix: ". Usa reload."
+    toggle-set-to: " impostato su "
+    dot: "."
+
+# =============================================================================
+# Messaggi di Morte
+# =============================================================================
+death:
+  common:
+    died: " è morto "
+    dot: "."
+  species:
+    pig:
+      singular: "MAIALE"
+      plural: "MAIALI"
+    cow:
+      singular: "MUCCA"
+      plural: "MUCCHE"
+    chicken:
+      singular: "POLLO"
+      plural: "POLLI"
+  cause:
+    rod:
+      prefix: "dopo aver "
+      hook-action: "agganciato"
+      middle: " il branco sbagliato di "
+    milking:
+      prefix: "dopo aver "
+      action: "munto"
+      middle: " la "
+    territorial:
+      prefix: "dopo essere "
+      action: "entrato"
+      middle: " nel territorio di "
+      suffix: "."
+    cooking:
+      prefix: "per aver "
+      action: "fatto infuriare"
+      furnace-suffix: " con una fornace."
+      smoker-suffix: " con un affumicatore."
+      campfire-suffix: " con un falò."
+    herd-damage:
+      prefix: "dopo aver "
+      action: "colpito"
+      middle: " il branco sbagliato di "
+    herd-nearby:
+      prefix: "mentre cercava di fuggire da "
+      action: "inferociti"
+    baby:
+      prefix: "dopo aver "
+      action: "minacciato"
+      middle: " un cucciolo di "
+  direct:
+    pig:
+      prefix: "dopo essere stato "
+      action: "sbranato"
+      middle: " da un "
+    cow:
+      prefix: "dopo essere stato "
+      action: "travolto"
+      middle: " da una "
+    chicken:
+      prefix: "dopo essere stato "
+      action: "fatto a pezzi"
+      middle: " da un "
+
+# =============================================================================
+# Banner
+# =============================================================================
+banner:
+  title: "FAUNAREBORN"
+  version-line: "Versione > {version}"
+  mc-line: "MC > {minecraftVersion}"
+
+# =============================================================================
+# Ciclo di Vita
+# =============================================================================
+lifecycle:
+  enabled-in: "Plugin attivato in "
+  disabled-in: "Plugin disattivato in "
+
+# =============================================================================
+# Log
+# =============================================================================
+logs:
+  startup:
+    folia-detected: "Runtime Folia rilevato. Attivazione percorso scheduler Folia."
+    failed: "Impossibile preparare l'avvio del plugin."
+  reload:
+    hot-reload-complete: "Hot reload completata in {elapsedMillis} ms."
+    failed-to-parse-yaml: "Impossibile analizzare uno o più file YAML di configurazione."
+    apply-failed: "Errore durante l'applicazione del runtime ricaricato. Ripristino runtime precedente."
+    rollback-failed: "Ripristino non riuscito. Potrebbe essere necessario un intervento manuale."
+    validation-failed: "Validazione configurazione non riuscita."

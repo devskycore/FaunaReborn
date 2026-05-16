@@ -116,7 +116,8 @@ gui:
     changed: "Idioma alterado para {file}."
     already-selected: "O idioma do plugin já estava configurado como {file}."
   toggle:
-    click-to-toggle: "Clique para alternar a hostilidade"
+    click-to-enable: "Clique para ativar a hostilidade"
+    click-to-disable: "Clique para desativar a hostilidade"
     applying-update: "Aplicando atualização em tempo de execução..."
     done: "Concluído"
   reload:

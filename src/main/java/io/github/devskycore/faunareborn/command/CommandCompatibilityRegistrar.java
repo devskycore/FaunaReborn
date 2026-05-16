@@ -27,7 +27,29 @@ public final class CommandCompatibilityRegistrar {
         if (tryPaperRegisterCommand(plugin, faunaCommand)) {
             return;
         }
+        if (tryPluginYamlRegistration(plugin, faunaCommand)) {
+            return;
+        }
         registerInCommandMap(plugin, faunaCommand);
+    }
+
+    private static boolean tryPluginYamlRegistration(FaunaRebornPlugin plugin, FaunaCommand faunaCommand) {
+        try {
+            org.bukkit.command.PluginCommand pluginCommand = plugin.getCommand(COMMAND_NAME);
+            if (pluginCommand == null) {
+                return false;
+            }
+            pluginCommand.setExecutor(faunaCommand);
+            pluginCommand.setTabCompleter(faunaCommand);
+            pluginCommand.setAliases(COMMAND_ALIASES);
+            pluginCommand.setDescription(COMMAND_DESCRIPTION);
+            pluginCommand.setUsage("/fauna help");
+            pluginCommand.setPermission("fauna.command.help");
+            return true;
+        } catch (UnsupportedOperationException ignored) {
+            // Paper plugins do not support YAML command declarations via getCommand().
+            return false;
+        }
     }
 
     private static boolean tryPaperRegisterCommand(FaunaRebornPlugin plugin, FaunaCommand faunaCommand) {

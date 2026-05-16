@@ -11,7 +11,7 @@
 # =============================================================================
 # Core
 # =============================================================================
-config-version: 1
+config-version: 2
 global-enabled: true
 
 # =============================================================================
@@ -19,8 +19,24 @@ global-enabled: true
 # =============================================================================
 language:
   # Language code loaded from plugins/FaunaReborn/lang/.
-  # Examples: en, es, pt.
+  # Examples: en, es, pt, it.
   file: en
+
+# =============================================================================
+# Update Checker (GitHub Releases)
+# =============================================================================
+update-checker:
+  enabled: true
+
+# =============================================================================
+# Project Links
+# =============================================================================
+links:
+  github: "https://github.com/devskycore/FaunaReborn"
+  spigot: "https://www.spigotmc.org/resources/faunareborn-nature-fights-back.135257/"
+  hangar: "https://hangar.papermc.io/DevSkyCore/FaunaReborn"
+  modrinth: "https://modrinth.com/plugin/faunareborn"
+  discord: "https://discord.gg/GvbxzTz88x"
 
 # =============================================================================
 # World Filter

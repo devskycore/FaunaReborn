@@ -5,29 +5,44 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Pattern;
 
 public final class LanguageManager {
 
     private static final String DEFAULT_LANGUAGE_CODE = "en";
     private static final String SPANISH_LANGUAGE_CODE = "es";
     private static final String PORTUGUESE_LANGUAGE_CODE = "pt";
+    private static final String ITALIAN_LANGUAGE_CODE = "it";
     private static final String DEFAULT_LANGUAGE_FILE = "english.yml";
     private static final String SPANISH_LANGUAGE_FILE = "spanish.yml";
     private static final String PORTUGUESE_LANGUAGE_FILE = "portuguese.yml";
+    private static final String ITALIAN_LANGUAGE_FILE = "italian.yml";
     private static final String LANGUAGE_CONFIG_PATH = "language.file";
+    private static final Pattern COMBINING_MARKS = Pattern.compile("\\p{M}+");
+    private static final Map<String, String> KNOWN_LANGUAGE_FILES = Map.of(
+            DEFAULT_LANGUAGE_CODE, DEFAULT_LANGUAGE_FILE,
+            SPANISH_LANGUAGE_CODE, SPANISH_LANGUAGE_FILE,
+            PORTUGUESE_LANGUAGE_CODE, PORTUGUESE_LANGUAGE_FILE,
+            ITALIAN_LANGUAGE_CODE, ITALIAN_LANGUAGE_FILE
+    );
 
     private final FaunaRebornPlugin plugin;
+    private final Map<String, String> languageAliases;
     private volatile FileConfiguration activeLanguage;
     private volatile FileConfiguration defaultLanguage;
 
     public LanguageManager(FaunaRebornPlugin plugin) {
         this.plugin = Objects.requireNonNull(plugin, "plugin");
+        this.languageAliases = createLanguageAliases();
     }
 
     public void reload() {
@@ -41,6 +56,7 @@ public final class LanguageManager {
         saveResourceIfAbsent("lang/" + DEFAULT_LANGUAGE_FILE);
         saveResourceIfAbsent("lang/" + SPANISH_LANGUAGE_FILE);
         saveResourceIfAbsent("lang/" + PORTUGUESE_LANGUAGE_FILE);
+        saveResourceIfAbsent("lang/" + ITALIAN_LANGUAGE_FILE);
         File englishFile = new File(languageDirectory, DEFAULT_LANGUAGE_FILE);
         defaultLanguage = YamlConfiguration.loadConfiguration(englishFile);
 
@@ -59,15 +75,23 @@ public final class LanguageManager {
     public List<String> availableLanguageCodes() {
         File languageDirectory = ensureLanguageDirectory();
         List<String> languages = new ArrayList<>();
-        if (new File(languageDirectory, DEFAULT_LANGUAGE_FILE).exists()) {
-            languages.add(DEFAULT_LANGUAGE_CODE);
+        for (Map.Entry<String, String> knownLanguage : KNOWN_LANGUAGE_FILES.entrySet()) {
+            if (new File(languageDirectory, knownLanguage.getValue()).exists()) {
+                languages.add(knownLanguage.getKey());
+            }
         }
-        if (new File(languageDirectory, SPANISH_LANGUAGE_FILE).exists()) {
-            languages.add(SPANISH_LANGUAGE_CODE);
+
+        File[] languageFiles = languageDirectory.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".yml"));
+        if (languageFiles != null) {
+            for (File languageFile : languageFiles) {
+                String fileName = languageFile.getName().toLowerCase(Locale.ROOT);
+                String derivedCode = deriveCodeFromFileName(fileName);
+                if (!derivedCode.isBlank() && !languages.contains(derivedCode)) {
+                    languages.add(derivedCode);
+                }
+            }
         }
-        if (new File(languageDirectory, PORTUGUESE_LANGUAGE_FILE).exists()) {
-            languages.add(PORTUGUESE_LANGUAGE_CODE);
-        }
+
         if (languages.isEmpty()) {
             return List.of(DEFAULT_LANGUAGE_CODE);
         }
@@ -132,37 +156,39 @@ public final class LanguageManager {
     }
 
     private String normalizeLanguageCode(String value) {
-        String trimmed = value == null ? DEFAULT_LANGUAGE_CODE : value.trim().toLowerCase(Locale.ROOT);
-        if (trimmed.isEmpty()) {
+        String normalized = normalizeToken(value);
+        if (normalized.isEmpty()) {
             return DEFAULT_LANGUAGE_CODE;
         }
-        if (trimmed.endsWith(".yml")) {
-            trimmed = trimmed.substring(0, trimmed.length() - 4);
+
+        String alias = languageAliases.get(normalized);
+        if (alias != null) {
+            return alias;
         }
-        if (trimmed.equals("english")) {
-            return DEFAULT_LANGUAGE_CODE;
+
+        String strippedAlias = languageAliases.get(stripDiacritics(normalized));
+        if (strippedAlias != null) {
+            return strippedAlias;
         }
-        if (trimmed.equals("spanish") || trimmed.equals("espanol") || trimmed.equals("español")) {
-            return SPANISH_LANGUAGE_CODE;
+
+        String repaired = normalizeToken(tryRepairMojibake(value));
+        if (!repaired.equals(normalized)) {
+            String repairedAlias = languageAliases.get(repaired);
+            if (repairedAlias != null) {
+                return repairedAlias;
+            }
+            String repairedStrippedAlias = languageAliases.get(stripDiacritics(repaired));
+            if (repairedStrippedAlias != null) {
+                return repairedStrippedAlias;
+            }
         }
-        if (trimmed.equals("portuguese")
-                || trimmed.equals("portugues")
-                || trimmed.equals("português")
-                || trimmed.equals("pt-br")
-                || trimmed.equals("pt_br")) {
-            return PORTUGUESE_LANGUAGE_CODE;
-        }
-        return trimmed;
+
+        return normalized;
     }
 
     private String resolveLanguageFile(String value) {
         String normalizedCode = normalizeLanguageCode(value);
-        return switch (normalizedCode) {
-            case DEFAULT_LANGUAGE_CODE -> DEFAULT_LANGUAGE_FILE;
-            case SPANISH_LANGUAGE_CODE -> SPANISH_LANGUAGE_FILE;
-            case PORTUGUESE_LANGUAGE_CODE -> PORTUGUESE_LANGUAGE_FILE;
-            default -> normalizedCode + ".yml";
-        };
+        return KNOWN_LANGUAGE_FILES.getOrDefault(normalizedCode, normalizedCode + ".yml");
     }
 
     public String currentLanguageCode() {
@@ -178,4 +204,61 @@ public final class LanguageManager {
         return languageDirectory;
     }
 
+    private static String deriveCodeFromFileName(String fileName) {
+        if (!fileName.endsWith(".yml")) {
+            return "";
+        }
+        String base = fileName.substring(0, fileName.length() - 4);
+        return switch (base) {
+            case "english" -> DEFAULT_LANGUAGE_CODE;
+            case "spanish" -> SPANISH_LANGUAGE_CODE;
+            case "portuguese" -> PORTUGUESE_LANGUAGE_CODE;
+            case "italian" -> ITALIAN_LANGUAGE_CODE;
+            default -> base;
+        };
+    }
+
+    private static Map<String, String> createLanguageAliases() {
+        Map<String, String> aliases = new LinkedHashMap<>();
+        registerAliases(aliases, DEFAULT_LANGUAGE_CODE, "en", "english", "ingles", "inglés", "en_us", "en-us");
+        registerAliases(aliases, SPANISH_LANGUAGE_CODE, "es", "spanish", "espanol", "español", "es_es", "es-es");
+        registerAliases(aliases, PORTUGUESE_LANGUAGE_CODE, "pt", "portuguese", "portugues", "português", "pt_br", "pt-br", "pt_pt", "pt-pt");
+        registerAliases(aliases, ITALIAN_LANGUAGE_CODE, "it", "italian", "italiano", "it_it", "it-it");
+        return Map.copyOf(aliases);
+    }
+
+    private static void registerAliases(Map<String, String> aliases, String code, String... values) {
+        for (String value : values) {
+            String normalized = normalizeToken(value);
+            if (normalized.isBlank()) {
+                continue;
+            }
+            aliases.put(normalized, code);
+            aliases.put(stripDiacritics(normalized), code);
+        }
+    }
+
+    private static String normalizeToken(String value) {
+        if (value == null) {
+            return "";
+        }
+        String normalized = value.trim().toLowerCase(Locale.ROOT);
+        if (normalized.endsWith(".yml")) {
+            normalized = normalized.substring(0, normalized.length() - 4);
+        }
+        return normalized.replace(' ', '-').replace('_', '-');
+    }
+
+    private static String stripDiacritics(String value) {
+        String normalized = Normalizer.normalize(value, Normalizer.Form.NFD);
+        return COMBINING_MARKS.matcher(normalized).replaceAll("");
+    }
+
+    private static String tryRepairMojibake(String value) {
+        if (value == null || !(value.contains("Ã") || value.contains("â") || value.contains("�"))) {
+            return value == null ? "" : value;
+        }
+        byte[] bytes = value.getBytes(StandardCharsets.ISO_8859_1);
+        return new String(bytes, StandardCharsets.UTF_8);
+    }
 }

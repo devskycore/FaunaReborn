@@ -116,7 +116,8 @@ gui:
     changed: "Language changed to {file}."
     already-selected: "The plugin language is already set to {file}."
   toggle:
-    click-to-toggle: "Click to toggle hostility"
+    click-to-enable: "Click to enable hostility"
+    click-to-disable: "Click to disable hostility"
     applying-update: "Applying runtime update..."
     done: "Done"
   reload:
@@ -222,6 +223,8 @@ logs:
   startup:
     folia-detected: "Folia runtime detected. Enabling Folia scheduler pathways."
     failed: "Failed to prepare plugin startup."
+  update:
+    available: "A new version is available: {latest} (current: {current}) -> {url}"
   reload:
     hot-reload-complete: "Hot reload completed in {elapsedMillis} ms."
     failed-to-parse-yaml: "Failed to parse one or more YAML configuration files."

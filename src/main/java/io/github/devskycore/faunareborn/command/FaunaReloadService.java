@@ -168,6 +168,7 @@ public final class FaunaReloadService {
     }
 
     private void ensureConfigFilesExist() {
+        plugin.configMigrationService().migrateIfNeeded();
         plugin.saveDefaultConfig();
         File entitiesDirectory = new File(plugin.getDataFolder(), "entities");
         if (!entitiesDirectory.exists()) {
