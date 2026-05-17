@@ -169,6 +169,7 @@ final class PigInteractionListener extends AbstractCookProvocationListenerSuppor
         if (aggressor == null || aggressor.isDead() || !aggressor.isOnline()) {
             return;
         }
+        aggressionController.provokePigFromDamage(victimPig, aggressor, isNaturalPig(victimPig));
         aggressionController.provokeNearbyPigsFromSocialAlert(
                 victimPig,
                 aggressor,

@@ -203,7 +203,7 @@ final class PigAggressionController {
 
     private void processPigFolia(int PigId, long tickSnapshot) {
         synchronized (stateLock) {
-            if (currentTick != tickSnapshot) {
+            if (currentTick < tickSnapshot) {
                 return;
             }
             PigAggressionBrain brain = brains.get(PigId);
@@ -303,6 +303,18 @@ final class PigAggressionController {
             putCooldown(resourceTriggerCooldownUntilByPlayer, playerId, PigId, currentTick + triggerCooldownTicks);
         }
         return activatePigAggression(Pig, aggressor, naturalPig, aggressionDurationTicks, hostilityCause);
+        }
+    }
+
+    boolean provokePigFromDamage(Pig pig, Player aggressor, boolean naturalPig) {
+        synchronized (stateLock) {
+            return activatePigAggression(
+                    pig,
+                    aggressor,
+                    naturalPig,
+                    settings.aggressionDurationTicks(),
+                    HostilityCause.HERD_RETALIATION_DAMAGE
+            );
         }
     }
 
