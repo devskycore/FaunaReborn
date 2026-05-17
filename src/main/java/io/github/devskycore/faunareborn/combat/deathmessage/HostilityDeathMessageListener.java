@@ -29,18 +29,20 @@ public final class HostilityDeathMessageListener implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST)
     private void onPlayerDeath(PlayerDeathEvent event) {
         Player player = event.getPlayer();
+        HostilityContextTracker.ContextEntry context = HostilityContextTracker.find(player.getUniqueId());
+        if (context != null) {
+            event.deathMessage(buildMessage(player.getName(), context.species(), context.cause()));
+            HostilityContextTracker.clear(player.getUniqueId());
+            return;
+        }
+
         HostileSpecies species = resolveHostileSpecies(player);
         if (species == null) {
             HostilityContextTracker.clear(player.getUniqueId());
             return;
         }
 
-        HostilityContextTracker.ContextEntry context = HostilityContextTracker.find(player.getUniqueId());
-        HostilityCause cause = context != null && context.species() == species
-                ? context.cause()
-                : HostilityCause.DIRECT_ASSAULT;
-
-        event.deathMessage(buildMessage(player.getName(), species, cause));
+        event.deathMessage(buildMessage(player.getName(), species, HostilityCause.DIRECT_ASSAULT));
         HostilityContextTracker.clear(player.getUniqueId());
     }
 

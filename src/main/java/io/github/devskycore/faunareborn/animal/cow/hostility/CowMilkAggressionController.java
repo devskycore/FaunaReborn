@@ -202,7 +202,7 @@ final class CowMilkAggressionController {
 
     private void processCowFolia(int cowId, long tickSnapshot) {
         synchronized (stateLock) {
-            if (currentTick != tickSnapshot) {
+            if (currentTick < tickSnapshot) {
                 return;
             }
             CowMilkAggressionBrain brain = brains.get(cowId);
@@ -630,7 +630,7 @@ final class CowMilkAggressionController {
             return false;
         }
         int effectiveAttackCooldownTicks = Math.max(1, (int) Math.round(settings.attackCooldownTicks() * environmentCache.context(cow.getWorld()).modifiers().attackCooldownMultiplier()));
-        if (currentTick - brain.lastAttackTick < effectiveAttackCooldownTicks) {
+        if (brain.lastAttackTick != Long.MIN_VALUE && currentTick - brain.lastAttackTick < effectiveAttackCooldownTicks) {
             return false;
         }
         brain.lastAttackTick = currentTick;

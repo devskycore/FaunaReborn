@@ -51,8 +51,7 @@ final class ActivationPolicy {
         activationStates.remove(chickenId);
     }
 
-    void track(Chicken chicken, boolean replaceActivationState) {
-        int chickenId = chicken.getEntityId();
+    void track(int chickenId, boolean replaceActivationState) {
         if (replaceActivationState) {
             activationStates.put(chickenId, new ActivationState());
             return;

@@ -48,8 +48,8 @@ final class ChickenTracker {
         return trackedChickens.containsKey(chickenId);
     }
 
-    void track(Chicken chicken) {
-        trackedChickens.put(chicken.getEntityId(), chicken);
+    void track(int chickenId, Chicken chicken) {
+        trackedChickens.put(chickenId, chicken);
         resetCursors();
     }
 

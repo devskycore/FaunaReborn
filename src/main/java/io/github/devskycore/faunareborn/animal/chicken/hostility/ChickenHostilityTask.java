@@ -170,7 +170,16 @@ final class ChickenHostilityTask implements Listener {
 
         HandlerList.unregisterAll(this);
 
-        visualController.clearAll(tracker.trackedChickens());
+        if (folia) {
+            for (var iterator = tracker.trackedChickens().int2ObjectEntrySet().fastIterator(); iterator.hasNext(); ) {
+                var entry = iterator.next();
+                int chickenId = entry.getIntKey();
+                Chicken chicken = entry.getValue();
+                scheduler.runForEntity(chicken, () -> visualController.deactivate(chickenId, chicken));
+            }
+        } else {
+            visualController.clearAll(tracker.trackedChickens());
+        }
         lodTierByChickenId.clear();
         tracker.clear();
         activationPolicy.clear();
@@ -760,6 +769,27 @@ final class ChickenHostilityTask implements Listener {
     }
 
     private void trackLoadedChickens() {
+        if (folia) {
+            for (World world : plugin.getServer().getWorlds()) {
+                if (activationPolicy.isWorldDisallowed(world)) {
+                    continue;
+                }
+                for (Chicken chicken : world.getEntitiesByClass(Chicken.class)) {
+                    scheduler.runForEntity(chicken, () -> {
+                        if (chicken == null || !chicken.isValid() || chicken.isDead()) {
+                            return;
+                        }
+                        if (activationPolicy.isWorldDisallowed(chicken.getWorld())) {
+                            return;
+                        }
+                        int chickenId = chicken.getEntityId();
+                        enqueueStateMutation(() -> trackChicken(chicken, chickenId, false));
+                    });
+                }
+            }
+            return;
+        }
+
         for (World world : plugin.getServer().getWorlds()) {
             if (activationPolicy.isWorldDisallowed(world)) {
                 continue;
@@ -772,15 +802,12 @@ final class ChickenHostilityTask implements Listener {
     }
 
     private void trackChicken(Chicken chicken, boolean replaceActivationState) {
-        if (chicken == null || !chicken.isValid() || chicken.isDead()) {
-            return;
-        }
-        if (activationPolicy.isWorldDisallowed(chicken.getWorld())) {
-            return;
-        }
+        trackChicken(chicken, chicken.getEntityId(), replaceActivationState);
+    }
 
-        tracker.track(chicken);
-        activationPolicy.track(chicken, replaceActivationState);
+    private void trackChicken(Chicken chicken, int chickenId, boolean replaceActivationState) {
+        tracker.track(chickenId, chicken);
+        activationPolicy.track(chickenId, replaceActivationState);
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -788,7 +815,8 @@ final class ChickenHostilityTask implements Listener {
         if (event.getEntity() instanceof Chicken chicken) {
             CreatureSpawnEvent.SpawnReason spawnReason = event.getSpawnReason();
             activationPolicy.markNonNaturalChicken(chicken, spawnReason);
-            enqueueStateMutation(() -> trackChicken(chicken, true));
+            int chickenId = chicken.getEntityId();
+            enqueueStateMutation(() -> trackChicken(chicken, chickenId, true));
         }
     }
 
@@ -1036,9 +1064,13 @@ final class ChickenHostilityTask implements Listener {
             }
         }
         if (chickens.isEmpty()) return;
+        List<Integer> chickenIds = new java.util.ArrayList<>(chickens.size());
+        for (Chicken chicken : chickens) {
+            chickenIds.add(chicken.getEntityId());
+        }
         enqueueStateMutation(() -> {
-            for (Chicken chicken : chickens) {
-                trackChicken(chicken, false);
+            for (int index = 0; index < chickens.size(); index++) {
+                trackChicken(chickens.get(index), chickenIds.get(index), false);
             }
         });
     }
@@ -1084,9 +1116,13 @@ final class ChickenHostilityTask implements Listener {
             }
         }
         if (chickens.isEmpty()) return;
+        List<Integer> chickenIds = new java.util.ArrayList<>(chickens.size());
+        for (Chicken chicken : chickens) {
+            chickenIds.add(chicken.getEntityId());
+        }
         enqueueStateMutation(() -> {
-            for (Chicken chicken : chickens) {
-                removeTrackedChicken(chicken.getEntityId(), chicken);
+            for (int index = 0; index < chickens.size(); index++) {
+                removeTrackedChicken(chickenIds.get(index), chickens.get(index));
             }
         });
     }
