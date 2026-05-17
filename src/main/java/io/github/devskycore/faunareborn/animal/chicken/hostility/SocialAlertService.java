@@ -2,6 +2,7 @@ package io.github.devskycore.faunareborn.animal.chicken.hostility;
 
 import io.github.devskycore.faunareborn.animal.chicken.config.ChickenHostilitySettings;
 import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
+import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapter;
 import it.unimi.dsi.fastutil.ints.Int2LongOpenHashMap;
 import org.bukkit.entity.Chicken;
 import org.bukkit.entity.Entity;
@@ -22,9 +23,16 @@ final class SocialAlertService {
     private final int joinCooldownTicks;
     private final int maxResponders;
     private final ChickenRecruitment recruitment;
+    private final SchedulerAdapter scheduler;
+    private final boolean folia;
     private final Int2LongOpenHashMap cooldownUntilByChickenId = new Int2LongOpenHashMap();
 
-    SocialAlertService(ChickenHostilitySettings.SocialAlert settings, ChickenRecruitment recruitment) {
+    SocialAlertService(
+            ChickenHostilitySettings.SocialAlert settings,
+            ChickenRecruitment recruitment,
+            SchedulerAdapter scheduler,
+            boolean folia
+    ) {
         this.enabled = settings.enabled();
         this.onDamage = settings.onDamage();
         this.onNearbyDeath = settings.onNearbyDeath();
@@ -34,6 +42,8 @@ final class SocialAlertService {
         this.joinCooldownTicks = settings.joinCooldownTicks();
         this.maxResponders = settings.maxResponders();
         this.recruitment = recruitment;
+        this.scheduler = scheduler;
+        this.folia = folia;
         this.cooldownUntilByChickenId.defaultReturnValue(Long.MIN_VALUE);
     }
 
@@ -83,12 +93,27 @@ final class SocialAlertService {
             return;
         }
 
+        if (folia) {
+            int dispatched = 0;
+            for (Entity entity : nearbyEntities) {
+                if (!(entity instanceof Chicken ally)) {
+                    continue;
+                }
+                scheduler.runForEntity(ally, () -> recruitment.tryRecruit(ally, aggressor, aggressionDurationTicks, true, hostilityCause));
+                dispatched++;
+                if (dispatched >= maxResponders) {
+                    break;
+                }
+            }
+            if (dispatched > 0 && cooldownTicks > 0) {
+                cooldownUntilByChickenId.put(emitterChickenId, currentTick + cooldownTicks);
+            }
+            return;
+        }
+
         int recruited = 0;
         for (Entity entity : nearbyEntities) {
             if (!(entity instanceof Chicken ally)) {
-                continue;
-            }
-            if (ally.getEntityId() == emitterChickenId) {
                 continue;
             }
             if (recruitment.tryRecruit(ally, aggressor, aggressionDurationTicks, true, hostilityCause)) {

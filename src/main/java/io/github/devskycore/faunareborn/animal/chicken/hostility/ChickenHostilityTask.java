@@ -31,6 +31,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.HandlerList;
+import org.bukkit.plugin.IllegalPluginAccessException;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.entity.CreatureSpawnEvent;
@@ -131,7 +132,16 @@ final class ChickenHostilityTask implements Listener {
         );
         this.movementController = new MovementController(combat, settings.movement());
         this.damageScaler = new ChickenDamageScaler(combat, settings.damageScaling(), worldNightStateCache);
-        this.socialAlertService = new SocialAlertService(settings.socialAlert(), this::tryRecruitChicken);
+        this.socialAlertService = new SocialAlertService(
+                settings.socialAlert(),
+                (chicken, aggressor, aggressionDurationTicks, applyJoinCooldown, hostilityCause) -> {
+                    synchronized (stateLock) {
+                        return tryRecruitChicken(chicken, aggressor, aggressionDurationTicks, applyJoinCooldown, hostilityCause);
+                    }
+                },
+                scheduler,
+                folia
+        );
         this.territorialPickupService = new TerritorialPickupService(
                 settings.itemPickupTerritoriality(),
                 targetingService.maxSimultaneousAttackersPerTarget(),
@@ -175,7 +185,11 @@ final class ChickenHostilityTask implements Listener {
                 var entry = iterator.next();
                 int chickenId = entry.getIntKey();
                 Chicken chicken = entry.getValue();
-                scheduler.runForEntity(chicken, () -> visualController.deactivate(chickenId, chicken));
+                try {
+                    scheduler.runForEntity(chicken, () -> visualController.deactivate(chickenId, chicken));
+                } catch (IllegalPluginAccessException ignored) {
+                    // Plugin is shutting down; cannot schedule new entity tasks.
+                }
             }
         } else {
             visualController.clearAll(tracker.trackedChickens());
