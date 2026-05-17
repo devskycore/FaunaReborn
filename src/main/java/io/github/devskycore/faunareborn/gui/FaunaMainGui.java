@@ -69,7 +69,7 @@ public final class FaunaMainGui implements Listener {
             commandMessages.sendNoPermission(player);
             return;
         }
-        player.openInventory(buildInventory());
+        player.openInventory(buildInventory(player));
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, SoundCategory.MASTER, 0.5f, 1.25f);
     }
 
@@ -78,7 +78,7 @@ public final class FaunaMainGui implements Listener {
             commandMessages.sendNoPermission(player);
             return;
         }
-        player.openInventory(buildLanguageInventory());
+        player.openInventory(buildLanguageInventory(player));
         player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, SoundCategory.MASTER, 0.55f, 1.15f);
     }
 
@@ -101,14 +101,21 @@ public final class FaunaMainGui implements Listener {
         }
 
         HumanEntity clicker = event.getWhoClicked();
-        if (!permissionService.canUseLang(clicker)) {
+        if (!permissionService.canUseGui(clicker)) {
             commandMessages.sendNoPermission(clicker);
-            clicker.closeInventory();
+            return;
+        }
+        if (reloadService.isInProgress()) {
+            renderBusyMainInventory(event.getView().getTopInventory(), clicker);
             return;
         }
         int slot = event.getRawSlot();
         if (slot == LANGUAGE_SLOT) {
-            clicker.openInventory(buildLanguageInventory());
+            if (!permissionService.canUseLang(clicker)) {
+                commandMessages.sendNoPermission(clicker);
+                return;
+            }
+            clicker.openInventory(buildLanguageInventory(clicker));
             if (clicker instanceof Player player) {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, SoundCategory.MASTER, 0.55f, 1.15f);
             }
@@ -131,13 +138,12 @@ public final class FaunaMainGui implements Listener {
                 player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_RESONATE, SoundCategory.MASTER, 0.55f, 1.2f);
             }
             Inventory top = event.getView().getTopInventory();
-            top.setItem(slot, createReloadingItem());
-            scheduler.runLater(() -> {
-                reloadService.reload(clicker);
-                if (clicker instanceof Player player) {
-                    player.openInventory(buildInventory());
+            renderBusyMainInventory(top, clicker);
+            scheduler.runLater(() -> reloadService.reload(clicker, () -> {
+                if (clicker instanceof Player player && player.isOnline()) {
+                    player.openInventory(buildInventory(player));
                 }
-            }, 1L);
+            }), 1L);
             return;
         }
 
@@ -186,7 +192,7 @@ public final class FaunaMainGui implements Listener {
         }
         Inventory top = event.getView().getTopInventory();
         top.setItem(slot, createAnimatedStateItem(toggle, targetState));
-        scheduler.runLater(() -> clicker.openInventory(buildInventory()), 1L);
+        scheduler.runLater(() -> clicker.openInventory(buildInventory(clicker)), 1L);
     }
 
     private void handleLanguageGuiClick(InventoryClickEvent event) {
@@ -196,15 +202,18 @@ public final class FaunaMainGui implements Listener {
         }
 
         HumanEntity clicker = event.getWhoClicked();
-        if (!permissionService.canUseGui(clicker)) {
+        if (!permissionService.canUseLang(clicker)) {
             commandMessages.sendNoPermission(clicker);
-            clicker.closeInventory();
+            return;
+        }
+        if (reloadService.isInProgress()) {
+            renderBusyLanguageInventory(event.getView().getTopInventory());
             return;
         }
 
         int slot = event.getRawSlot();
         if (slot == LANGUAGE_BACK_SLOT) {
-            clicker.openInventory(buildInventory());
+            clicker.openInventory(buildInventory(clicker));
             if (clicker instanceof Player player) {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, SoundCategory.MASTER, 0.6f, 0.9f);
             }
@@ -240,33 +249,45 @@ public final class FaunaMainGui implements Listener {
         }
     }
 
-    private Inventory buildInventory() {
+    private Inventory buildInventory(HumanEntity viewer) {
         Inventory inventory = plugin.getServer().createInventory(new GuiHolder(GuiViewType.MAIN), SIZE, title());
         fillBackground(inventory);
+        boolean canUseLang = permissionService.canUseLang(viewer);
+        boolean canUseReload = permissionService.canUseReload(viewer);
+        boolean busy = reloadService.isInProgress();
 
         List<EntityModuleToggle> toggles = configService.moduleToggles();
         for (int i = 0; i < toggles.size() && i < TOGGLE_SLOTS.length; i++) {
             EntityModuleToggle toggle = toggles.get(i);
             boolean enabled = configService.isEnabled(toggle);
-            inventory.setItem(TOGGLE_SLOTS[i], createToggleItem(toggle, enabled));
+            inventory.setItem(TOGGLE_SLOTS[i], busy ? createBusyToggleItem(toggle, enabled) : createToggleItem(toggle, enabled));
         }
-        inventory.setItem(LANGUAGE_SLOT, createLanguageItem());
-        inventory.setItem(RELOAD_SLOT, createReloadItem());
-        inventory.setItem(CLOSE_SLOT, createCloseItem());
+        inventory.setItem(LANGUAGE_SLOT, busy ? createBusyActionItem(Material.NAME_TAG, "gui.language.button-main", "LANGUAGE") : (canUseLang ? createLanguageItem() : createLockedActionItem(Material.BARRIER, "gui.language.button-main", "LANGUAGE")));
+        inventory.setItem(RELOAD_SLOT, busy ? createReloadingItem() : (canUseReload ? createReloadItem() : createLockedActionItem(Material.BARRIER, "gui.reload.title-main", "RELOAD")));
+        inventory.setItem(CLOSE_SLOT, busy ? createBusyActionItem(Material.BARRIER, "gui.close.title-main", "CLOSE") : createCloseItem());
         return inventory;
     }
 
-    private Inventory buildLanguageInventory() {
+    private Inventory buildLanguageInventory(HumanEntity viewer) {
         Inventory inventory = plugin.getServer().createInventory(new GuiHolder(GuiViewType.LANGUAGE), LANGUAGE_GUI_SIZE, languageTitle());
         ItemStack frame = createPane(Component.text(" ", NamedTextColor.DARK_GRAY));
         for (int i = 0; i < LANGUAGE_GUI_SIZE; i++) {
             inventory.setItem(i, frame);
         }
-        inventory.setItem(LANGUAGE_ENGLISH_SLOT, createLanguageOptionItem("ENGLISH", "en", Material.WHITE_BANNER));
-        inventory.setItem(LANGUAGE_PORTUGUESE_SLOT, createLanguageOptionItem("PORTUGUÊS", "pt", Material.GREEN_BANNER));
-        inventory.setItem(LANGUAGE_SPANISH_SLOT, createLanguageOptionItem("ESPAÑOL", "es", Material.RED_BANNER));
-        inventory.setItem(LANGUAGE_ITALIAN_SLOT, createLanguageOptionItem("ITALIANO", "it", Material.LIME_BANNER));
-        inventory.setItem(LANGUAGE_BACK_SLOT, createLanguageBackItem());
+        boolean busy = reloadService.isInProgress();
+        if (busy) {
+            inventory.setItem(LANGUAGE_ENGLISH_SLOT, createBusyActionItem(Material.WHITE_BANNER, "gui.language.title-main", "LANGUAGE"));
+            inventory.setItem(LANGUAGE_PORTUGUESE_SLOT, createBusyActionItem(Material.GREEN_BANNER, "gui.language.title-main", "LANGUAGE"));
+            inventory.setItem(LANGUAGE_SPANISH_SLOT, createBusyActionItem(Material.RED_BANNER, "gui.language.title-main", "LANGUAGE"));
+            inventory.setItem(LANGUAGE_ITALIAN_SLOT, createBusyActionItem(Material.LIME_BANNER, "gui.language.title-main", "LANGUAGE"));
+            inventory.setItem(LANGUAGE_BACK_SLOT, createBusyActionItem(Material.ARROW, "gui.language.back-main", "BACK"));
+            return inventory;
+        }
+        inventory.setItem(LANGUAGE_ENGLISH_SLOT, createLanguageOptionItem("English", "en", Material.WHITE_BANNER));
+        inventory.setItem(LANGUAGE_PORTUGUESE_SLOT, createLanguageOptionItem("Portugu\u00eas", "pt", Material.GREEN_BANNER));
+        inventory.setItem(LANGUAGE_SPANISH_SLOT, createLanguageOptionItem("Espa\u00f1ol", "es", Material.RED_BANNER));
+        inventory.setItem(LANGUAGE_ITALIAN_SLOT, createLanguageOptionItem("Italiano", "it", Material.LIME_BANNER));
+        inventory.setItem(LANGUAGE_BACK_SLOT, permissionService.canUseGui(viewer) ? createLanguageBackItem() : createLockedActionItem(Material.BARRIER, "gui.language.back-main", "BACK"));
         return inventory;
     }
 
@@ -346,6 +367,48 @@ public final class FaunaMainGui implements Listener {
         ));
         reloadLore.replaceAll(line -> line.decoration(TextDecoration.ITALIC, false));
         meta.lore(reloadLore);
+        stack.setItemMeta(meta);
+        return stack;
+    }
+
+    private ItemStack createLockedActionItem(Material material, String titleKey, String fallbackTitle) {
+        ItemStack stack = new ItemStack(material);
+        ItemMeta meta = stack.getItemMeta();
+        meta.displayName(
+                Component.text(language.text(titleKey, fallbackTitle), NamedTextColor.RED)
+                        .decorate(TextDecoration.BOLD)
+                        .decoration(TextDecoration.ITALIC, false)
+        );
+        List<Component> lore = new ArrayList<>(List.of(
+                Component.text("| ", NamedTextColor.WHITE).append(Component.text(language.text("gui.common.status", "Status") + ": ", NamedTextColor.GRAY))
+                        .append(Component.text(language.text("gui.common.locked", "LOCKED"), NamedTextColor.RED).decorate(TextDecoration.BOLD)),
+                Component.empty(),
+                Component.text("(!) ", NamedTextColor.YELLOW)
+                        .append(Component.text(language.text("gui.common.no-permission", "You do not have permission for this action."), NamedTextColor.GRAY))
+        ));
+        lore.replaceAll(line -> line.decoration(TextDecoration.ITALIC, false));
+        meta.lore(lore);
+        stack.setItemMeta(meta);
+        return stack;
+    }
+
+    private ItemStack createBusyActionItem(Material material, String titleKey, String fallbackTitle) {
+        ItemStack stack = new ItemStack(material);
+        ItemMeta meta = stack.getItemMeta();
+        meta.displayName(
+                Component.text(language.text(titleKey, fallbackTitle), NamedTextColor.AQUA)
+                        .decorate(TextDecoration.BOLD)
+                        .decoration(TextDecoration.ITALIC, false)
+        );
+        List<Component> lore = new ArrayList<>(List.of(
+                Component.text("| ", NamedTextColor.WHITE).append(Component.text(language.text("gui.common.status", "Status") + ": ", NamedTextColor.GRAY))
+                        .append(Component.text(language.text("gui.common.busy", "PROCESSING"), NamedTextColor.AQUA).decorate(TextDecoration.BOLD)),
+                Component.empty(),
+                Component.text("(!) ", NamedTextColor.YELLOW)
+                        .append(Component.text(language.text("gui.common.wait-reload", "Please wait while reload is processing."), NamedTextColor.GRAY))
+        ));
+        lore.replaceAll(line -> line.decoration(TextDecoration.ITALIC, false));
+        meta.lore(lore);
         stack.setItemMeta(meta);
         return stack;
     }
@@ -473,6 +536,30 @@ public final class FaunaMainGui implements Listener {
         return stack;
     }
 
+    private ItemStack createBusyToggleItem(EntityModuleToggle toggle, boolean enabled) {
+        ItemStack stack = new ItemStack(toggle.icon());
+        ItemMeta meta = stack.getItemMeta();
+        String entityName = entityDisplayName(toggle);
+        meta.displayName(
+                Component.text(entityName + " ", NamedTextColor.YELLOW)
+                        .decorate(TextDecoration.BOLD)
+                        .append(Component.text(language.text("gui.common.settings", "Settings"), NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
+                        .decoration(TextDecoration.ITALIC, false)
+        );
+        List<Component> lore = new ArrayList<>(List.of(
+                Component.text("| ", NamedTextColor.WHITE).append(Component.text(language.text("gui.common.status", "Status") + ": ", NamedTextColor.GRAY))
+                        .append(Component.text(enabled ? language.text("gui.common.enabled", "ENABLED") : language.text("gui.common.disabled", "DISABLED"), enabled ? NamedTextColor.GREEN : NamedTextColor.RED).decorate(TextDecoration.BOLD)),
+                Component.text("| ", NamedTextColor.WHITE).append(Component.text(language.text("gui.common.busy", "PROCESSING"), NamedTextColor.AQUA)),
+                Component.empty(),
+                Component.text("(!) ", NamedTextColor.YELLOW).append(Component.text(language.text("gui.common.wait-reload", "Please wait while reload is processing."), NamedTextColor.GRAY))
+        ));
+        lore.replaceAll(line -> line.decoration(TextDecoration.ITALIC, false));
+        meta.lore(lore);
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+        stack.setItemMeta(meta);
+        return stack;
+    }
+
     private int resolveToggleIndex(int slot) {
         for (int i = 0; i < TOGGLE_SLOTS.length; i++) {
             if (TOGGLE_SLOTS[i] == slot) {
@@ -503,26 +590,71 @@ public final class FaunaMainGui implements Listener {
     }
 
     private void applyLanguageSelection(HumanEntity clicker, String languageCode) {
+        String readableName = readableLanguageName(languageCode);
+        String readableWithCode = readableName + " (" + languageCode + ")";
         if (activeLanguageCode().equalsIgnoreCase(languageCode)) {
             clicker.sendMessage(Component.text(
-                    plugin.languageManager().text("gui.language.already-selected", "The plugin language is already set to {file}.", java.util.Map.of("file", languageCode)),
+                    plugin.languageManager().text("gui.language.already-selected", "The plugin language is already set to {file}.", java.util.Map.of("file", readableWithCode)),
                     NamedTextColor.YELLOW
             ).decoration(TextDecoration.ITALIC, false));
             if (clicker instanceof Player player) {
                 player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, SoundCategory.MASTER, 0.5f, 0.95f);
             }
-            clicker.openInventory(buildLanguageInventory());
+            clicker.openInventory(buildLanguageInventory(clicker));
             return;
         }
         plugin.languageManager().switchLanguage(languageCode);
         clicker.sendMessage(Component.text(
-                plugin.languageManager().text("gui.language.changed", "Language changed to {file}.", java.util.Map.of("file", languageCode)),
+                plugin.languageManager().text("gui.language.changed", "Language changed to {file}.", java.util.Map.of("file", readableWithCode)),
                 NamedTextColor.GREEN
         ).decoration(TextDecoration.ITALIC, false));
         if (clicker instanceof Player player) {
             player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_CHIME, SoundCategory.MASTER, 0.6f, 1.4f);
         }
-        clicker.openInventory(buildLanguageInventory());
+        Inventory top = clicker.getOpenInventory().getTopInventory();
+        if (resolveViewType(top) == GuiViewType.LANGUAGE) {
+            int selectedSlot = resolveLanguageSlot(languageCode);
+            if (selectedSlot >= 0) {
+                top.setItem(selectedSlot, createAppliedLanguageOptionItem(readableName, languageCode, languageBannerMaterial(languageCode)));
+            }
+            scheduler.runLater(() -> clicker.openInventory(buildLanguageInventory(clicker)), 1L);
+            return;
+        }
+        clicker.openInventory(buildLanguageInventory(clicker));
+    }
+
+    private void renderBusyMainInventory(Inventory inventory, HumanEntity viewer) {
+        if (inventory == null) {
+            return;
+        }
+        fillBackground(inventory);
+        List<EntityModuleToggle> toggles = configService.moduleToggles();
+        for (int i = 0; i < toggles.size() && i < TOGGLE_SLOTS.length; i++) {
+            EntityModuleToggle toggle = toggles.get(i);
+            boolean enabled = configService.isEnabled(toggle);
+            inventory.setItem(TOGGLE_SLOTS[i], createBusyToggleItem(toggle, enabled));
+        }
+        inventory.setItem(LANGUAGE_SLOT, createBusyActionItem(Material.NAME_TAG, "gui.language.button-main", "LANGUAGE"));
+        inventory.setItem(RELOAD_SLOT, createReloadingItem());
+        inventory.setItem(CLOSE_SLOT, createBusyActionItem(Material.BARRIER, "gui.close.title-main", "CLOSE"));
+        if (viewer instanceof Player player) {
+            player.playSound(player.getLocation(), Sound.BLOCK_AMETHYST_BLOCK_RESONATE, SoundCategory.MASTER, 0.35f, 1.8f);
+        }
+    }
+
+    private void renderBusyLanguageInventory(Inventory inventory) {
+        if (inventory == null) {
+            return;
+        }
+        ItemStack frame = createPane(Component.text(" ", NamedTextColor.DARK_GRAY));
+        for (int i = 0; i < inventory.getSize(); i++) {
+            inventory.setItem(i, frame);
+        }
+        inventory.setItem(LANGUAGE_ENGLISH_SLOT, createBusyActionItem(Material.WHITE_BANNER, "gui.language.title-main", "LANGUAGE"));
+        inventory.setItem(LANGUAGE_PORTUGUESE_SLOT, createBusyActionItem(Material.GREEN_BANNER, "gui.language.title-main", "LANGUAGE"));
+        inventory.setItem(LANGUAGE_SPANISH_SLOT, createBusyActionItem(Material.RED_BANNER, "gui.language.title-main", "LANGUAGE"));
+        inventory.setItem(LANGUAGE_ITALIAN_SLOT, createBusyActionItem(Material.LIME_BANNER, "gui.language.title-main", "LANGUAGE"));
+        inventory.setItem(LANGUAGE_BACK_SLOT, createBusyActionItem(Material.ARROW, "gui.language.back-main", "BACK"));
     }
 
     private String activeLanguageCode() {
@@ -545,6 +677,62 @@ public final class FaunaMainGui implements Listener {
                 "gui.entities." + toggle.entityType().id(),
                 toggle.entityType().id().toUpperCase()
         );
+    }
+
+    private String readableLanguageName(String languageCode) {
+        return switch (languageCode.toLowerCase()) {
+            case "en" -> "English";
+            case "pt" -> "Portugu\u00eas";
+            case "es" -> "Espa\u00f1ol";
+            case "it" -> "Italiano";
+            default -> languageCode.toUpperCase();
+        };
+    }
+
+    private Material languageBannerMaterial(String languageCode) {
+        return switch (languageCode.toLowerCase()) {
+            case "en" -> Material.WHITE_BANNER;
+            case "pt" -> Material.GREEN_BANNER;
+            case "es" -> Material.RED_BANNER;
+            case "it" -> Material.LIME_BANNER;
+            default -> Material.GRAY_BANNER;
+        };
+    }
+
+    private int resolveLanguageSlot(String languageCode) {
+        return switch (languageCode.toLowerCase()) {
+            case "en" -> LANGUAGE_ENGLISH_SLOT;
+            case "pt" -> LANGUAGE_PORTUGUESE_SLOT;
+            case "es" -> LANGUAGE_SPANISH_SLOT;
+            case "it" -> LANGUAGE_ITALIAN_SLOT;
+            default -> -1;
+        };
+    }
+
+    private ItemStack createAppliedLanguageOptionItem(String label, String fileName, Material material) {
+        ItemStack stack = new ItemStack(material);
+        ItemMeta meta = stack.getItemMeta();
+        meta.displayName(
+                Component.text(label, NamedTextColor.GREEN)
+                        .decorate(TextDecoration.BOLD)
+                        .decoration(TextDecoration.ITALIC, false)
+        );
+        List<Component> lore = new ArrayList<>(List.of(
+                Component.text("| ", NamedTextColor.WHITE)
+                        .append(Component.text(language.text("gui.language.status-label", "Status") + ": ", NamedTextColor.GRAY))
+                        .append(Component.text(language.text("gui.language.selected", "SELECTED"), NamedTextColor.GREEN).decorate(TextDecoration.BOLD)),
+                Component.text("| ", NamedTextColor.WHITE)
+                        .append(Component.text(language.text("gui.toggle.applying-update", "Applying runtime update..."), NamedTextColor.AQUA)),
+                Component.empty(),
+                Component.text("(!) ", NamedTextColor.YELLOW)
+                        .append(Component.text(language.text("gui.language.applied", "Applied"), NamedTextColor.GRAY)),
+                Component.text("  ", NamedTextColor.DARK_GRAY)
+                        .append(Component.text(fileName.toUpperCase(), NamedTextColor.DARK_GRAY))
+        ));
+        lore.replaceAll(line -> line.decoration(TextDecoration.ITALIC, false));
+        meta.lore(lore);
+        stack.setItemMeta(meta);
+        return stack;
     }
 
     private enum GuiViewType {

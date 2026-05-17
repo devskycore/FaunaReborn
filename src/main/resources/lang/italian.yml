@@ -89,6 +89,10 @@ gui:
     status: "Stato"
     enabled: "ATTIVO"
     disabled: "DISATTIVO"
+    locked: "BLOCCATO"
+    busy: "ELABORAZIONE"
+    wait-reload: "Attendi mentre la ricarica viene elaborata."
+    no-permission: "Non hai il permesso per questa azione."
   entities:
     chicken: "POLLO"
     cow: "MUCCA"
@@ -104,6 +108,7 @@ gui:
     selected: "SELEZIONATA"
     available: "DISPONIBILE"
     click-to-select: "Clicca per selezionare"
+    applied: "Applicata"
     back-main: "INDIETRO"
     back-tail: "Menu Principale"
     back-description: "Torna al pannello di controllo"

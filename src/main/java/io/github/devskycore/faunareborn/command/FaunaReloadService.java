@@ -41,11 +41,18 @@ public final class FaunaReloadService {
     }
 
     public void reload(CommandSender sender) {
+        reload(sender, null);
+    }
+
+    public void reload(CommandSender sender, Runnable completion) {
         if (!inProgress.compareAndSet(false, true)) {
             sender.sendMessage(plugin.languageManager().text(
                     "commands.reload.already-in-progress",
                     "FaunaReborn reload is already in progress."
             ));
+            if (completion != null) {
+                completion.run();
+            }
             return;
         }
 
@@ -92,8 +99,15 @@ public final class FaunaReloadService {
                         }
                     } finally {
                         inProgress.set(false);
+                        if (completion != null) {
+                            completion.run();
+                        }
                     }
                 }));
+    }
+
+    public boolean isInProgress() {
+        return inProgress.get();
     }
 
     private PluginSettings loadCandidateSettings() {

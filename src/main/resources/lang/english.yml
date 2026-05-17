@@ -92,6 +92,10 @@ gui:
     status: "Status"
     enabled: "ENABLED"
     disabled: "DISABLED"
+    locked: "LOCKED"
+    busy: "PROCESSING"
+    wait-reload: "Please wait while reload is processing."
+    no-permission: "You do not have permission for this action."
   entities:
     chicken: "CHICKEN"
     cow: "COW"
@@ -108,6 +112,7 @@ gui:
     # Keep placeholders like {languages} unchanged.
     available: "AVAILABLE"
     click-to-select: "Click to select"
+    applied: "Applied"
     back-main: "BACK"
     back-tail: "Main Menu"
     back-description: "Return to the control panel"

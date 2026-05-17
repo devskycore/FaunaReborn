@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.1.1] - 2026-05-17
+## [1.1.2] - 2026-05-17
 
 ### Fixed
 - Fixed multiple Folia thread-safety issues that caused `Thread failed main thread check` errors in chicken hostility flows.

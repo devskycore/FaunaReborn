@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 public final class LanguageManager {
@@ -37,6 +39,7 @@ public final class LanguageManager {
 
     private final FaunaRebornPlugin plugin;
     private final Map<String, String> languageAliases;
+    private final Set<String> missingKeyWarnings = ConcurrentHashMap.newKeySet();
     private volatile FileConfiguration activeLanguage;
     private volatile FileConfiguration defaultLanguage;
 
@@ -70,6 +73,7 @@ public final class LanguageManager {
         }
 
         activeLanguage = YamlConfiguration.loadConfiguration(selectedLanguageFile);
+        missingKeyWarnings.clear();
     }
 
     public List<String> availableLanguageCodes() {
@@ -128,10 +132,12 @@ public final class LanguageManager {
         if (currentDefault != null) {
             String defaultValue = currentDefault.getString(path);
             if (defaultValue != null && !defaultValue.isBlank()) {
+                logMissingPathOnce(path, "active");
                 return defaultValue;
             }
         }
 
+        logMissingPathOnce(path, "active+default");
         return fallback;
     }
 
@@ -260,5 +266,17 @@ public final class LanguageManager {
         }
         byte[] bytes = value.getBytes(StandardCharsets.ISO_8859_1);
         return new String(bytes, StandardCharsets.UTF_8);
+    }
+
+    private void logMissingPathOnce(String path, String scope) {
+        String key = path + "|" + scope;
+        if (!missingKeyWarnings.add(key)) {
+            return;
+        }
+        if ("active".equals(scope)) {
+            plugin.getLogger().warning("Missing language key in active file: '" + path + "'. Falling back to english.yml.");
+            return;
+        }
+        plugin.getLogger().warning("Missing language key in active and english files: '" + path + "'. Using code fallback.");
     }
 }

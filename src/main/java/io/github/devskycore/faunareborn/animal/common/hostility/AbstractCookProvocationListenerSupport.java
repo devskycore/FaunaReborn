@@ -33,7 +33,7 @@ public abstract class AbstractCookProvocationListenerSupport {
     private final Map<String, CookedBatchReady> cookedBatchByCooker = new ConcurrentHashMap<>();
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    protected final void onEntityPickupItem(EntityPickupItemEvent event) {
+    public final void onEntityPickupItem(EntityPickupItemEvent event) {
         if (!(event.getEntity() instanceof Player player)) {
             return;
         }
@@ -66,7 +66,12 @@ public abstract class AbstractCookProvocationListenerSupport {
         if (maxItemAgeTicks() > 0 && event.getItem().getTicksLived() > maxItemAgeTicks()) {
             return;
         }
-        int pickedUpAmount = event.getItem().getItemStack().getAmount() - event.getRemaining();
+        int stackAmount = event.getItem().getItemStack().getAmount();
+        int remainingAmount = Math.max(0, event.getRemaining());
+        int pickedUpAmount = Math.max(0, stackAmount - remainingAmount);
+        if (pickedUpAmount == 0 && remainingAmount > 0) {
+            pickedUpAmount = remainingAmount;
+        }
         if (pickedUpAmount <= 0) {
             return;
         }
@@ -84,7 +89,7 @@ public abstract class AbstractCookProvocationListenerSupport {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    protected final void onBlockCook(BlockCookEvent event) {
+    public final void onBlockCook(BlockCookEvent event) {
         if (!isResourceProvocationEnabled()) {
             return;
         }
@@ -110,7 +115,7 @@ public abstract class AbstractCookProvocationListenerSupport {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    protected final void onFurnaceExtract(FurnaceExtractEvent event) {
+    public final void onFurnaceExtract(FurnaceExtractEvent event) {
         if (!isResourceProvocationEnabled() || event.getItemType() != cookedMeat()) {
             return;
         }
@@ -134,7 +139,7 @@ public abstract class AbstractCookProvocationListenerSupport {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    protected final void onInventoryClick(InventoryClickEvent event) {
+    public final void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) {
             return;
         }
@@ -162,7 +167,7 @@ public abstract class AbstractCookProvocationListenerSupport {
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    protected final void onPlayerInteract(PlayerInteractEvent event) {
+    public final void onPlayerInteract(PlayerInteractEvent event) {
         if (!isResourceProvocationEnabled()) {
             return;
         }

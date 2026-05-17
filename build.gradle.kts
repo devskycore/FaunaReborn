@@ -2,6 +2,9 @@ plugins {
     id("java-library")
 }
 
+group = "io.github.devskycore"
+version = "1.1.2"
+
 repositories {
     maven("https://repo.papermc.io/repository/maven-public/")
 }

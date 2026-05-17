@@ -92,6 +92,10 @@ gui:
     status: "Estado"
     enabled: "ACTIVADO"
     disabled: "DESACTIVADO"
+    locked: "BLOQUEADO"
+    busy: "PROCESANDO"
+    wait-reload: "Espera mientras se procesa la recarga."
+    no-permission: "No tienes permiso para esta acción."
   entities:
     chicken: "POLLO"
     cow: "VACA"
@@ -100,7 +104,7 @@ gui:
     title-main: "IDIOMA"
     title-tail: "Seleccionar"
     button-main: "IDIOMA"
-    button-tail: "Menu"
+    button-tail: "Menú"
     current-prefix: "Actual"
     click-to-open: "Haz clic para cambiar el idioma"
     status-label: "Estado"
@@ -108,8 +112,9 @@ gui:
     # Keep placeholders like {languages} unchanged.
     available: "DISPONIBLE"
     click-to-select: "Haz clic para seleccionar"
+    applied: "Aplicado"
     back-main: "VOLVER"
-    back-tail: "Menu Principal"
+    back-tail: "Menú Principal"
     back-description: "Volver al panel de control"
     back-click: "Haz clic para volver"
     # Keep placeholders like {language} unchanged.
