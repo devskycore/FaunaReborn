@@ -81,7 +81,7 @@ final class ActivationPolicy {
     boolean isInvalidTarget(Chicken chicken, Player player) {
         return player == null
                 || isPeacefulWorld(chicken.getWorld())
-                || !targetEligibilityService.isEligible(chicken, player, worldFilter, -1L);
+                || targetEligibilityService.isIneligible(chicken, player, worldFilter, -1L);
     }
 
     boolean isActivationBlocked(Chicken chicken, List<Entity> nearbyEntities) {
@@ -92,7 +92,7 @@ final class ActivationPolicy {
     }
 
     boolean isActivationBlockedForAggressor(Chicken chicken, Player aggressor) {
-        if (aggressor == null || !targetEligibilityService.isEligible(chicken, aggressor, worldFilter, -1L)) {
+        if (aggressor == null || targetEligibilityService.isIneligible(chicken, aggressor, worldFilter, -1L)) {
             return true;
         }
         if (HostilityDistances.distanceSq(chicken, aggressor) > ChickenHostilityConstants.PLAYER_PROXIMITY_RADIUS_SQ) {
@@ -127,7 +127,7 @@ final class ActivationPolicy {
     private boolean isPlayerNearby(Entity entity, List<Entity> nearbyEntities) {
         for (Entity nearbyEntity : nearbyEntities) {
             if (!(nearbyEntity instanceof Player player)) continue;
-            if (!targetEligibilityService.isEligible(player, worldFilter, -1L)) continue;
+            if (targetEligibilityService.isIneligible(player, worldFilter, -1L)) continue;
             if (isPeacefulWorld(entity.getWorld())) continue;
             if (player.getWorld() != entity.getWorld()) continue;
             if (HostilityDistances.distanceSq(entity, player) <= ChickenHostilityConstants.PLAYER_PROXIMITY_RADIUS_SQ) return true;

@@ -882,7 +882,7 @@ final class ChickenHostilityTask implements Listener {
         if (!(event.getEntity() instanceof Player player)) {
             return;
         }
-        if (!targetEligibilityService.isEligible(player, activationPolicy.worldFilter(), currentTick)
+        if (targetEligibilityService.isIneligible(player, activationPolicy.worldFilter(), currentTick)
                 || activationPolicy.isPeacefulWorld(player.getWorld())) {
             return;
         }
@@ -965,7 +965,7 @@ final class ChickenHostilityTask implements Listener {
             return;
         }
         Player player = event.getPlayer();
-        if (!targetEligibilityService.isEligible(player, activationPolicy.worldFilter(), currentTick)) {
+        if (targetEligibilityService.isIneligible(player, activationPolicy.worldFilter(), currentTick)) {
             return;
         }
         Location outputLocation = block.getLocation().add(0.5D, 0.5D, 0.5D);
@@ -1182,7 +1182,7 @@ final class ChickenHostilityTask implements Listener {
             if (!(entity instanceof Player candidate)) {
                 continue;
             }
-            if (!targetEligibilityService.isEligible(candidate, activationPolicy.worldFilter(), currentTick)) {
+            if (targetEligibilityService.isIneligible(candidate, activationPolicy.worldFilter(), currentTick)) {
                 continue;
             }
             double distanceSq = candidate.getLocation().distanceSquared(origin);

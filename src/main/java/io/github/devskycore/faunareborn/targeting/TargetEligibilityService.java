@@ -50,10 +50,7 @@ public final class TargetEligibilityService {
         if (!evaluateBaseEligibility(player, currentTick)) {
             return false;
         }
-        if (source instanceof Player sourcePlayer && !sourcePlayer.canSee(player)) {
-            return false;
-        }
-        return true;
+        return !(source instanceof Player sourcePlayer) || sourcePlayer.canSee(player);
     }
 
     public boolean isEligible(Player player, WorldFilter worldFilter, long currentTick) {
@@ -66,6 +63,14 @@ public final class TargetEligibilityService {
         return evaluateBaseEligibility(player, currentTick);
     }
 
+    public boolean isIneligible(LivingEntity source, Player player, WorldFilter worldFilter, long currentTick) {
+        return !isEligible(source, player, worldFilter, currentTick);
+    }
+
+    public boolean isIneligible(Player player, WorldFilter worldFilter, long currentTick) {
+        return !isEligible(player, worldFilter, currentTick);
+    }
+
     private boolean evaluateBaseEligibility(Player player, long currentTick) {
         UUID playerId = player.getUniqueId();
         CachedEligibility cached = cache.get(playerId);
@@ -73,10 +78,7 @@ public final class TargetEligibilityService {
             return cached.eligible;
         }
 
-        boolean eligible = true;
-        if (!player.isOnline() || !player.isValid() || player.isDead()) {
-            eligible = false;
-        }
+        boolean eligible = player.isOnline() && player.isValid() && !player.isDead();
 
         if (eligible) {
             GameMode mode = player.getGameMode();

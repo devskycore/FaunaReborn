@@ -4,6 +4,7 @@ plugins {
 
 group = "io.github.devskycore"
 version = "1.1.2"
+description = "FaunaReborn plugin"
 
 repositories {
     maven("https://repo.papermc.io/repository/maven-public/")

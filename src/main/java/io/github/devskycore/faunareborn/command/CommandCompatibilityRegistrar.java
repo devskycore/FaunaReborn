@@ -127,6 +127,18 @@ public final class CommandCompatibilityRegistrar {
         try {
             Method getCommandMap = plugin.getServer().getClass().getMethod("getCommandMap");
             CommandMap commandMap = (CommandMap) getCommandMap.invoke(plugin.getServer());
+            Command existing = commandMap.getCommand(COMMAND_NAME);
+            if (existing != null) {
+                if (existing instanceof org.bukkit.command.PluginCommand pluginCommand) {
+                    pluginCommand.setExecutor(faunaCommand);
+                    pluginCommand.setTabCompleter(faunaCommand);
+                    pluginCommand.setAliases(COMMAND_ALIASES);
+                    pluginCommand.setDescription(COMMAND_DESCRIPTION);
+                    pluginCommand.setUsage("/fauna help");
+                    pluginCommand.setPermission("fauna.command.help");
+                }
+                return;
+            }
             Command command = new LegacyFaunaCommand(faunaCommand);
             commandMap.register(plugin.getName().toLowerCase(), command);
         } catch (ReflectiveOperationException exception) {

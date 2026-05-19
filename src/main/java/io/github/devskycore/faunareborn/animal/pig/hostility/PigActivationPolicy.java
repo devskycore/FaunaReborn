@@ -49,7 +49,7 @@ final class PigActivationPolicy {
         if (!pig.isAdult() || !pig.isValid() || pig.isDead()) {
             return true;
         }
-        if (!targetEligibilityService.isEligible(pig, aggressor, worldFilter, -1L)) {
+        if (targetEligibilityService.isIneligible(pig, aggressor, worldFilter, -1L)) {
             return true;
         }
         if (pig.getWorld() != aggressor.getWorld()) {

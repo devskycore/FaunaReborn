@@ -2,7 +2,7 @@ package io.github.devskycore.faunareborn.targeting;
 
 import io.github.devskycore.faunareborn.config.common.TargetingSettings;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.entity.Chicken;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
@@ -27,11 +27,12 @@ public final class TargetScoringService {
         return settings.retargetCooldownTicks();
     }
 
-    public double score(Chicken source, Player candidate, UUID currentTargetId, int attackers, double distanceSq, boolean hasLineOfSight) {
+    public double score(Player candidate, UUID currentTargetId, int attackers, double distanceSq, boolean hasLineOfSight) {
         double distance = Math.sqrt(Math.max(0.0D, distanceSq));
         double maxHealth = 20.0D;
-        if (candidate.getAttribute(Attribute.MAX_HEALTH) != null) {
-            maxHealth = Math.max(1.0D, candidate.getAttribute(Attribute.MAX_HEALTH).getValue());
+        AttributeInstance maxHealthAttribute = candidate.getAttribute(Attribute.MAX_HEALTH);
+        if (maxHealthAttribute != null) {
+            maxHealth = Math.max(1.0D, maxHealthAttribute.getValue());
         }
         double healthRatio = Math.clamp(candidate.getHealth() / maxHealth, 0.0D, 1.0D);
         double healthComponent = (1.0D - healthRatio) * settings.healthWeight();

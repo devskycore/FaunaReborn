@@ -56,7 +56,7 @@ public final class GitHubUpdateChecker {
                     if (!result.updateAvailable()) {
                         return;
                     }
-                    String currentVersion = plugin.getDescription().getVersion();
+                    String currentVersion = plugin.getPluginMeta().getVersion();
                     plugin.getLogger().info(plugin.languageManager().text(
                             "logs.update.available",
                             "A new version is available: {latest} (current: {current}) -> {url}",
@@ -82,7 +82,7 @@ public final class GitHubUpdateChecker {
         if (!player.hasPermission("fauna.admin")) {
             return;
         }
-        String currentVersion = plugin.getDescription().getVersion();
+        String currentVersion = plugin.getPluginMeta().getVersion();
         player.sendMessage(plugin.languageManager().text(
                 "logs.update.available",
                 "A new version is available: {latest} (current: {current}) -> {url}",
@@ -99,14 +99,13 @@ public final class GitHubUpdateChecker {
     }
 
     private UpdateCheckResult fetchLatestRelease() {
-        String encodedRepository = encodeRepository(GITHUB_REPOSITORY);
+        String encodedRepository = encodeRepository();
         String apiUrl = "https://api.github.com/repos/" + encodedRepository + "/releases/latest";
 
         HttpRequest request = HttpRequest.newBuilder(URI.create(apiUrl))
                 .GET()
                 .timeout(Duration.ofSeconds(8))
                 .header("Accept", "application/vnd.github+json")
-                .header("X-GitHub-Api-Version", "2022-11-28")
                 .header("User-Agent", "FaunaReborn-UpdateChecker")
                 .build();
 
@@ -118,7 +117,7 @@ public final class GitHubUpdateChecker {
             String body = response.body();
             String latestTag = readValue(TAG_NAME_PATTERN, body);
             String releaseUrl = readValue(HTML_URL_PATTERN, body);
-            String currentVersion = plugin.getDescription().getVersion();
+            String currentVersion = plugin.getPluginMeta().getVersion();
             boolean newer = isVersionNewer(latestTag, currentVersion);
             return new UpdateCheckResult(newer, normalizeVersion(latestTag), releaseUrl);
         } catch (InterruptedException exception) {
@@ -148,11 +147,8 @@ public final class GitHubUpdateChecker {
         });
     }
 
-    private String encodeRepository(String repository) {
-        String trimmed = repository == null ? "" : repository.trim();
-        if (trimmed.isBlank()) {
-            return "devskycore/FaunaReborn";
-        }
+    private String encodeRepository() {
+        String trimmed = GITHUB_REPOSITORY.trim();
         String[] split = trimmed.split("/", 2);
         if (split.length != 2) {
             return "devskycore/FaunaReborn";

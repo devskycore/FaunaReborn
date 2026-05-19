@@ -16,14 +16,10 @@ public record EnvironmentAggressionSettings(
 ) {
     private static final double MAX_DAMAGE_MULTIPLIER = 2.0D;
     private static final double MAX_DETECTION_MULTIPLIER = 3.0D;
+    private static final double MIN_GENERAL_MULTIPLIER = 0.1D;
     private static final double MIN_ATTACK_COOLDOWN_MULTIPLIER = 0.4D;
     private static final double MIN_PICKUP_REQUIREMENT_MULTIPLIER = 0.25D;
     private static final double MAX_MOVEMENT_SPEED_MULTIPLIER = 2.0D;
-
-    public static EnvironmentAggressionSettings disabled() {
-        Modifier disabledModifier = Modifier.disabled();
-        return new EnvironmentAggressionSettings(false, false, 100, disabledModifier, disabledModifier, disabledModifier, disabledModifier, disabledModifier, disabledModifier);
-    }
 
     public static EnvironmentAggressionSettings fromConfig(FileConfiguration config, String rootPath) {
         String root = rootPath + ".environment-modifiers";
@@ -34,12 +30,12 @@ public record EnvironmentAggressionSettings(
                 enabled,
                 debug,
                 Math.max(20, refreshIntervalSeconds * 20),
-                readModifier(config.getConfigurationSection(root + ".rain"), false),
-                readModifier(config.getConfigurationSection(root + ".thunderstorm"), false),
-                readModifier(config.getConfigurationSection(root + ".full-moon"), false),
-                readModifier(config.getConfigurationSection(root + ".combinations.night-rain"), false),
-                readModifier(config.getConfigurationSection(root + ".combinations.night-thunderstorm"), false),
-                readModifier(config.getConfigurationSection(root + ".combinations.night-full-moon"), false)
+                readModifier(config.getConfigurationSection(root + ".rain")),
+                readModifier(config.getConfigurationSection(root + ".thunderstorm")),
+                readModifier(config.getConfigurationSection(root + ".full-moon")),
+                readModifier(config.getConfigurationSection(root + ".combinations.night-rain")),
+                readModifier(config.getConfigurationSection(root + ".combinations.night-thunderstorm")),
+                readModifier(config.getConfigurationSection(root + ".combinations.night-full-moon"))
         );
     }
 
@@ -69,24 +65,24 @@ public record EnvironmentAggressionSettings(
         return combined;
     }
 
-    private static Modifier readModifier(ConfigurationSection section, boolean enabledByDefault) {
+    private static Modifier readModifier(ConfigurationSection section) {
         if (section == null) {
             return Modifier.disabled();
         }
-        boolean enabled = section.getBoolean("enabled", enabledByDefault);
+        boolean enabled = section.getBoolean("enabled", false);
         if (!enabled) {
             return Modifier.disabled();
         }
         return new Modifier(true, new EnvironmentAggressionModifiers(
-                clampMin(section.getDouble("aggression-multiplier", 1.0D), 0.1D),
-                clampRange(section.getDouble("detection-radius-multiplier", 1.0D), 0.1D, MAX_DETECTION_MULTIPLIER),
+                clampMin(section.getDouble("aggression-multiplier", 1.0D)),
+                clampRange(section.getDouble("detection-radius-multiplier", 1.0D), MIN_GENERAL_MULTIPLIER, MAX_DETECTION_MULTIPLIER),
                 clampRange(section.getDouble("detection-radius-bonus", 0.0D), 0.0D, 8.0D),
-                clampRange(section.getDouble("attack-damage-multiplier", 1.0D), 0.1D, MAX_DAMAGE_MULTIPLIER),
+                clampRange(section.getDouble("attack-damage-multiplier", 1.0D), MIN_GENERAL_MULTIPLIER, MAX_DAMAGE_MULTIPLIER),
                 clampRange(section.getDouble("attack-cooldown-multiplier", 1.0D), MIN_ATTACK_COOLDOWN_MULTIPLIER, 2.5D),
-                clampRange(section.getDouble("movement-speed-multiplier", 1.0D), 0.1D, MAX_MOVEMENT_SPEED_MULTIPLIER),
+                clampRange(section.getDouble("movement-speed-multiplier", 1.0D), MIN_GENERAL_MULTIPLIER, MAX_MOVEMENT_SPEED_MULTIPLIER),
                 clampRange(section.getDouble("pickup-requirement-multiplier", 1.0D), MIN_PICKUP_REQUIREMENT_MULTIPLIER, 4.0D),
-                clampMin(section.getDouble("social-alert-multiplier", 1.0D), 0.1D),
-                clampMin(section.getDouble("target-persistence-multiplier", 1.0D), 0.1D),
+                clampMin(section.getDouble("social-alert-multiplier", 1.0D)),
+                clampMin(section.getDouble("target-persistence-multiplier", 1.0D)),
                 section.getBoolean("fearlessness", false)
         ));
     }
@@ -95,14 +91,14 @@ public record EnvironmentAggressionSettings(
         if (!Double.isFinite(value)) {
             return min;
         }
-        return Math.max(min, Math.min(max, value));
+        return Math.clamp(value, min, max);
     }
 
-    private static double clampMin(double value, double min) {
+    private static double clampMin(double value) {
         if (!Double.isFinite(value)) {
-            return min;
+            return MIN_GENERAL_MULTIPLIER;
         }
-        return Math.max(min, value);
+        return Math.max(MIN_GENERAL_MULTIPLIER, value);
     }
 
     public record Modifier(boolean enabled, EnvironmentAggressionModifiers modifiers) {

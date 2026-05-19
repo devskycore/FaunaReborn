@@ -332,7 +332,7 @@ final class CowMilkAggressionController {
         if (emitter == null || aggressor == null || nearbyEntities == null || nearbyEntities.isEmpty()) {
             return;
         }
-        if (!targetEligibilityService.isEligible(aggressor, global.worldFilter(), -1L)) {
+        if (targetEligibilityService.isIneligible(aggressor, global.worldFilter(), -1L)) {
             return;
         }
 
@@ -657,7 +657,7 @@ final class CowMilkAggressionController {
             return null;
         }
         Player player = org.bukkit.Bukkit.getPlayer(targetUuid);
-        if (!targetEligibilityService.isEligible(player, global.worldFilter(), currentTick)) {
+        if (targetEligibilityService.isIneligible(player, global.worldFilter(), currentTick)) {
             return null;
         }
         return player;

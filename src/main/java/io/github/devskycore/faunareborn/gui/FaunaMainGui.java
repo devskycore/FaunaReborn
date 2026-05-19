@@ -11,6 +11,7 @@ import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapters;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.jetbrains.annotations.NotNull;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.SoundCategory;
@@ -28,6 +29,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public final class FaunaMainGui implements Listener {
     private static final int SIZE = 54;
@@ -250,7 +252,9 @@ public final class FaunaMainGui implements Listener {
     }
 
     private Inventory buildInventory(HumanEntity viewer) {
-        Inventory inventory = plugin.getServer().createInventory(new GuiHolder(GuiViewType.MAIN), SIZE, title());
+        GuiHolder holder = new GuiHolder(GuiViewType.MAIN);
+        Inventory inventory = plugin.getServer().createInventory(holder, SIZE, title());
+        holder.bind(inventory);
         fillBackground(inventory);
         boolean canUseLang = permissionService.canUseLang(viewer);
         boolean canUseReload = permissionService.canUseReload(viewer);
@@ -262,14 +266,16 @@ public final class FaunaMainGui implements Listener {
             boolean enabled = configService.isEnabled(toggle);
             inventory.setItem(TOGGLE_SLOTS[i], busy ? createBusyToggleItem(toggle, enabled) : createToggleItem(toggle, enabled));
         }
-        inventory.setItem(LANGUAGE_SLOT, busy ? createBusyActionItem(Material.NAME_TAG, "gui.language.button-main", "LANGUAGE") : (canUseLang ? createLanguageItem() : createLockedActionItem(Material.BARRIER, "gui.language.button-main", "LANGUAGE")));
-        inventory.setItem(RELOAD_SLOT, busy ? createReloadingItem() : (canUseReload ? createReloadItem() : createLockedActionItem(Material.BARRIER, "gui.reload.title-main", "RELOAD")));
+        inventory.setItem(LANGUAGE_SLOT, busy ? createBusyActionItem(Material.NAME_TAG, "gui.language.button-main", "LANGUAGE") : (canUseLang ? createLanguageItem() : createLockedActionItem("gui.language.button-main", "LANGUAGE")));
+        inventory.setItem(RELOAD_SLOT, busy ? createReloadingItem() : (canUseReload ? createReloadItem() : createLockedActionItem("gui.reload.title-main", "RELOAD")));
         inventory.setItem(CLOSE_SLOT, busy ? createBusyActionItem(Material.BARRIER, "gui.close.title-main", "CLOSE") : createCloseItem());
         return inventory;
     }
 
     private Inventory buildLanguageInventory(HumanEntity viewer) {
-        Inventory inventory = plugin.getServer().createInventory(new GuiHolder(GuiViewType.LANGUAGE), LANGUAGE_GUI_SIZE, languageTitle());
+        GuiHolder holder = new GuiHolder(GuiViewType.LANGUAGE);
+        Inventory inventory = plugin.getServer().createInventory(holder, LANGUAGE_GUI_SIZE, languageTitle());
+        holder.bind(inventory);
         ItemStack frame = createPane(Component.text(" ", NamedTextColor.DARK_GRAY));
         for (int i = 0; i < LANGUAGE_GUI_SIZE; i++) {
             inventory.setItem(i, frame);
@@ -284,10 +290,10 @@ public final class FaunaMainGui implements Listener {
             return inventory;
         }
         inventory.setItem(LANGUAGE_ENGLISH_SLOT, createLanguageOptionItem("English", "en", Material.WHITE_BANNER));
-        inventory.setItem(LANGUAGE_PORTUGUESE_SLOT, createLanguageOptionItem("Portugu\u00eas", "pt", Material.GREEN_BANNER));
-        inventory.setItem(LANGUAGE_SPANISH_SLOT, createLanguageOptionItem("Espa\u00f1ol", "es", Material.RED_BANNER));
+        inventory.setItem(LANGUAGE_PORTUGUESE_SLOT, createLanguageOptionItem("Português", "pt", Material.GREEN_BANNER));
+        inventory.setItem(LANGUAGE_SPANISH_SLOT, createLanguageOptionItem("Español", "es", Material.RED_BANNER));
         inventory.setItem(LANGUAGE_ITALIAN_SLOT, createLanguageOptionItem("Italiano", "it", Material.LIME_BANNER));
-        inventory.setItem(LANGUAGE_BACK_SLOT, permissionService.canUseGui(viewer) ? createLanguageBackItem() : createLockedActionItem(Material.BARRIER, "gui.language.back-main", "BACK"));
+        inventory.setItem(LANGUAGE_BACK_SLOT, permissionService.canUseGui(viewer) ? createLanguageBackItem() : createLockedActionItem("gui.language.back-main", "BACK"));
         return inventory;
     }
 
@@ -371,8 +377,8 @@ public final class FaunaMainGui implements Listener {
         return stack;
     }
 
-    private ItemStack createLockedActionItem(Material material, String titleKey, String fallbackTitle) {
-        ItemStack stack = new ItemStack(material);
+    private ItemStack createLockedActionItem(String titleKey, String fallbackTitle) {
+        ItemStack stack = new ItemStack(Material.BARRIER);
         ItemMeta meta = stack.getItemMeta();
         meta.displayName(
                 Component.text(language.text(titleKey, fallbackTitle), NamedTextColor.RED)
@@ -680,17 +686,17 @@ public final class FaunaMainGui implements Listener {
     }
 
     private String readableLanguageName(String languageCode) {
-        return switch (languageCode.toLowerCase()) {
+        return switch (languageCode.toLowerCase(Locale.ROOT)) {
             case "en" -> "English";
-            case "pt" -> "Portugu\u00eas";
-            case "es" -> "Espa\u00f1ol";
+            case "pt" -> "Português";
+            case "es" -> "Español";
             case "it" -> "Italiano";
-            default -> languageCode.toUpperCase();
+            default -> languageCode.toUpperCase(Locale.ROOT);
         };
     }
 
     private Material languageBannerMaterial(String languageCode) {
-        return switch (languageCode.toLowerCase()) {
+        return switch (languageCode.toLowerCase(Locale.ROOT)) {
             case "en" -> Material.WHITE_BANNER;
             case "pt" -> Material.GREEN_BANNER;
             case "es" -> Material.RED_BANNER;
@@ -700,7 +706,7 @@ public final class FaunaMainGui implements Listener {
     }
 
     private int resolveLanguageSlot(String languageCode) {
-        return switch (languageCode.toLowerCase()) {
+        return switch (languageCode.toLowerCase(Locale.ROOT)) {
             case "en" -> LANGUAGE_ENGLISH_SLOT;
             case "pt" -> LANGUAGE_PORTUGUESE_SLOT;
             case "es" -> LANGUAGE_SPANISH_SLOT;
@@ -741,10 +747,28 @@ public final class FaunaMainGui implements Listener {
         NONE
     }
 
-    private record GuiHolder(GuiViewType viewType) implements InventoryHolder {
+    private static final class GuiHolder implements InventoryHolder {
+        private final GuiViewType viewType;
+        private Inventory inventory;
+
+        private GuiHolder(GuiViewType viewType) {
+            this.viewType = viewType;
+        }
+
+        private void bind(Inventory inventory) {
+            this.inventory = inventory;
+        }
+
+        private GuiViewType viewType() {
+            return viewType;
+        }
+
         @Override
-        public Inventory getInventory() {
-            return null;
+        public @NotNull Inventory getInventory() {
+            if (inventory == null) {
+                throw new IllegalStateException("Inventory holder is not bound yet.");
+            }
+            return inventory;
         }
     }
 

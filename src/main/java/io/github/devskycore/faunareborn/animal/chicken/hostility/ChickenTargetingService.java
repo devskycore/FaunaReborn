@@ -120,7 +120,7 @@ final class ChickenTargetingService {
 
         for (Entity entity : nearby) {
             if (!(entity instanceof Player player)) continue;
-            if (!targetEligibilityService.isEligible(chicken, player, activationPolicy.worldFilter(), currentTick)) continue;
+            if (targetEligibilityService.isIneligible(chicken, player, activationPolicy.worldFilter(), currentTick)) continue;
             if (activationPolicy.isInvalidTarget(chicken, player)) continue;
             if (brain != null && isRetargetBlocked(brain, player.getUniqueId(), currentTick)) continue;
             if (isOnGlobalTargetCooldown(player.getUniqueId(), chickenId, currentTick)) continue;
@@ -141,7 +141,7 @@ final class ChickenTargetingService {
 
             int attackers = targetingIndex.attackersForTarget(player.getUniqueId());
             boolean hasLineOfSight = chicken.hasLineOfSight(player);
-            double score = targetScoringService.score(chicken, player, currentTargetId, attackers, distSq, hasLineOfSight);
+            double score = targetScoringService.score(player, currentTargetId, attackers, distSq, hasLineOfSight);
             if (score > bestScore || (score == bestScore && distSq < bestDist)) {
                 best = player;
                 bestDist = distSq;

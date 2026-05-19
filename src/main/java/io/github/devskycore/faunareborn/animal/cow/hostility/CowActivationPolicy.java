@@ -49,7 +49,7 @@ final class CowActivationPolicy {
         if (!cow.isAdult() || !cow.isValid() || cow.isDead()) {
             return true;
         }
-        if (!targetEligibilityService.isEligible(cow, aggressor, worldFilter, -1L)) {
+        if (targetEligibilityService.isIneligible(cow, aggressor, worldFilter, -1L)) {
             return true;
         }
         if (cow.getWorld() != aggressor.getWorld()) {

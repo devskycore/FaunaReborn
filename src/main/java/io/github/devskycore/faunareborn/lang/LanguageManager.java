@@ -142,8 +142,7 @@ public final class LanguageManager {
     }
 
     public String text(String path, String fallback, Map<String, String> placeholders) {
-        String raw = text(path, fallback);
-        String formatted = raw;
+        String formatted = text(path, fallback);
         for (Map.Entry<String, String> entry : placeholders.entrySet()) {
             formatted = formatted.replace("{" + entry.getKey() + "}", entry.getValue());
         }
@@ -204,8 +203,8 @@ public final class LanguageManager {
 
     private File ensureLanguageDirectory() {
         File languageDirectory = new File(plugin.getDataFolder(), "lang");
-        if (!languageDirectory.exists()) {
-            languageDirectory.mkdirs();
+        if (!languageDirectory.exists() && !languageDirectory.mkdirs()) {
+            throw new IllegalStateException("Could not create language directory: " + languageDirectory.getAbsolutePath());
         }
         return languageDirectory;
     }

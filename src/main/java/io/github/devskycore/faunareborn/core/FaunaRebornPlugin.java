@@ -13,12 +13,14 @@ import io.github.devskycore.faunareborn.lang.LanguageManager;
 import io.github.devskycore.faunareborn.module.ModuleManager;
 import io.github.devskycore.faunareborn.system.lifecycle.PluginBanner;
 import io.github.devskycore.faunareborn.system.lifecycle.PluginLifecycleLogger;
+import io.github.devskycore.faunareborn.system.shutdown.ShutdownOrchestrator;
 import io.github.devskycore.faunareborn.system.startup.StartupOrchestrator;
 import io.github.devskycore.faunareborn.system.update.GitHubUpdateChecker;
 import io.github.devskycore.faunareborn.system.update.UpdateNotifyListener;
-import org.bukkit.event.HandlerList;
 import org.bukkit.Material;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.logging.Level;
 
 public final class FaunaRebornPlugin extends JavaPlugin {
 
@@ -53,13 +55,13 @@ public final class FaunaRebornPlugin extends JavaPlugin {
         final long startedAt = System.nanoTime();
 
         try {
-            shutdownModulesAndListeners();
+            new ShutdownOrchestrator(this).run();
             if (updateChecker != null) {
                 updateChecker.shutdown();
             }
         } catch (Throwable throwable) {
             getLogger().warning("FaunaReborn encountered an unexpected shutdown error: " + throwable.getMessage());
-            throwable.printStackTrace();
+            getLogger().log(Level.WARNING, "Shutdown failure stack trace", throwable);
         }
 
         PluginBanner.printDisable(this, languageManager());
@@ -98,18 +100,6 @@ public final class FaunaRebornPlugin extends JavaPlugin {
             configMigrationService = new ConfigMigrationService(this);
         }
         return configMigrationService;
-    }
-
-    private void shutdownModulesAndListeners() {
-        ModuleManager manager = moduleManager();
-        if (manager != null) {
-            manager.disableAll();
-            setModuleManager(null);
-        }
-        if (deathMessageListener() != null) {
-            HandlerList.unregisterAll(deathMessageListener());
-            setDeathMessageListener(null);
-        }
     }
 
     private void registerCommands() {
