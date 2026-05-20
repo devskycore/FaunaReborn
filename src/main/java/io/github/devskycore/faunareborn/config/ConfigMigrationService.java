@@ -19,7 +19,6 @@ public final class ConfigMigrationService {
     private static final int TARGET_CONFIG_VERSION = 2;
     private static final String CONFIG_RESOURCE_PATH = "config.yml";
     private static final String CONFIG_VERSION_PATH = "config-version";
-    private static final String RELEASE_TAG = "1.1.0";
 
     private static final Map<String, String> LANGUAGE_RESOURCE_FILES = Map.of(
             "english.yml", "lang/english.yml",
@@ -150,7 +149,7 @@ public final class ConfigMigrationService {
     }
 
     private void createBackupIfMissing(File targetFile) {
-        File backup = new File(targetFile.getParentFile(), targetFile.getName() + ".bak-" + RELEASE_TAG);
+        File backup = new File(targetFile.getParentFile(), targetFile.getName() + ".bak-" + plugin.getPluginMeta().getVersion());
         if (backup.exists()) {
             return;
         }

@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.3] - 2026-05-20
+
+### Fixed
+- Restored cross-plugin compatibility for targeting behavior, including vanish and god-mode integrations.
+- Hardened startup and shutdown cleanup paths to behave safely under partial startup failures.
+- Cleaned up static-analysis findings across command, hostility, and lifecycle codepaths while preserving behavior.
+
+### Changed
+- Promoted project versioning from `1.1.2` to release `1.1.3` in Gradle project metadata.
+- Updated migration backup filename tagging to use the runtime plugin version instead of a stale hardcoded release tag.
+
 ## [1.1.2] - 2026-05-17
 
 ### Fixed
