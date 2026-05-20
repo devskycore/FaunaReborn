@@ -7,7 +7,6 @@ import org.bukkit.World;
 import org.bukkit.entity.Pig;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
 
 import java.util.List;
 import java.util.Map;
@@ -21,7 +20,6 @@ final class PigTerritorialPickupService {
     private final PigAggressionController aggressionController;
     private final NaturalPigResolver naturalPigResolver;
     private final boolean requireLineOfSight;
-    private final WorldEnvironmentContextCache environmentCache;
     private final Map<UUID, TerritorialPickupCounter> counters = new ConcurrentHashMap<>();
 
     PigTerritorialPickupService(
@@ -29,15 +27,13 @@ final class PigTerritorialPickupService {
             PigSettings.SocialAlertSettings socialAlertSettings,
             PigAggressionController aggressionController,
             NaturalPigResolver naturalPigResolver,
-            boolean requireLineOfSight,
-            WorldEnvironmentContextCache environmentCache
+            boolean requireLineOfSight
     ) {
         this.settings = settings;
         this.socialAlertSettings = socialAlertSettings;
         this.aggressionController = aggressionController;
         this.naturalPigResolver = naturalPigResolver;
         this.requireLineOfSight = requireLineOfSight;
-        this.environmentCache = environmentCache;
     }
 
     boolean isNonTerritorialMaterial(Material material) {
@@ -154,7 +150,7 @@ final class PigTerritorialPickupService {
             case PORKCHOP -> settings.rawPorkchopThreshold();
             default -> Integer.MAX_VALUE;
         };
-        if (!settings.nightModifierEnabled() || world == null || !isNight(world)) {
+        if (settings.nightModifierDisabled() || world == null || !isNight(world)) {
             return threshold;
         }
         return Math.max(1, (int) Math.ceil(threshold * settings.nightThresholdMultiplier()));

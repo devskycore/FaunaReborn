@@ -144,7 +144,6 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
                 secondsToTicks(forgetTargetAfterSeconds, true),
                 rodTriggerCooldownTicks,
                 detectionRange,
-                detectionRange * detectionRange,
                 requireLineOfSight,
                 warningDurationTicks,
                 attackDamage,
@@ -248,7 +247,6 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
                         32.0D,
                         10.0D
                 ),
-                0.0D,
                 secondsToTicks(clampedDouble(
                         entityConfig.getDouble("pig-hostility.social-alert.cooldown-seconds", 1.0D),
                         0.0D,
@@ -276,7 +274,6 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
                 socialAlert.onNearbyDeath(),
                 socialAlert.responderAdultsOnly(),
                 socialAlert.radius(),
-                socialAlert.radius() * socialAlert.radius(),
                 socialAlert.cooldownTicks(),
                 socialAlert.joinCooldownTicks(),
                 socialAlert.maxResponders()
@@ -288,16 +285,7 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
 
     private PigSettings.GlobalHostilitySettings loadGlobalHostilitySettings(FileConfiguration globalConfig) {
         GlobalHostilitySettingsData data = globalHostilitySettingsReader.read(globalConfig);
-        GlobalHostilitySettingsData.VisualEffectsSettingsData visualData = data.visualEffectsSettings();
-        SharedVisualEffectsSettings visualEffectsSettings = new SharedVisualEffectsSettings(
-                visualData.glowEnabled(),
-                visualData.particlesEnabled(),
-                visualData.particlesIntervalTicks(),
-                visualData.particlesIntensity(),
-                visualData.soundEnabled(),
-                visualData.soundIntervalTicks(),
-                visualData.soundVolume()
-        );
+        SharedVisualEffectsSettings visualEffectsSettings = visualEffectsSettings(data);
 
         return new PigSettings.GlobalHostilitySettings(
                 data.activationChance(),
@@ -316,6 +304,19 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
                 data.nightDamageMultiplier(),
                 visualEffectsSettings,
                 data.targeting()
+        );
+    }
+
+    private static SharedVisualEffectsSettings visualEffectsSettings(GlobalHostilitySettingsData data) {
+        GlobalHostilitySettingsData.VisualEffectsSettingsData visualData = data.visualEffectsSettings();
+        return new SharedVisualEffectsSettings(
+                visualData.glowEnabled(),
+                visualData.particlesEnabled(),
+                visualData.particlesIntervalTicks(),
+                visualData.particlesIntensity(),
+                visualData.soundEnabled(),
+                visualData.soundIntervalTicks(),
+                visualData.soundVolume()
         );
     }
 

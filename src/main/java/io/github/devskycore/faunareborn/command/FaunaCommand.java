@@ -54,13 +54,13 @@ public final class FaunaCommand implements CommandExecutor, TabCompleter {
             @NotNull CommandSender sender,
             @NotNull Command command,
             @NotNull String label,
-            @NotNull String[] args
+            @NotNull String @NotNull [] args
     ) {
         execute(sender, args);
         return true;
     }
 
-    public void execute(@NotNull CommandSender sender, @NotNull String[] args) {
+    public void execute(@NotNull CommandSender sender, @NotNull String @NotNull [] args) {
         registry.execute(sender, args);
     }
 
@@ -69,12 +69,12 @@ public final class FaunaCommand implements CommandExecutor, TabCompleter {
             @NotNull CommandSender sender,
             @NotNull Command command,
             @NotNull String alias,
-            @NotNull String[] args
+            @NotNull String @NotNull [] args
     ) {
         return suggest(sender, args);
     }
 
-    public @NotNull List<String> suggest(@NotNull CommandSender sender, @NotNull String[] args) {
+    public @NotNull List<String> suggest(@NotNull CommandSender sender, @NotNull String @NotNull [] args) {
         List<String> suggestions = registry.suggest(sender, args);
         return suggestions.isEmpty() ? Collections.emptyList() : List.copyOf(suggestions);
     }

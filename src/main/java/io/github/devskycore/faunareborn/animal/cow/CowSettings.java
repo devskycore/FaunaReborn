@@ -30,7 +30,6 @@ public record CowSettings(
                 int forgetTargetAfterTicks,
                 int milkingTriggerCooldownTicks,
                 double detectionRange,
-                double detectionRangeSq,
                 boolean requireLineOfSight,
                 int warningDurationTicks,
                 double attackDamage,
@@ -52,7 +51,6 @@ public record CowSettings(
                     forgetTargetAfterTicks,
                     milkingTriggerCooldownTicks,
                     detectionRange,
-                    detectionRangeSq,
                     requireLineOfSight,
                     warningDurationTicks,
                     attackDamage,
@@ -122,7 +120,6 @@ public record CowSettings(
                 boolean onNearbyDeath,
                 boolean responderAdultsOnly,
                 double radius,
-                double radiusSq,
                 int cooldownTicks,
                 int joinCooldownTicks,
                 int maxResponders
@@ -133,7 +130,6 @@ public record CowSettings(
                     onNearbyDeath,
                     responderAdultsOnly,
                     radius,
-                    radiusSq,
                     cooldownTicks,
                     joinCooldownTicks,
                     maxResponders

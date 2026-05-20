@@ -25,10 +25,8 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.persistence.PersistentDataType;
-import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,8 +53,7 @@ final class CowMilkInteractionListener extends AbstractCookProvocationListenerSu
             CowSettings.SocialAlertSettings socialAlertSettings,
             CowSettings.GlobalHostilitySettings global,
             CowMilkAggressionController aggressionController,
-            CowSettings.ResourceProvocationSettings resourceProvocationSettings,
-            WorldEnvironmentContextCache environmentCache
+            CowSettings.ResourceProvocationSettings resourceProvocationSettings
     ) {
         this.settings = settings;
         this.socialAlertSettings = socialAlertSettings;
@@ -69,8 +66,7 @@ final class CowMilkInteractionListener extends AbstractCookProvocationListenerSu
                 socialAlertSettings,
                 aggressionController,
                 this::isNaturalCow,
-                settings.requireLineOfSight(),
-                environmentCache
+                settings.requireLineOfSight()
         );
         this.nonNaturalCowKey = new NamespacedKey(plugin, "non_natural_cow");
     }
@@ -117,7 +113,7 @@ final class CowMilkInteractionListener extends AbstractCookProvocationListenerSu
         if (!(event.getEntity() instanceof Cow cow)) {
             return;
         }
-        if (!HostilityEventSupport.isNaturalSpawn(event.getSpawnReason())) {
+        if (HostilityEventSupport.isNonNaturalSpawn(event.getSpawnReason())) {
             cow.getPersistentDataContainer().set(nonNaturalCowKey, PersistentDataType.BYTE, TRUE_BYTE);
         }
     }
@@ -217,11 +213,11 @@ final class CowMilkInteractionListener extends AbstractCookProvocationListenerSu
     }
 
     @Override
-    protected boolean isSupportedCooker(Material material) {
-        return material == Material.FURNACE
-                || material == Material.SMOKER
-                || material == Material.CAMPFIRE
-                || material == Material.SOUL_CAMPFIRE;
+    protected boolean isUnsupportedCooker(Material material) {
+        return material != Material.FURNACE
+                && material != Material.SMOKER
+                && material != Material.CAMPFIRE
+                && material != Material.SOUL_CAMPFIRE;
     }
 
     @Override
@@ -270,8 +266,8 @@ final class CowMilkInteractionListener extends AbstractCookProvocationListenerSu
     }
 
     @Override
-    protected boolean isResourceProvocationEnabled() {
-        return resourceProvocationSettings.enabled();
+    protected boolean isResourceProvocationDisabled() {
+        return !resourceProvocationSettings.enabled();
     }
 
     @Override

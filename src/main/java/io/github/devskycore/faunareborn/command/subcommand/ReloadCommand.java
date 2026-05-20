@@ -27,8 +27,8 @@ public final class ReloadCommand implements FaunaSubcommand {
     }
 
     @Override
-    public boolean canAccess(CommandSender sender, PermissionService permissions) {
-        return permissions.canUseReload(sender);
+    public boolean cannotAccess(CommandSender sender, PermissionService permissions) {
+        return !permissions.canUseReload(sender);
     }
 
     @Override

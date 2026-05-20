@@ -247,7 +247,7 @@ final class CowMilkAggressionController {
 
     void provokeCowFromMilking(Cow cow, Player aggressor, boolean naturalCow) {
         synchronized (stateLock) {
-        if (isProvocationBlocked(cow, naturalCow)) {
+        if (isProvocationBlocked(cow)) {
             return;
         }
 
@@ -264,9 +264,9 @@ final class CowMilkAggressionController {
         }
     }
 
-    boolean provokeCowFromDamage(Cow cow, Player aggressor, boolean naturalCow) {
+    void provokeCowFromDamage(Cow cow, Player aggressor, boolean naturalCow) {
         synchronized (stateLock) {
-        return activateCowAggression(
+        activateCowAggression(
                 cow,
                 aggressor,
                 naturalCow,
@@ -302,7 +302,7 @@ final class CowMilkAggressionController {
             HostilityCause hostilityCause
     ) {
         synchronized (stateLock) {
-        if (isProvocationBlocked(cow, naturalCow)) {
+        if (isProvocationBlocked(cow)) {
             return false;
         }
         UUID playerId = aggressor.getUniqueId();
@@ -354,7 +354,7 @@ final class CowMilkAggressionController {
             if (socialAlertSettings.responderAdultsOnly() && !ally.isAdult()) {
                 continue;
             }
-            if (isProvocationBlocked(ally, naturalCowPredicate.test(ally))) {
+            if (isProvocationBlocked(ally)) {
                 continue;
             }
             CowMilkAggressionBrain allyBrain = brains.get(ally.getEntityId());
@@ -382,7 +382,7 @@ final class CowMilkAggressionController {
         }
     }
 
-    private boolean isProvocationBlocked(Cow cow, boolean naturalCow) {
+    private boolean isProvocationBlocked(Cow cow) {
         if (cow == null) {
             return true;
         }
@@ -911,7 +911,8 @@ final class CowMilkAggressionController {
                     0.0D
             );
             int intervalMultiplier = brain.lodTier == LodTier.MEDIUM ? 2 : 1;
-            brain.nextParticleTick = currentTick + (visual.particlesIntervalTicks() * intervalMultiplier);
+            long particleIntervalTicks = (long) visual.particlesIntervalTicks() * intervalMultiplier;
+            brain.nextParticleTick = currentTick + particleIntervalTicks;
         }
     }
 

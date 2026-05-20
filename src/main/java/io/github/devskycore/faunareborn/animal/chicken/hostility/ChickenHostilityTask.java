@@ -19,7 +19,6 @@ import io.github.devskycore.faunareborn.system.lod.LodSettings;
 import io.github.devskycore.faunareborn.system.lod.LodTier;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import org.bukkit.Difficulty;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -727,7 +726,7 @@ final class ChickenHostilityTask implements Listener {
         }
         int chickenId = chicken.getEntityId();
         if (!tracker.isTracked(chickenId)) {
-            trackChicken(chicken, false);
+            trackChicken(chicken, chicken.getEntityId(), false);
         }
 
         ChickenHostilityBrain brain = tracker.brain(chickenId);
@@ -809,14 +808,10 @@ final class ChickenHostilityTask implements Listener {
                 continue;
             }
             for (Chicken chicken : world.getEntitiesByClass(Chicken.class)) {
-                trackChicken(chicken, false);
+                trackChicken(chicken, chicken.getEntityId(), false);
             }
         }
         tracker.resetCursors();
-    }
-
-    private void trackChicken(Chicken chicken, boolean replaceActivationState) {
-        trackChicken(chicken, chicken.getEntityId(), replaceActivationState);
     }
 
     private void trackChicken(Chicken chicken, int chickenId, boolean replaceActivationState) {
@@ -890,7 +885,7 @@ final class ChickenHostilityTask implements Listener {
         Item item = event.getItem();
         Material material = item.getItemStack().getType();
         if (material == COOKED_MEAT) {
-            HostilityCause cookingCause = consumeCookValidation(player, item.getLocation(), COOKED_MEAT);
+            HostilityCause cookingCause = consumeCookValidation(player, item.getLocation());
             if (cookingCause == null) {
                 return;
             }
@@ -927,7 +922,7 @@ final class ChickenHostilityTask implements Listener {
             return;
         }
         Material cookerType = event.getBlock().getType();
-        if (!isSupportedCooker(cookerType)) {
+        if (isUnsupportedCooker(cookerType)) {
             return;
         }
         if (event.getSource().getType() != RAW_MEAT) {
@@ -957,7 +952,7 @@ final class ChickenHostilityTask implements Listener {
             return;
         }
         Block block = event.getBlock();
-        if (!isSupportedCooker(block.getType())) {
+        if (isUnsupportedCooker(block.getType())) {
             return;
         }
         World world = block.getWorld();
@@ -969,12 +964,7 @@ final class ChickenHostilityTask implements Listener {
             return;
         }
         Location outputLocation = block.getLocation().add(0.5D, 0.5D, 0.5D);
-        HostilityCause cookingCause = consumeCookValidation(
-                player,
-                outputLocation,
-                COOKED_MEAT,
-                resolveCookingCause(block.getType())
-        );
+        HostilityCause cookingCause = consumeCookValidation(player, outputLocation, resolveCookingCause(block.getType()));
         if (cookingCause == null) {
             return;
         }
@@ -998,7 +988,7 @@ final class ChickenHostilityTask implements Listener {
         }
         ItemStack cursor = event.getCursor();
         ItemStack current = event.getCurrentItem();
-        boolean placedRawOnInputSlot = event.getRawSlot() == 0 && cursor != null && cursor.getType() == RAW_MEAT;
+        boolean placedRawOnInputSlot = event.getRawSlot() == 0 && cursor.getType() == RAW_MEAT;
         boolean shiftMovedRaw = event.isShiftClick()
                 && event.getClickedInventory() != null
                 && event.getClickedInventory().getType() == InventoryType.PLAYER
@@ -1175,34 +1165,13 @@ final class ChickenHostilityTask implements Listener {
         });
     }
 
-    private Player findNearestValidPlayer(Location origin, List<Entity> nearby) {
-        Player nearest = null;
-        double bestDistanceSq = Double.MAX_VALUE;
-        for (Entity entity : nearby) {
-            if (!(entity instanceof Player candidate)) {
-                continue;
-            }
-            if (targetEligibilityService.isIneligible(candidate, activationPolicy.worldFilter(), currentTick)) {
-                continue;
-            }
-            double distanceSq = candidate.getLocation().distanceSquared(origin);
-            if (distanceSq >= bestDistanceSq) {
-                continue;
-            }
-            bestDistanceSq = distanceSq;
-            nearest = candidate;
-        }
-        return nearest;
-    }
-
-    private HostilityCause consumeCookValidation(Player player, Location outputLocation, Material cookedType) {
-        return consumeCookValidation(player, outputLocation, cookedType, null);
+    private HostilityCause consumeCookValidation(Player player, Location outputLocation) {
+        return consumeCookValidation(player, outputLocation, null);
     }
 
     private HostilityCause consumeCookValidation(
             Player player,
             Location outputLocation,
-            Material cookedType,
             HostilityCause fallbackCause
     ) {
         PendingCookIntent intent = pendingCookIntentByPlayer.get(player.getUniqueId());
@@ -1211,7 +1180,7 @@ final class ChickenHostilityTask implements Listener {
             return null;
         }
         CookedBatchReady ready = cookedBatchByCooker.get(cookerKey);
-        if (ready == null || currentTick > ready.expiresAtTick() || ready.material() != cookedType) {
+        if (ready == null || currentTick > ready.expiresAtTick() || ready.material() != COOKED_MEAT) {
             return null;
         }
         if (intent != null && currentTick <= intent.expiresAtTick() && intent.cookerKey().equals(cookerKey)) {
@@ -1290,11 +1259,11 @@ final class ChickenHostilityTask implements Listener {
         cookedBatchByCooker.entrySet().removeIf(entry -> tickSnapshot > entry.getValue().expiresAtTick());
     }
 
-    private boolean isSupportedCooker(Material material) {
-        return material == Material.FURNACE
-                || material == Material.SMOKER
-                || material == Material.CAMPFIRE
-                || material == Material.SOUL_CAMPFIRE;
+    private boolean isUnsupportedCooker(Material material) {
+        return material != Material.FURNACE
+                && material != Material.SMOKER
+                && material != Material.CAMPFIRE
+                && material != Material.SOUL_CAMPFIRE;
     }
 
     private record PendingCookIntent(String cookerKey, long expiresAtTick, HostilityCause cookingCause) {}

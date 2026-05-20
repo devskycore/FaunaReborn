@@ -7,7 +7,6 @@ public abstract class BaseProvocationSettings {
     private final int forgetTargetAfterTicks;
     private final int triggerCooldownTicks;
     private final double detectionRange;
-    private final double detectionRangeSq;
     private final boolean requireLineOfSight;
     private final int warningDurationTicks;
     private final double attackDamage;
@@ -29,7 +28,6 @@ public abstract class BaseProvocationSettings {
             int forgetTargetAfterTicks,
             int triggerCooldownTicks,
             double detectionRange,
-            double detectionRangeSq,
             boolean requireLineOfSight,
             int warningDurationTicks,
             double attackDamage,
@@ -50,7 +48,6 @@ public abstract class BaseProvocationSettings {
         this.forgetTargetAfterTicks = forgetTargetAfterTicks;
         this.triggerCooldownTicks = triggerCooldownTicks;
         this.detectionRange = detectionRange;
-        this.detectionRangeSq = detectionRangeSq;
         this.requireLineOfSight = requireLineOfSight;
         this.warningDurationTicks = warningDurationTicks;
         this.attackDamage = attackDamage;
@@ -85,10 +82,6 @@ public abstract class BaseProvocationSettings {
 
     public final double detectionRange() {
         return detectionRange;
-    }
-
-    public final double detectionRangeSq() {
-        return detectionRangeSq;
     }
 
     public final boolean requireLineOfSight() {

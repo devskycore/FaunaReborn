@@ -38,8 +38,8 @@ public final class LangCommand implements FaunaSubcommand {
     }
 
     @Override
-    public boolean canAccess(CommandSender sender, PermissionService permissions) {
-        return permissions.canUseLang(sender);
+    public boolean cannotAccess(CommandSender sender, PermissionService permissions) {
+        return !permissions.canUseLang(sender);
     }
 
     @Override

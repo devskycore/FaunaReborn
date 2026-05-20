@@ -31,8 +31,8 @@ public final class GuiCommand implements FaunaSubcommand {
     }
 
     @Override
-    public boolean canAccess(CommandSender sender, PermissionService permissions) {
-        return permissions.canUseGui(sender);
+    public boolean cannotAccess(CommandSender sender, PermissionService permissions) {
+        return !permissions.canUseGui(sender);
     }
 
     @Override

@@ -16,7 +16,7 @@ public interface FaunaSubcommand {
         return Collections.emptyList();
     }
 
-    default boolean canAccess(CommandSender sender, PermissionService permissions) {
-        return permissions.hasPermission(sender, info().permission());
+    default boolean cannotAccess(CommandSender sender, PermissionService permissions) {
+        return !permissions.hasPermission(sender, info().permission());
     }
 }

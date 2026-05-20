@@ -7,7 +7,6 @@ import org.bukkit.World;
 import org.bukkit.entity.Cow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
 
 import java.util.List;
 import java.util.Map;
@@ -21,7 +20,6 @@ final class CowTerritorialPickupService {
     private final CowMilkAggressionController aggressionController;
     private final NaturalCowResolver naturalCowResolver;
     private final boolean requireLineOfSight;
-    private final WorldEnvironmentContextCache environmentCache;
     private final Map<UUID, TerritorialPickupCounter> counters = new ConcurrentHashMap<>();
 
     CowTerritorialPickupService(
@@ -29,15 +27,13 @@ final class CowTerritorialPickupService {
             CowSettings.SocialAlertSettings socialAlertSettings,
             CowMilkAggressionController aggressionController,
             NaturalCowResolver naturalCowResolver,
-            boolean requireLineOfSight,
-            WorldEnvironmentContextCache environmentCache
+            boolean requireLineOfSight
     ) {
         this.settings = settings;
         this.socialAlertSettings = socialAlertSettings;
         this.aggressionController = aggressionController;
         this.naturalCowResolver = naturalCowResolver;
         this.requireLineOfSight = requireLineOfSight;
-        this.environmentCache = environmentCache;
     }
 
     boolean isNonTerritorialMaterial(Material material) {
@@ -154,7 +150,7 @@ final class CowTerritorialPickupService {
             case BONE -> settings.boneThreshold();
             default -> Integer.MAX_VALUE;
         };
-        if (!settings.nightModifierEnabled() || world == null || !isNight(world)) {
+        if (settings.nightModifierDisabled() || world == null || !isNight(world)) {
             return threshold;
         }
         return Math.max(1, (int) Math.ceil(threshold * settings.nightThresholdMultiplier()));

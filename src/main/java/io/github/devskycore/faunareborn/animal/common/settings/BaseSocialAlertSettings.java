@@ -7,7 +7,6 @@ public abstract class BaseSocialAlertSettings {
     private final boolean onNearbyDeath;
     private final boolean responderAdultsOnly;
     private final double radius;
-    private final double radiusSq;
     private final int cooldownTicks;
     private final int joinCooldownTicks;
     private final int maxResponders;
@@ -18,7 +17,6 @@ public abstract class BaseSocialAlertSettings {
             boolean onNearbyDeath,
             boolean responderAdultsOnly,
             double radius,
-            double radiusSq,
             int cooldownTicks,
             int joinCooldownTicks,
             int maxResponders
@@ -28,7 +26,6 @@ public abstract class BaseSocialAlertSettings {
         this.onNearbyDeath = onNearbyDeath;
         this.responderAdultsOnly = responderAdultsOnly;
         this.radius = radius;
-        this.radiusSq = radiusSq;
         this.cooldownTicks = cooldownTicks;
         this.joinCooldownTicks = joinCooldownTicks;
         this.maxResponders = maxResponders;
@@ -52,10 +49,6 @@ public abstract class BaseSocialAlertSettings {
 
     public final double radius() {
         return radius;
-    }
-
-    public final double radiusSq() {
-        return radiusSq;
     }
 
     public final int cooldownTicks() {

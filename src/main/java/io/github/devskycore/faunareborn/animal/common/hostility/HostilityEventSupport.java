@@ -16,12 +16,12 @@ public final class HostilityEventSupport {
     private HostilityEventSupport() {
     }
 
-    public static boolean isNaturalSpawn(CreatureSpawnEvent.SpawnReason spawnReason) {
-        return spawnReason == CreatureSpawnEvent.SpawnReason.NATURAL
-                || spawnReason == CreatureSpawnEvent.SpawnReason.DEFAULT
-                || spawnReason == CreatureSpawnEvent.SpawnReason.BREEDING
-                || spawnReason == CreatureSpawnEvent.SpawnReason.COMMAND
-                || "CHUNK_GEN".equals(spawnReason.name());
+    public static boolean isNonNaturalSpawn(CreatureSpawnEvent.SpawnReason spawnReason) {
+        return spawnReason != CreatureSpawnEvent.SpawnReason.NATURAL
+                && spawnReason != CreatureSpawnEvent.SpawnReason.DEFAULT
+                && spawnReason != CreatureSpawnEvent.SpawnReason.BREEDING
+                && spawnReason != CreatureSpawnEvent.SpawnReason.COMMAND
+                && !"CHUNK_GEN".equals(spawnReason.name());
     }
 
     public static Player resolveDamagingPlayer(Entity damager) {

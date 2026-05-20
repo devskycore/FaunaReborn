@@ -81,8 +81,8 @@ public abstract class BaseResourceProvocationSettings {
         return maxItemAgeTicks;
     }
 
-    public final boolean nightModifierEnabled() {
-        return nightModifierEnabled;
+    public final boolean nightModifierDisabled() {
+        return !nightModifierEnabled;
     }
 
     public final double nightThresholdMultiplier() {

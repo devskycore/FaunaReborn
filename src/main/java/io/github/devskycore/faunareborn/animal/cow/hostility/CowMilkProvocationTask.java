@@ -59,8 +59,7 @@ public final class CowMilkProvocationTask extends AbstractProvocationTaskRunner 
                 socialAlertSettings,
                 globalSettings,
                 aggressionController,
-                resourceSettings,
-                environmentCache
+                resourceSettings
         );
         return new Bundle(
                 plugin,

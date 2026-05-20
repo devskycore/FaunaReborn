@@ -248,7 +248,7 @@ final class PigAggressionController {
 
     void provokePigFromRodProvocation(Pig Pig, Player aggressor, boolean naturalPig) {
         synchronized (stateLock) {
-        if (isProvocationBlocked(Pig, naturalPig)) {
+        if (isProvocationBlocked(Pig)) {
             return;
         }
 
@@ -291,7 +291,7 @@ final class PigAggressionController {
             HostilityCause hostilityCause
     ) {
         synchronized (stateLock) {
-        if (isProvocationBlocked(Pig, naturalPig)) {
+        if (isProvocationBlocked(Pig)) {
             return false;
         }
         UUID playerId = aggressor.getUniqueId();
@@ -306,9 +306,9 @@ final class PigAggressionController {
         }
     }
 
-    boolean provokePigFromDamage(Pig pig, Player aggressor, boolean naturalPig) {
+    void provokePigFromDamage(Pig pig, Player aggressor, boolean naturalPig) {
         synchronized (stateLock) {
-            return activatePigAggression(
+            activatePigAggression(
                     pig,
                     aggressor,
                     naturalPig,
@@ -355,7 +355,7 @@ final class PigAggressionController {
             if (socialAlertSettings.responderAdultsOnly() && !ally.isAdult()) {
                 continue;
             }
-            if (isProvocationBlocked(ally, naturalPigPredicate.test(ally))) {
+            if (isProvocationBlocked(ally)) {
                 continue;
             }
             PigAggressionBrain allyBrain = brains.get(ally.getEntityId());
@@ -383,7 +383,7 @@ final class PigAggressionController {
         }
     }
 
-    private boolean isProvocationBlocked(Pig Pig, boolean naturalPig) {
+    private boolean isProvocationBlocked(Pig Pig) {
         if (Pig == null) {
             return true;
         }
@@ -930,7 +930,8 @@ final class PigAggressionController {
                     0.0D
             );
             int intervalMultiplier = brain.lodTier == LodTier.MEDIUM ? 2 : 1;
-            brain.nextParticleTick = currentTick + (visual.particlesIntervalTicks() * intervalMultiplier);
+            long particleIntervalTicks = (long) visual.particlesIntervalTicks() * intervalMultiplier;
+            brain.nextParticleTick = currentTick + particleIntervalTicks;
         }
     }
 

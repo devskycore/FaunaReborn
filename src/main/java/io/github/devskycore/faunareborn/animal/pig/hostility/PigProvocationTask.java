@@ -59,8 +59,7 @@ public final class PigProvocationTask extends AbstractProvocationTaskRunner {
                 socialAlertSettings,
                 globalSettings,
                 aggressionController,
-                resourceSettings,
-                environmentCache
+                resourceSettings
         );
         return new Bundle(
                 plugin,

@@ -185,8 +185,12 @@ public final class FaunaReloadService {
         plugin.configMigrationService().migrateIfNeeded();
         plugin.saveDefaultConfig();
         File entitiesDirectory = new File(plugin.getDataFolder(), "entities");
-        if (!entitiesDirectory.exists()) {
-            entitiesDirectory.mkdirs();
+        if (!entitiesDirectory.exists() && !entitiesDirectory.mkdirs() && !entitiesDirectory.exists()) {
+            plugin.getLogger().warning(plugin.languageManager().text(
+                    "logs.reload.entities-dir-create-failed",
+                    "Failed to create entities configuration directory: {path}",
+                    java.util.Map.of("path", entitiesDirectory.getAbsolutePath())
+            ));
         }
         for (EntityType entityType : EntityType.values()) {
             String resourcePath = entityType.resourcePath();

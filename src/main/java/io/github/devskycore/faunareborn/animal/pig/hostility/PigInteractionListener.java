@@ -25,9 +25,7 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.EquipmentSlot;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
-import io.github.devskycore.faunareborn.system.environment.WorldEnvironmentContextCache;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -54,8 +52,7 @@ final class PigInteractionListener extends AbstractCookProvocationListenerSuppor
             PigSettings.SocialAlertSettings socialAlertSettings,
             PigSettings.GlobalHostilitySettings global,
             PigAggressionController aggressionController,
-            PigSettings.ResourceProvocationSettings resourceProvocationSettings,
-            WorldEnvironmentContextCache environmentCache
+            PigSettings.ResourceProvocationSettings resourceProvocationSettings
     ) {
         this.settings = settings;
         this.socialAlertSettings = socialAlertSettings;
@@ -68,8 +65,7 @@ final class PigInteractionListener extends AbstractCookProvocationListenerSuppor
                 socialAlertSettings,
                 aggressionController,
                 this::isNaturalPig,
-                settings.requireLineOfSight(),
-                environmentCache
+                settings.requireLineOfSight()
         );
         this.nonNaturalPigKey = new NamespacedKey(plugin, "non_natural_pig");
     }
@@ -109,7 +105,7 @@ final class PigInteractionListener extends AbstractCookProvocationListenerSuppor
         if (!(event.getEntity() instanceof Pig pig)) {
             return;
         }
-        if (!HostilityEventSupport.isNaturalSpawn(event.getSpawnReason())) {
+        if (HostilityEventSupport.isNonNaturalSpawn(event.getSpawnReason())) {
             pig.getPersistentDataContainer().set(nonNaturalPigKey, PersistentDataType.BYTE, TRUE_BYTE);
         }
     }
@@ -186,11 +182,11 @@ final class PigInteractionListener extends AbstractCookProvocationListenerSuppor
     }
 
     @Override
-    protected boolean isSupportedCooker(Material material) {
-        return material == Material.FURNACE
-                || material == Material.SMOKER
-                || material == Material.CAMPFIRE
-                || material == Material.SOUL_CAMPFIRE;
+    protected boolean isUnsupportedCooker(Material material) {
+        return material != Material.FURNACE
+                && material != Material.SMOKER
+                && material != Material.CAMPFIRE
+                && material != Material.SOUL_CAMPFIRE;
     }
 
     @Override
@@ -239,8 +235,8 @@ final class PigInteractionListener extends AbstractCookProvocationListenerSuppor
     }
 
     @Override
-    protected boolean isResourceProvocationEnabled() {
-        return resourceProvocationSettings.enabled();
+    protected boolean isResourceProvocationDisabled() {
+        return !resourceProvocationSettings.enabled();
     }
 
     @Override

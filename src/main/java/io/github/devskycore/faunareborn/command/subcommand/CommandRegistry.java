@@ -30,7 +30,7 @@ public final class CommandRegistry {
         if (args.length == 0) {
             FaunaSubcommand help = subcommands.get("help");
             if (help != null) {
-                if (!help.canAccess(sender, permissions)) {
+                if (help.cannotAccess(sender, permissions)) {
                     commandMessages.sendNoPermission(sender);
                     return;
                 }
@@ -46,7 +46,7 @@ public final class CommandRegistry {
             return;
         }
 
-        if (!subcommand.canAccess(sender, permissions)) {
+        if (subcommand.cannotAccess(sender, permissions)) {
             commandMessages.sendNoPermission(sender);
             return;
         }
@@ -66,7 +66,7 @@ public final class CommandRegistry {
                 if (!subcommand.info().name().startsWith(token)) {
                     continue;
                 }
-                if (!subcommand.canAccess(sender, permissions)) {
+                if (subcommand.cannotAccess(sender, permissions)) {
                     continue;
                 }
                 suggestions.add(subcommand.info().name());
@@ -76,7 +76,7 @@ public final class CommandRegistry {
 
         if (args.length > 1) {
             FaunaSubcommand subcommand = subcommands.get(args[0].toLowerCase(Locale.ROOT));
-            if (subcommand == null || !subcommand.canAccess(sender, permissions)) {
+            if (subcommand == null || subcommand.cannotAccess(sender, permissions)) {
                 return List.of();
             }
             String[] tail = new String[args.length - 1];
@@ -93,7 +93,7 @@ public final class CommandRegistry {
             if (subcommand.info().administrative() && !includeAdminCommands) {
                 continue;
             }
-            if (!subcommand.canAccess(sender, permissions)) {
+            if (subcommand.cannotAccess(sender, permissions)) {
                 continue;
             }
             visible.add(subcommand);

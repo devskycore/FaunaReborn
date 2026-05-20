@@ -10,6 +10,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockCookEvent;
 import org.bukkit.event.entity.EntityPickupItemEvent;
@@ -25,7 +26,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 
-public abstract class AbstractCookProvocationListenerSupport {
+public abstract class AbstractCookProvocationListenerSupport implements Listener {
 
     private static final long COOK_VALIDATION_WINDOW_TICKS = 20L * 180L;
 
@@ -37,7 +38,7 @@ public abstract class AbstractCookProvocationListenerSupport {
         if (!(event.getEntity() instanceof Player player)) {
             return;
         }
-        if (!isResourceProvocationEnabled() || player.isDead() || !player.isOnline()) {
+        if (isResourceProvocationDisabled() || player.isDead() || !player.isOnline()) {
             return;
         }
         if (player.getGameMode() == GameMode.CREATIVE || player.getGameMode() == GameMode.SPECTATOR) {
@@ -72,7 +73,7 @@ public abstract class AbstractCookProvocationListenerSupport {
         if (pickedUpAmount == 0 && remainingAmount > 0) {
             pickedUpAmount = remainingAmount;
         }
-        if (pickedUpAmount <= 0) {
+        if (pickedUpAmount == 0) {
             return;
         }
         double radius = detectionRadius();
@@ -90,11 +91,11 @@ public abstract class AbstractCookProvocationListenerSupport {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public final void onBlockCook(BlockCookEvent event) {
-        if (!isResourceProvocationEnabled()) {
+        if (isResourceProvocationDisabled()) {
             return;
         }
         Material cookerType = event.getBlock().getType();
-        if (!isSupportedCooker(cookerType)) {
+        if (isUnsupportedCooker(cookerType)) {
             return;
         }
         if (event.getSource().getType() != rawMeat()) {
@@ -116,11 +117,11 @@ public abstract class AbstractCookProvocationListenerSupport {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public final void onFurnaceExtract(FurnaceExtractEvent event) {
-        if (!isResourceProvocationEnabled() || event.getItemType() != cookedMeat()) {
+        if (isResourceProvocationDisabled() || event.getItemType() != cookedMeat()) {
             return;
         }
         Block block = event.getBlock();
-        if (!isSupportedCooker(block.getType())) {
+        if (isUnsupportedCooker(block.getType())) {
             return;
         }
         if (isWorldDisallowed(block.getWorld().getName()) || block.getWorld().getDifficulty() == Difficulty.PEACEFUL) {
@@ -143,7 +144,7 @@ public abstract class AbstractCookProvocationListenerSupport {
         if (!(event.getWhoClicked() instanceof Player player)) {
             return;
         }
-        if (!isResourceProvocationEnabled()) {
+        if (isResourceProvocationDisabled()) {
             return;
         }
         InventoryType topType = event.getView().getTopInventory().getType();
@@ -155,7 +156,7 @@ public abstract class AbstractCookProvocationListenerSupport {
         }
         ItemStack cursor = event.getCursor();
         ItemStack current = event.getCurrentItem();
-        boolean placedRawOnInputSlot = event.getRawSlot() == 0 && cursor != null && cursor.getType() == rawMeat();
+        boolean placedRawOnInputSlot = event.getRawSlot() == 0 && cursor.getType() == rawMeat();
         boolean shiftMovedRaw = event.isShiftClick()
                 && event.getClickedInventory() != null
                 && event.getClickedInventory().getType() == InventoryType.PLAYER
@@ -168,7 +169,7 @@ public abstract class AbstractCookProvocationListenerSupport {
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public final void onPlayerInteract(PlayerInteractEvent event) {
-        if (!isResourceProvocationEnabled()) {
+        if (isResourceProvocationDisabled()) {
             return;
         }
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK || event.getClickedBlock() == null) {
@@ -257,7 +258,7 @@ public abstract class AbstractCookProvocationListenerSupport {
         return null;
     }
 
-    protected abstract boolean isResourceProvocationEnabled();
+    protected abstract boolean isResourceProvocationDisabled();
 
     protected abstract boolean isWorldDisallowed(String worldName);
 
@@ -279,7 +280,7 @@ public abstract class AbstractCookProvocationListenerSupport {
 
     protected abstract Material cookedMeat();
 
-    protected abstract boolean isSupportedCooker(Material material);
+    protected abstract boolean isUnsupportedCooker(Material material);
 
     protected HostilityCause resolveCookingCause(Material cookerType) {
         return HostilityEventSupport.resolveCookingCause(cookerType);
