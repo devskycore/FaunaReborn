@@ -1,6 +1,7 @@
 package io.github.devskycore.faunareborn.targeting;
 
 import org.bukkit.entity.Player;
+import org.bukkit.metadata.MetadataValue;
 import org.bukkit.NamespacedKey;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
@@ -47,6 +48,9 @@ final class PlayerVisibilityService {
             return true;
         }
         for (String key : VANISH_KEYS) {
+            if (hasTruthyMetadata(player, key)) {
+                return true;
+            }
             if (hasTruthyPersistentFlag(player, key)) {
                 return true;
             }
@@ -59,6 +63,23 @@ final class PlayerVisibilityService {
                     || normalized.equals("staff")
                     || normalized.equals("staffmode")) {
                 return true;
+            }
+        }
+        return false;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static boolean hasTruthyMetadata(Player player, String key) {
+        if (!player.hasMetadata(key)) {
+            return false;
+        }
+        for (MetadataValue value : player.getMetadata(key)) {
+            try {
+                if (value != null && value.asBoolean()) {
+                    return true;
+                }
+            } catch (RuntimeException ignored) {
+                // Defensive: third-party metadata implementations can throw on coercion.
             }
         }
         return false;
