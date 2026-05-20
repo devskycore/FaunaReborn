@@ -14,11 +14,10 @@ public final class ShutdownOrchestrator {
 
     public void run() {
         ModuleManager moduleManager = plugin.moduleManager();
-        if (moduleManager == null) {
-            return;
+        if (moduleManager != null) {
+            moduleManager.disableAll();
+            plugin.setModuleManager(null);
         }
-        moduleManager.disableAll();
-        plugin.setModuleManager(null);
         if (plugin.deathMessageListener() != null) {
             HandlerList.unregisterAll(plugin.deathMessageListener());
             plugin.setDeathMessageListener(null);

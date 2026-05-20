@@ -41,6 +41,7 @@ public final class StartupOrchestrator {
                     plugin,
                     featureRegistry.createModules(plugin, settings)
             );
+            plugin.setModuleManager(moduleManager);
             moduleManager.enableAll();
             if (plugin.deathMessageListener() != null) {
                 HandlerList.unregisterAll(plugin.deathMessageListener());
@@ -48,9 +49,9 @@ public final class StartupOrchestrator {
             HostilityDeathMessageListener deathMessageListener = new HostilityDeathMessageListener(plugin.languageManager());
             plugin.getServer().getPluginManager().registerEvents(deathMessageListener, plugin);
             plugin.setDeathMessageListener(deathMessageListener);
-            plugin.setModuleManager(moduleManager);
             return true;
         } catch (Throwable throwable) {
+            plugin.setModuleManager(null);
             plugin.getLogger().log(
                     Level.SEVERE,
                     plugin.languageManager().text("logs.startup.failed", "Failed to prepare plugin startup."),
