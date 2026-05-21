@@ -1,8 +1,8 @@
-# =============================================================================
+﻿# =============================================================================
 # Quick Guide (Lang)
 # =============================================================================
 # - Keep placeholders like {language}, {totalPages}, {elapsedMillis} unchanged.
-# - Keep commands and slash syntax unchanged (example: /fauna help [page]).
+# - Keep commands and slash syntax unchanged (example: /fauna help [pÃ¡gina]).
 # - Keep 2-space indentation under each parent key.
 # - Keep key names exactly as provided by the plugin.
 # - Translate only values inside quotes.
@@ -24,20 +24,20 @@ commands:
       disabled-title: "Desactivado"
   meta:
     help:
-      usage: "/fauna help [page]"
+      usage: "/fauna help [pÃ¡gina]"
       description: "Muestra los comandos disponibles."
     version:
       usage: "/fauna version"
-      description: "Muestra detalles de versión del plugin."
+      description: "Muestra detalles de versiÃ³n del plugin."
     about:
       usage: "/fauna about"
-      description: "Explica qué hace FaunaReborn."
+      description: "Explica quÃ© hace FaunaReborn."
     entities:
       usage: "/fauna entities"
       description: "Lista entidades soportadas y su estado actual."
     reload:
       usage: "/fauna reload"
-      description: "Recarga configuraciones y módulos."
+      description: "Recarga configuraciones y mÃ³dulos."
     gui:
       usage: "/fauna gui"
       description: "Abre la GUI administrativa de FaunaReborn."
@@ -46,10 +46,19 @@ commands:
       description: "Cambia el idioma activo del plugin."
   help:
     none-available: "No hay comandos disponibles para ti."
-    usage: "Usa: /fauna help [page]"
-    page-out-of-range: "Página no encontrada. Páginas disponibles: 1-{totalPages}."
+    usage: "Usa: /fauna help [pÃ¡gina]"
+    page-out-of-range: "PÃ¡gina no encontrada. PÃ¡ginas disponibles: 1-{totalPages}."
     header: "Comandos ({page}/{totalPages})"
-    next-page-tip: "Consejo: /fauna help {nextPage}"
+    out-of-range-use: "Usa "
+    out-of-range-or: " o "
+    header-title-default: "COMANDOS"
+    header-title-admin: "COMANDOS: ADMIN"
+    header-title-permissions: "COMANDOS: PERMISOS"
+    header-search: "Comando: {query}"
+    nav-prev-label: "< ANTERIOR"
+    nav-next-label: "SIGUIENTE >"
+    nav-go-to-page: "Ir a la pagina {page}"
+    click-to-use: "Click para usar: {command}"
   about:
     title: "FaunaReborn"
     tagline: "La naturaleza contraataca."
@@ -58,20 +67,20 @@ commands:
   entities:
     header: "Entidades soportadas"
   version:
-    header: "Versión de FaunaReborn"
+    header: "VersiÃ³n de FaunaReborn"
     unknown-author: "Desconocido"
     name-label: "Nombre"
-    version-label: "Versión"
+    version-label: "VersiÃ³n"
     authors-label: "Autores"
     minecraft-label: "Minecraft"
     server-label: "Servidor"
     status-label: "Estado"
-    status-running: "En ejecución"
+    status-running: "En ejecuciÃ³n"
   reload:
-    already-in-progress: "La recarga de FaunaReborn ya está en progreso."
+    already-in-progress: "La recarga de FaunaReborn ya estÃ¡ en progreso."
     started: "Recarga de FaunaReborn iniciada..."
     completed: "Recarga de FaunaReborn completada en {elapsedMillis} ms."
-    failed: "La recarga de FaunaReborn falló. La configuración anterior sigue activa."
+    failed: "La recarga de FaunaReborn fallÃ³. La configuraciÃ³n anterior sigue activa."
   lang:
     usage: "Uso: /fauna lang <idioma>"
     # Keep placeholders like {languages} unchanged.
@@ -88,14 +97,14 @@ gui:
     main: "FaunaReborn"
     panel: "Ajustes"
   common:
-    settings: "Configuración"
+    settings: "ConfiguraciÃ³n"
     status: "Estado"
     enabled: "ACTIVADO"
     disabled: "DESACTIVADO"
     locked: "BLOQUEADO"
     busy: "PROCESANDO"
     wait-reload: "Espera mientras se procesa la recarga."
-    no-permission: "No tienes permiso para esta acción."
+    no-permission: "No tienes permiso para esta acciÃ³n."
   entities:
     chicken: "POLLO"
     cow: "VACA"
@@ -104,7 +113,8 @@ gui:
     title-main: "IDIOMA"
     title-tail: "Seleccionar"
     button-main: "IDIOMA"
-    button-tail: "Menú"
+    button-tail: "MenÃº"
+    option-tail: "Idioma"
     current-prefix: "Actual"
     click-to-open: "Haz clic para cambiar el idioma"
     status-label: "Estado"
@@ -114,7 +124,7 @@ gui:
     click-to-select: "Haz clic para seleccionar"
     applied: "Aplicado"
     back-main: "VOLVER"
-    back-tail: "Menú Principal"
+    back-tail: "MenÃº Principal"
     back-description: "Volver al panel de control"
     back-click: "Haz clic para volver"
     # Keep placeholders like {language} unchanged.
@@ -123,25 +133,25 @@ gui:
   toggle:
     click-to-enable: "Haz clic para activar la hostilidad"
     click-to-disable: "Haz clic para desactivar la hostilidad"
-    applying-update: "Aplicando actualización en tiempo de ejecución..."
+    applying-update: "Aplicando actualizaciÃ³n en tiempo de ejecuciÃ³n..."
     done: "Listo"
   reload:
     title-main: "RECARGAR"
     title-tail: "Archivos"
     applies-manual: "Aplica cambios manuales"
     click-to-reload: "Haz clic para recargar archivos"
-    syncing-files: "Sincronizando los últimos cambios de archivos..."
+    syncing-files: "Sincronizando los Ãºltimos cambios de archivos..."
     please-wait-tick: "Espera 1 tick"
   close:
     title-main: "CERRAR"
-    title-tail: "Menú"
+    title-tail: "MenÃº"
     exit-panel: "Salir de este panel de control"
-    click-to-close: "Haz clic para cerrar el menú"
+    click-to-close: "Haz clic para cerrar el menÃº"
   feedback:
-    failed-update-state: "No se pudo actualizar el estado del módulo para "
-    failed-runtime-update: "Falló la actualización en tiempo de ejecución para "
+    failed-update-state: "No se pudo actualizar el estado del mÃ³dulo para "
+    failed-runtime-update: "FallÃ³ la actualizaciÃ³n en tiempo de ejecuciÃ³n para "
     failed-runtime-update-suffix: ". Usa recarga."
-    toggle-set-to: " ahora está "
+    toggle-set-to: " ahora estÃ¡ "
     dot: "."
 
 # =============================================================================
@@ -149,7 +159,7 @@ gui:
 # =============================================================================
 death:
   common:
-    died: " murió "
+    died: " muriÃ³ "
     dot: "."
   species:
     pig:
@@ -163,15 +173,15 @@ death:
       plural: "POLLOS"
   cause:
     rod:
-      prefix: "después de "
+      prefix: "despuÃ©s de "
       hook-action: "atrapar"
       middle: " al "
     milking:
-      prefix: "después de "
+      prefix: "despuÃ©s de "
       action: "ordenar"
       middle: " a la "
     territorial:
-      prefix: "después de "
+      prefix: "despuÃ©s de "
       action: "invadir"
       middle: " territorio de "
       suffix: "."
@@ -182,27 +192,27 @@ death:
       smoker-suffix: " con un ahumador."
       campfire-suffix: " con una fogata."
     herd-damage:
-      prefix: "después de "
+      prefix: "despuÃ©s de "
       action: "golpear"
       middle: " a la manada equivocada de "
     herd-nearby:
       prefix: "mientras intentaba escapar de "
       action: ""
     baby:
-      prefix: "después de "
+      prefix: "despuÃ©s de "
       action: "amenazar"
-      middle: " a una cría de "
+      middle: " a una crÃ­a de "
   direct:
     pig:
-      prefix: "después de ser "
+      prefix: "despuÃ©s de ser "
       action: "destrozado"
       middle: " por un "
     cow:
-      prefix: "después de ser "
+      prefix: "despuÃ©s de ser "
       action: "pisoteado"
       middle: " por una "
     chicken:
-      prefix: "después de ser "
+      prefix: "despuÃ©s de ser "
       action: "picoteado hasta morir"
       middle: " por un "
 
@@ -211,7 +221,7 @@ death:
 # =============================================================================
 banner:
   title: "FAUNAREBORN"
-  version-line: "Versión > {version}"
+  version-line: "VersiÃ³n > {version}"
   mc-line: "MC > {minecraftVersion}"
 
 # =============================================================================
@@ -230,7 +240,7 @@ logs:
     failed: "No se pudo preparar el arranque del plugin."
   reload:
     hot-reload-complete: "Recarga completada en {elapsedMillis} ms."
-    failed-to-parse-yaml: "No se pudo analizar uno o más archivos YAML de configuración."
-    apply-failed: "Falló al aplicar la configuración actualizada. Revirtiendo a la configuración anterior."
-    rollback-failed: "La recuperación falló. Puede requerirse intervención manual."
-    validation-failed: "La validación de configuración falló."
+    failed-to-parse-yaml: "No se pudo analizar uno o mÃ¡s archivos YAML de configuraciÃ³n."
+    apply-failed: "FallÃ³ al aplicar la configuraciÃ³n actualizada. Revirtiendo a la configuraciÃ³n anterior."
+    rollback-failed: "La recuperaciÃ³n fallÃ³. Puede requerirse intervenciÃ³n manual."
+    validation-failed: "La validaciÃ³n de configuraciÃ³n fallÃ³."

@@ -54,7 +54,7 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 
 ### Internationalization (i18n)
 - Built-in i18n system with configurable language selection via `config.yml` (`language.file`).
-- Ships with ready-to-use language files in `lang/` (`english.yml`, `spanish.yml`, `portuguese.yml`, `italian.yml`).
+- Ships with ready-to-use language files in `lang/` (`english.yml`, `spanish.yml`, `portuguese.yml`, `italian.yml`, `french.yml`).
 - Commands, GUI labels, and runtime feedback/messages are localized.
 
 ## Commands
@@ -71,7 +71,7 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 | `/fauna reload` | Reloads plugin configuration and modules. | `fauna.command.reload` (or `fauna.admin` / `fauna.*`) |
 | `/fauna gui` | Opens the FaunaReborn management GUI. | `fauna.command.gui` (or `fauna.admin` / `fauna.*`) |
 | `/fauna lang` | Opens the language selection menu (players) or prints usage in console. | `fauna.command.lang` (or `fauna.admin` / `fauna.*`) |
-| `/fauna lang <language>` | Changes plugin language at runtime (for example `en`, `es`, `pt`, `it`). | `fauna.command.lang` (or `fauna.admin` / `fauna.*`) |
+| `/fauna lang <language>` | Changes plugin language at runtime (for example `en`, `es`, `pt`, `it`, `fr`). | `fauna.command.lang` (or `fauna.admin` / `fauna.*`) |
 
 ### Aliases
 - `/faunareborn`
@@ -131,12 +131,13 @@ Notes:
    - `plugins/FaunaReborn/lang/spanish.yml`
    - `plugins/FaunaReborn/lang/portuguese.yml`
    - `plugins/FaunaReborn/lang/italian.yml`
+   - `plugins/FaunaReborn/lang/french.yml`
 5. Run `/fauna reload` or restart.
 
 ## Quick Configuration Notes
 
 - `global-enabled`: master switch.
-- `language.file`: selects the language by code (for example `en`, `es`, or `pt`).
+- `language.file`: selects the language by code (for example `en`, `es`, `pt`, `it`, or `fr`).
 - `world-filter`: global activation mode and world list.
 - `lod`: distance-based LOD tiers with hysteresis and per-tier tick cadence.
 - `targeting.scoring`: weighted target priority behavior.

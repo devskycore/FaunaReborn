@@ -1,8 +1,8 @@
-# =============================================================================
+﻿# =============================================================================
 # Guida Rapida (Lingua)
 # =============================================================================
 # - Mantieni invariati i placeholder come {language}, {totalPages}, {elapsedMillis}.
-# - Mantieni invariati i comandi e la sintassi slash (esempio: /fauna help [page]).
+# - Mantieni invariati i comandi e la sintassi slash (esempio: /fauna help [pagina]).
 # - Mantieni 2 spazi di indentazione sotto ogni chiave padre.
 # - Mantieni i nomi delle chiavi esattamente come forniti dal plugin.
 # - Traduci solo i valori tra virgolette.
@@ -14,7 +14,7 @@ commands:
   common:
     prefix: "FaunaReborn"
     no-permission: "Non hai il permesso per usare questo comando."
-    player-only: "Questo comando può essere eseguito solo da un giocatore."
+    player-only: "Questo comando puÃ² essere eseguito solo da un giocatore."
     unknown-subcommand: "Sottocomando sconosciuto. Usa /fauna help."
     state:
       enabled: "abilitato"
@@ -23,7 +23,7 @@ commands:
       disabled-title: "Disabilitato"
   meta:
     help:
-      usage: "/fauna help [page]"
+      usage: "/fauna help [pagina]"
       description: "Mostra i comandi disponibili."
     version:
       usage: "/fauna version"
@@ -33,7 +33,7 @@ commands:
       description: "Scopri cosa fa FaunaReborn."
     entities:
       usage: "/fauna entities"
-      description: "Elenca le entità supportate e il loro stato attuale."
+      description: "Elenca le entitÃ  supportate e il loro stato attuale."
     reload:
       usage: "/fauna reload"
       description: "Ricarica configurazione e moduli."
@@ -41,21 +41,30 @@ commands:
       usage: "/fauna gui"
       description: "Apri la GUI admin di FaunaReborn."
     lang:
-      usage: "/fauna lang <language>"
+      usage: "/fauna lang <lingua>"
       description: "Cambia la lingua attiva del plugin."
   help:
     none-available: "Non hai comandi disponibili."
-    usage: "Uso: /fauna help [page]"
+    usage: "Uso: /fauna help [pagina]"
     page-out-of-range: "Pagina fuori intervallo. Pagine disponibili: 1-{totalPages}."
     header: "Comandi ({page}/{totalPages})"
-    next-page-tip: "Suggerimento: /fauna help {nextPage}"
+    out-of-range-use: "Usa "
+    out-of-range-or: " o "
+    header-title-default: "COMANDI"
+    header-title-admin: "COMANDI: ADMIN"
+    header-title-permissions: "COMANDI: PERMESSI"
+    header-search: "Comando: {query}"
+    nav-prev-label: "< PRECEDENTE"
+    nav-next-label: "SUCCESSIVO >"
+    nav-go-to-page: "Vai alla pagina {page}"
+    click-to-use: "Clicca per usare: {command}"
   about:
     title: "FaunaReborn"
     tagline: "La natura reagisce."
     line1: "Trasforma animali passivi in minacce intelligenti e configurabili."
-    line2: "Include impostazioni per entità, controlli runtime, elaborazione ottimizzata e sistemi di comportamento avanzati."
+    line2: "Include impostazioni per entitÃ , controlli runtime, elaborazione ottimizzata e sistemi di comportamento avanzati."
   entities:
-    header: "Entità Supportate"
+    header: "EntitÃ  Supportate"
   version:
     header: "Versione FaunaReborn"
     unknown-author: "Sconosciuto"
@@ -67,12 +76,12 @@ commands:
     status-label: "Stato"
     status-running: "In esecuzione"
   reload:
-    already-in-progress: "La ricarica di FaunaReborn è già in corso."
+    already-in-progress: "La ricarica di FaunaReborn Ã¨ giÃ  in corso."
     started: "Ricarica di FaunaReborn avviata..."
     completed: "Ricarica di FaunaReborn completata in {elapsedMillis} ms."
-    failed: "Ricarica di FaunaReborn non riuscita. La configurazione precedente è ancora attiva."
+    failed: "Ricarica di FaunaReborn non riuscita. La configurazione precedente Ã¨ ancora attiva."
   lang:
-    usage: "Uso: /fauna lang <language>"
+    usage: "Uso: /fauna lang <lingua>"
     available: "Lingue disponibili: {languages}"
     invalid: "Lingua '{language}' non trovata. Disponibili: {languages}"
     changed: "Lingua cambiata in {language}."
@@ -102,6 +111,7 @@ gui:
     title-tail: "Seleziona"
     button-main: "LINGUA"
     button-tail: "Menu"
+    option-tail: "Lingua"
     current-prefix: "Attuale"
     click-to-open: "Clicca per cambiare lingua"
     status-label: "Stato"
@@ -114,10 +124,10 @@ gui:
     back-description: "Torna al pannello di controllo"
     back-click: "Clicca per tornare indietro"
     changed: "Lingua cambiata in {file}."
-    already-selected: "La lingua del plugin è già impostata su {file}."
+    already-selected: "La lingua del plugin Ã¨ giÃ  impostata su {file}."
   toggle:
-    click-to-enable: "Clicca per attivare l'ostilità"
-    click-to-disable: "Clicca per disattivare l'ostilità"
+    click-to-enable: "Clicca per attivare l'ostilitÃ "
+    click-to-disable: "Clicca per disattivare l'ostilitÃ "
     applying-update: "Applicazione aggiornamento runtime..."
     done: "Fatto"
   reload:
@@ -144,7 +154,7 @@ gui:
 # =============================================================================
 death:
   common:
-    died: " è morto "
+    died: " Ã¨ morto "
     dot: "."
   species:
     pig:
@@ -175,7 +185,7 @@ death:
       action: "fatto infuriare"
       furnace-suffix: " con una fornace."
       smoker-suffix: " con un affumicatore."
-      campfire-suffix: " con un falò."
+      campfire-suffix: " con un falÃ²."
     herd-damage:
       prefix: "dopo aver "
       action: "colpito"
@@ -225,7 +235,7 @@ logs:
     failed: "Impossibile preparare l'avvio del plugin."
   reload:
     hot-reload-complete: "Hot reload completata in {elapsedMillis} ms."
-    failed-to-parse-yaml: "Impossibile analizzare uno o più file YAML di configurazione."
+    failed-to-parse-yaml: "Impossibile analizzare uno o piÃ¹ file YAML di configurazione."
     apply-failed: "Errore durante l'applicazione del runtime ricaricato. Ripristino runtime precedente."
     rollback-failed: "Ripristino non riuscito. Potrebbe essere necessario un intervento manuale."
     validation-failed: "Validazione configurazione non riuscita."

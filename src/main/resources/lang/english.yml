@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # Quick Guide (Lang)
 # =============================================================================
 # - Keep placeholders like {language}, {totalPages}, {elapsedMillis} unchanged.
@@ -48,8 +48,17 @@ commands:
     none-available: "No commands are available to you."
     usage: "Usage: /fauna help [page]"
     page-out-of-range: "Page out of range. Available pages: 1-{totalPages}."
+    out-of-range-use: "Use "
+    out-of-range-or: " or "
     header: "Commands ({page}/{totalPages})"
-    next-page-tip: "Hint: /fauna help {nextPage}"
+    header-title-default: "COMMANDS"
+    header-title-admin: "COMMANDS: ADMIN"
+    header-title-permissions: "COMMANDS: PERMISSIONS"
+    header-search: "Command: {query}"
+    nav-prev-label: "< PREV"
+    nav-next-label: "NEXT >"
+    nav-go-to-page: "Go to page {page}"
+    click-to-use: "Click to use: {command}"
   about:
     title: "FaunaReborn"
     tagline: "Nature fights back."
@@ -105,6 +114,7 @@ gui:
     title-tail: "Select"
     button-main: "LANGUAGE"
     button-tail: "Menu"
+    option-tail: "Language"
     current-prefix: "Current"
     click-to-open: "Click to change language"
     status-label: "Status"
