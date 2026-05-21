@@ -150,7 +150,7 @@ final class ActivationPolicy {
         }
 
         return switch (spawnReason) {
-            case SPAWNER, SPAWNER_EGG, DISPENSE_EGG, EGG, BREEDING -> false;
+            case SPAWNER, SPAWNER_EGG -> false;
             default -> true;
         };
     }

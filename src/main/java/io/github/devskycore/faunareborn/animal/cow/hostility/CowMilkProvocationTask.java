@@ -1,4 +1,6 @@
 package io.github.devskycore.faunareborn.animal.cow.hostility;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonGlobalHostilitySettings;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonSocialAlertSettings;
 
 import io.github.devskycore.faunareborn.animal.common.hostility.AbstractProvocationTaskRunner;
 import io.github.devskycore.faunareborn.animal.cow.CowSettings;
@@ -15,8 +17,8 @@ public final class CowMilkProvocationTask extends AbstractProvocationTaskRunner 
             FaunaRebornPlugin plugin,
             CowSettings.MilkProvocationSettings settings,
             CowSettings.ResourceProvocationSettings resourceSettings,
-            CowSettings.SocialAlertSettings socialAlertSettings,
-            CowSettings.GlobalHostilitySettings globalSettings,
+            CommonSocialAlertSettings socialAlertSettings,
+            CommonGlobalHostilitySettings globalSettings,
             EnvironmentAggressionSettings environmentSettings,
             LodSettings lodSettings
     ) {
@@ -39,8 +41,8 @@ public final class CowMilkProvocationTask extends AbstractProvocationTaskRunner 
             FaunaRebornPlugin plugin,
             CowSettings.MilkProvocationSettings settings,
             CowSettings.ResourceProvocationSettings resourceSettings,
-            CowSettings.SocialAlertSettings socialAlertSettings,
-            CowSettings.GlobalHostilitySettings globalSettings,
+            CommonSocialAlertSettings socialAlertSettings,
+            CommonGlobalHostilitySettings globalSettings,
             EnvironmentAggressionSettings environmentSettings,
             LodSettings lodSettings
     ) {

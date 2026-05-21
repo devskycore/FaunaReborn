@@ -19,12 +19,15 @@ public final class ConfigMigrationService {
     private static final int TARGET_CONFIG_VERSION = 2;
     private static final String CONFIG_RESOURCE_PATH = "config.yml";
     private static final String CONFIG_VERSION_PATH = "config-version";
+    private static final String LEGACY_ONLY_NATURAL_PATH = "activation.only-natural";
+    private static final String NATURAL_SPAWNS_ONLY_PATH = "activation.natural-spawns-only";
 
     private static final Map<String, String> LANGUAGE_RESOURCE_FILES = Map.of(
             "english.yml", "lang/english.yml",
             "spanish.yml", "lang/spanish.yml",
             "portuguese.yml", "lang/portuguese.yml",
-            "italian.yml", "lang/italian.yml"
+            "italian.yml", "lang/italian.yml",
+            "french.yml", "lang/french.yml"
     );
 
     private final FaunaRebornPlugin plugin;
@@ -43,6 +46,7 @@ public final class ConfigMigrationService {
         File configFile = new File(plugin.getDataFolder(), CONFIG_RESOURCE_PATH);
         YamlConfiguration existing = YamlConfiguration.loadConfiguration(configFile);
         YamlConfiguration defaults = loadBundledYaml(CONFIG_RESOURCE_PATH);
+        boolean migratedNaturalSpawnsOnly = migrateNaturalSpawnsOnlyAlias(existing);
 
         int currentVersion = existing.getInt(CONFIG_VERSION_PATH, 1);
         if (currentVersion < TARGET_CONFIG_VERSION) {
@@ -54,10 +58,18 @@ public final class ConfigMigrationService {
         }
 
         int addedKeys = mergeMissingKeys(existing, defaults);
-        if (addedKeys > 0) {
+        if (migratedNaturalSpawnsOnly || addedKeys > 0) {
             saveWithBackup(configFile, existing);
             plugin.getLogger().info("Updated config.yml with " + addedKeys + " newly introduced default keys.");
         }
+    }
+
+    private boolean migrateNaturalSpawnsOnlyAlias(YamlConfiguration existing) {
+        if (existing.isSet(NATURAL_SPAWNS_ONLY_PATH) || !existing.isSet(LEGACY_ONLY_NATURAL_PATH)) {
+            return false;
+        }
+        existing.set(NATURAL_SPAWNS_ONLY_PATH, existing.getBoolean(LEGACY_ONLY_NATURAL_PATH));
+        return true;
     }
 
     private void ensureLanguageFilesAndMergeMissingKeys() {

@@ -1,8 +1,10 @@
 package io.github.devskycore.faunareborn.animal.pig;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonGlobalHostilitySettings;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonSocialAlertSettings;
 
 import io.github.devskycore.faunareborn.animal.common.GlobalHostilitySettingsData;
 import io.github.devskycore.faunareborn.animal.common.GlobalHostilitySettingsReader;
-import io.github.devskycore.faunareborn.animal.common.settings.SharedVisualEffectsSettings;
+import io.github.devskycore.faunareborn.animal.common.SharedHostilityLoaderSupport;
 import io.github.devskycore.faunareborn.config.common.ConfigNumbers;
 import io.github.devskycore.faunareborn.config.common.LodSettingsReader;
 import io.github.devskycore.faunareborn.config.common.TargetingSettingsReader;
@@ -48,57 +50,57 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
         boolean moduleEnabled = entityConfig.getBoolean("pig.enabled", true);
         boolean provocationEnabled = entityConfig.getBoolean("pig-rod-provocation.enabled", true);
 
-        double aggressionDurationSeconds = clampedDouble(
+        double aggressionDurationSeconds = SharedHostilityLoaderSupport.clampedDouble(
                 entityConfig.getDouble("pig-rod-provocation.aggression-duration-seconds", 6.0D),
                 1.0D,
                 120.0D,
                 6.0D
         );
-        double forgetTargetAfterSeconds = clampedDouble(
+        double forgetTargetAfterSeconds = SharedHostilityLoaderSupport.clampedDouble(
                 entityConfig.getDouble("pig-rod-provocation.targeting.forget-target-after-seconds", 8.0D),
                 1.0D,
                 180.0D,
                 8.0D
         );
-        double detectionRange = clampedDouble(
+        double detectionRange = SharedHostilityLoaderSupport.clampedDouble(
                 entityConfig.getDouble("pig-rod-provocation.detection-range", 12.0D),
                 2.0D,
                 64.0D,
                 12.0D
         );
-        int rodTriggerCooldownTicks = secondsToTicks(clampedDouble(
+        int rodTriggerCooldownTicks = SharedHostilityLoaderSupport.secondsToTicks(SharedHostilityLoaderSupport.clampedDouble(
                 entityConfig.getDouble("pig-rod-provocation.rod-trigger-cooldown-seconds", 2.0D),
                 0.0D,
                 60.0D,
                 2.0D
         ), false);
-        int warningDurationTicks = secondsToTicks(clampedDouble(
+        int warningDurationTicks = SharedHostilityLoaderSupport.secondsToTicks(SharedHostilityLoaderSupport.clampedDouble(
                 entityConfig.getDouble("pig-rod-provocation.warning.duration-seconds", 0.25D),
                 0.0D,
                 5.0D,
                 0.25D
         ), false);
 
-        double attackDamage = clampedDouble(
+        double attackDamage = SharedHostilityLoaderSupport.clampedDouble(
                 entityConfig.getDouble("pig-rod-provocation.attack.damage", 2.5D),
                 0.1D,
                 20.0D,
                 2.5D
         );
-        double attackCooldownSeconds = clampedDouble(
+        double attackCooldownSeconds = SharedHostilityLoaderSupport.clampedDouble(
                 entityConfig.getDouble("pig-rod-provocation.attack.cooldown", 1.2D),
                 0.2D,
                 10.0D,
                 1.2D
         );
-        double knockbackStrength = clampedDouble(
+        double knockbackStrength = SharedHostilityLoaderSupport.clampedDouble(
                 entityConfig.getDouble("pig-rod-provocation.attack.knockback-strength", 1.1D),
                 0.0D,
                 4.0D,
                 1.1D
         );
 
-        double speedMultiplier = clampedDouble(
+        double speedMultiplier = SharedHostilityLoaderSupport.clampedDouble(
                 entityConfig.getDouble("pig-rod-provocation.movement.speed-multiplier", 1.25D),
                 0.5D,
                 2.5D,
@@ -106,7 +108,7 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
         );
 
         boolean requireLineOfSight = entityConfig.getBoolean("pig-rod-provocation.targeting.require-line-of-sight", true);
-        int retargetGraceTicks = secondsToTicks(clampedDouble(
+        int retargetGraceTicks = SharedHostilityLoaderSupport.secondsToTicks(SharedHostilityLoaderSupport.clampedDouble(
                 entityConfig.getDouble("pig-rod-provocation.targeting.retarget-grace-seconds", 3.0D),
                 0.0D,
                 60.0D,
@@ -116,13 +118,13 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
         boolean playWarningSound = entityConfig.getBoolean("pig-rod-provocation.sounds.warning-enabled", true);
         boolean playStompSound = entityConfig.getBoolean("pig-rod-provocation.sounds.stomp-enabled", true);
         boolean chargeEnabled = entityConfig.getBoolean("pig-rod-provocation.charge.enabled", true);
-        int chargeMinIntervalTicks = secondsToTicks(clampedDouble(
+        int chargeMinIntervalTicks = SharedHostilityLoaderSupport.secondsToTicks(SharedHostilityLoaderSupport.clampedDouble(
                 entityConfig.getDouble("pig-rod-provocation.charge.min-interval-seconds", 0.8D),
                 0.05D,
                 10.0D,
                 0.8D
         ), true);
-        int chargeMaxIntervalTicks = secondsToTicks(clampedDouble(
+        int chargeMaxIntervalTicks = SharedHostilityLoaderSupport.secondsToTicks(SharedHostilityLoaderSupport.clampedDouble(
                 entityConfig.getDouble("pig-rod-provocation.charge.max-interval-seconds", 2.5D),
                 0.1D,
                 15.0D,
@@ -131,7 +133,7 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
         if (chargeMaxIntervalTicks < chargeMinIntervalTicks) {
             chargeMaxIntervalTicks = chargeMinIntervalTicks;
         }
-        double chargeExtraPush = clampedDouble(
+        double chargeExtraPush = SharedHostilityLoaderSupport.clampedDouble(
                 entityConfig.getDouble("pig-rod-provocation.charge.extra-push", 0.17D),
                 0.0D,
                 1.0D,
@@ -140,14 +142,14 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
 
         PigSettings.RodProvocationSettings rodProvocation = new PigSettings.RodProvocationSettings(
                 provocationEnabled,
-                secondsToTicks(aggressionDurationSeconds, true),
-                secondsToTicks(forgetTargetAfterSeconds, true),
+                SharedHostilityLoaderSupport.secondsToTicks(aggressionDurationSeconds, true),
+                SharedHostilityLoaderSupport.secondsToTicks(forgetTargetAfterSeconds, true),
                 rodTriggerCooldownTicks,
                 detectionRange,
                 requireLineOfSight,
                 warningDurationTicks,
                 attackDamage,
-                secondsToTicks(attackCooldownSeconds, true),
+                SharedHostilityLoaderSupport.secondsToTicks(attackCooldownSeconds, true),
                 knockbackStrength,
                 speedMultiplier,
                 retargetGraceTicks,
@@ -159,7 +161,7 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
                 chargeMaxIntervalTicks,
                 chargeExtraPush
         );
-        double resourceDetectionRadius = clampedDouble(
+        double resourceDetectionRadius = SharedHostilityLoaderSupport.clampedDouble(
                 entityConfig.getDouble("pig-resource-provocation.detection-radius", 8.0D),
                 2.0D,
                 64.0D,
@@ -193,7 +195,7 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
                 ),
                 resourceDetectionRadius,
                 resourceDetectionRadius * resourceDetectionRadius,
-                secondsToTicks(clampedDouble(
+                SharedHostilityLoaderSupport.secondsToTicks(SharedHostilityLoaderSupport.clampedDouble(
                         entityConfig.getDouble("pig-resource-provocation.time-window-seconds", 12.0D),
                         0.2D,
                         300.0D,
@@ -208,7 +210,7 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
                         "Pig-resource-provocation.max-item-age-ticks is too high. Clamped to 12000"
                 ),
                 entityConfig.getBoolean("pig-resource-provocation.night-modifier.enabled", true),
-                clampedDouble(
+                SharedHostilityLoaderSupport.clampedDouble(
                         entityConfig.getDouble("pig-resource-provocation.night-modifier.threshold-multiplier", 0.75D),
                         0.1D,
                         5.0D,
@@ -223,37 +225,37 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
                         "Invalid Pig-resource-provocation.max-responders in Pig.yml. Falling back to 3",
                         "Pig-resource-provocation.max-responders is too high. Clamped to 32"
                 ),
-                secondsToTicks(clampedDouble(
+                SharedHostilityLoaderSupport.secondsToTicks(SharedHostilityLoaderSupport.clampedDouble(
                         entityConfig.getDouble("pig-resource-provocation.trigger-cooldown-seconds", 2.5D),
                         0.0D,
                         60.0D,
                         2.5D
                 ), false),
-                secondsToTicks(clampedDouble(
+                SharedHostilityLoaderSupport.secondsToTicks(SharedHostilityLoaderSupport.clampedDouble(
                         entityConfig.getDouble("pig-resource-provocation.aggression-duration-seconds", 10.0D),
                         1.0D,
                         180.0D,
                         10.0D
                 ), true)
         );
-        PigSettings.SocialAlertSettings socialAlert = new PigSettings.SocialAlertSettings(
+        CommonSocialAlertSettings socialAlert = new CommonSocialAlertSettings(
                 entityConfig.getBoolean("pig-hostility.social-alert.enabled", true),
                 entityConfig.getBoolean("pig-hostility.social-alert.triggers.by-damage-to-pig", true),
                 entityConfig.getBoolean("pig-hostility.social-alert.triggers.by-nearby-pig-death", true),
                 entityConfig.getBoolean("pig-hostility.social-alert.responders.adults-only", true),
-                clampedDouble(
+                SharedHostilityLoaderSupport.clampedDouble(
                         entityConfig.getDouble("pig-hostility.social-alert.radius", 10.0D),
                         2.0D,
                         32.0D,
                         10.0D
                 ),
-                secondsToTicks(clampedDouble(
+                SharedHostilityLoaderSupport.secondsToTicks(SharedHostilityLoaderSupport.clampedDouble(
                         entityConfig.getDouble("pig-hostility.social-alert.cooldown-seconds", 1.0D),
                         0.0D,
                         60.0D,
                         1.0D
                 ), false),
-                secondsToTicks(clampedDouble(
+                SharedHostilityLoaderSupport.secondsToTicks(SharedHostilityLoaderSupport.clampedDouble(
                         entityConfig.getDouble("pig-hostility.social-alert.join-cooldown-seconds", 2.0D),
                         0.0D,
                         60.0D,
@@ -268,70 +270,14 @@ public final class PigSettingsLoader implements EntitySettingsLoader<PigSettings
                         "Pig-hostility.social-alert.max-responders is too high. Clamped to 32"
                 )
         );
-        socialAlert = new PigSettings.SocialAlertSettings(
-                socialAlert.enabled(),
-                socialAlert.onDamage(),
-                socialAlert.onNearbyDeath(),
-                socialAlert.responderAdultsOnly(),
-                socialAlert.radius(),
-                socialAlert.cooldownTicks(),
-                socialAlert.joinCooldownTicks(),
-                socialAlert.maxResponders()
-        );
         LodSettings lodSettings = lodSettingsReader.read(globalConfig, "lod");
         return new PigSettings(moduleEnabled, rodProvocation, resourceProvocation, socialAlert, loadGlobalHostilitySettings(globalConfig),
                 EnvironmentAggressionSettings.fromConfig(entityConfig, ""), lodSettings);
     }
 
-    private PigSettings.GlobalHostilitySettings loadGlobalHostilitySettings(FileConfiguration globalConfig) {
+    private CommonGlobalHostilitySettings loadGlobalHostilitySettings(FileConfiguration globalConfig) {
         GlobalHostilitySettingsData data = globalHostilitySettingsReader.read(globalConfig);
-        SharedVisualEffectsSettings visualEffectsSettings = visualEffectsSettings(data);
-
-        return new PigSettings.GlobalHostilitySettings(
-                data.activationChance(),
-                data.onlyNatural(),
-                data.ignoreNamed(),
-                data.worldFilter(),
-                data.maxActivePerChunk(),
-                data.maxActivePerWorld(),
-                data.maxProcessedPerTick(),
-                data.peacefulDamageMultiplier(),
-                data.easyDamageMultiplier(),
-                data.normalDamageMultiplier(),
-                data.hardDamageMultiplier(),
-                data.worldDamageMultipliers(),
-                data.nightDamageEnabled(),
-                data.nightDamageMultiplier(),
-                visualEffectsSettings,
-                data.targeting()
-        );
+        return SharedHostilityLoaderSupport.mapGlobalHostilitySettings(data);
     }
 
-    private static SharedVisualEffectsSettings visualEffectsSettings(GlobalHostilitySettingsData data) {
-        GlobalHostilitySettingsData.VisualEffectsSettingsData visualData = data.visualEffectsSettings();
-        return new SharedVisualEffectsSettings(
-                visualData.glowEnabled(),
-                visualData.particlesEnabled(),
-                visualData.particlesIntervalTicks(),
-                visualData.particlesIntensity(),
-                visualData.soundEnabled(),
-                visualData.soundIntervalTicks(),
-                visualData.soundVolume()
-        );
-    }
-
-    private static int secondsToTicks(double seconds, boolean minimumOne) {
-        long ticks = Math.round(seconds * 20.0D);
-        if (ticks > Integer.MAX_VALUE) {
-            return Integer.MAX_VALUE;
-        }
-        return Math.max(minimumOne ? 1 : 0, (int) ticks);
-    }
-
-    private static double clampedDouble(double value, double min, double max, double fallback) {
-        if (Double.isNaN(value) || Double.isInfinite(value) || value < min) {
-            return fallback;
-        }
-        return Math.min(value, max);
-    }
 }

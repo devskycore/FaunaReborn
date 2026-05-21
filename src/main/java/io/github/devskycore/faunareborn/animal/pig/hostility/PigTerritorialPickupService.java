@@ -1,4 +1,5 @@
 package io.github.devskycore.faunareborn.animal.pig.hostility;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonSocialAlertSettings;
 
 import io.github.devskycore.faunareborn.animal.pig.PigSettings;
 import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
@@ -16,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 final class PigTerritorialPickupService {
 
     private final PigSettings.ResourceProvocationSettings settings;
-    private final PigSettings.SocialAlertSettings socialAlertSettings;
+    private final CommonSocialAlertSettings socialAlertSettings;
     private final PigAggressionController aggressionController;
     private final NaturalPigResolver naturalPigResolver;
     private final boolean requireLineOfSight;
@@ -24,7 +25,7 @@ final class PigTerritorialPickupService {
 
     PigTerritorialPickupService(
             PigSettings.ResourceProvocationSettings settings,
-            PigSettings.SocialAlertSettings socialAlertSettings,
+            CommonSocialAlertSettings socialAlertSettings,
             PigAggressionController aggressionController,
             NaturalPigResolver naturalPigResolver,
             boolean requireLineOfSight

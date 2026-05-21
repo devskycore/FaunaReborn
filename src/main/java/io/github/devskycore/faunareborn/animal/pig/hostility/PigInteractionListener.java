@@ -1,4 +1,6 @@
 package io.github.devskycore.faunareborn.animal.pig.hostility;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonGlobalHostilitySettings;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonSocialAlertSettings;
 
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import io.github.devskycore.faunareborn.animal.common.hostility.AbstractCookProvocationListenerSupport;
@@ -38,9 +40,9 @@ final class PigInteractionListener extends AbstractCookProvocationListenerSuppor
     private static final Material COOKED_MEAT = Material.COOKED_PORKCHOP;
 
     private final PigSettings.RodProvocationSettings settings;
-    private final PigSettings.SocialAlertSettings socialAlertSettings;
+    private final CommonSocialAlertSettings socialAlertSettings;
     private final PigSettings.ResourceProvocationSettings resourceProvocationSettings;
-    private final PigSettings.GlobalHostilitySettings global;
+    private final CommonGlobalHostilitySettings global;
     private final PigAggressionController aggressionController;
     private final PigTerritorialPickupService territorialPickupService;
     private final NamespacedKey nonNaturalPigKey;
@@ -49,8 +51,8 @@ final class PigInteractionListener extends AbstractCookProvocationListenerSuppor
     PigInteractionListener(
             FaunaRebornPlugin plugin,
             PigSettings.RodProvocationSettings settings,
-            PigSettings.SocialAlertSettings socialAlertSettings,
-            PigSettings.GlobalHostilitySettings global,
+            CommonSocialAlertSettings socialAlertSettings,
+            CommonGlobalHostilitySettings global,
             PigAggressionController aggressionController,
             PigSettings.ResourceProvocationSettings resourceProvocationSettings
     ) {

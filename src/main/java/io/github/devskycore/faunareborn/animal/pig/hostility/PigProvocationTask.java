@@ -1,4 +1,6 @@
 package io.github.devskycore.faunareborn.animal.pig.hostility;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonGlobalHostilitySettings;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonSocialAlertSettings;
 
 import io.github.devskycore.faunareborn.animal.common.hostility.AbstractProvocationTaskRunner;
 import io.github.devskycore.faunareborn.animal.pig.PigSettings;
@@ -15,8 +17,8 @@ public final class PigProvocationTask extends AbstractProvocationTaskRunner {
             FaunaRebornPlugin plugin,
             PigSettings.RodProvocationSettings settings,
             PigSettings.ResourceProvocationSettings resourceSettings,
-            PigSettings.SocialAlertSettings socialAlertSettings,
-            PigSettings.GlobalHostilitySettings globalSettings,
+            CommonSocialAlertSettings socialAlertSettings,
+            CommonGlobalHostilitySettings globalSettings,
             EnvironmentAggressionSettings environmentSettings,
             LodSettings lodSettings
     ) {
@@ -39,8 +41,8 @@ public final class PigProvocationTask extends AbstractProvocationTaskRunner {
             FaunaRebornPlugin plugin,
             PigSettings.RodProvocationSettings settings,
             PigSettings.ResourceProvocationSettings resourceSettings,
-            PigSettings.SocialAlertSettings socialAlertSettings,
-            PigSettings.GlobalHostilitySettings globalSettings,
+            CommonSocialAlertSettings socialAlertSettings,
+            CommonGlobalHostilitySettings globalSettings,
             EnvironmentAggressionSettings environmentSettings,
             LodSettings lodSettings
     ) {

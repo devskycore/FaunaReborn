@@ -1,4 +1,5 @@
 package io.github.devskycore.faunareborn.animal.pig.hostility;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonGlobalHostilitySettings;
 
 import io.github.devskycore.faunareborn.animal.pig.PigSettings;
 import io.github.devskycore.faunareborn.config.common.WorldFilter;
@@ -22,7 +23,7 @@ final class PigActivationPolicy {
 
     PigActivationPolicy(
             PigSettings.RodProvocationSettings settings,
-            PigSettings.GlobalHostilitySettings global,
+            CommonGlobalHostilitySettings global,
             TargetEligibilityService targetEligibilityService
     ) {
         this.activationChance = global.activationChance();

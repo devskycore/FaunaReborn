@@ -1,4 +1,6 @@
 package io.github.devskycore.faunareborn.animal.pig.hostility;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonGlobalHostilitySettings;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonSocialAlertSettings;
 
 import io.github.devskycore.faunareborn.animal.common.settings.SharedVisualEffectsSettings;
 import io.github.devskycore.faunareborn.animal.pig.PigSettings;
@@ -54,7 +56,7 @@ final class PigAggressionController {
     private final boolean folia;
     private final Object stateLock = new Object();
     private final PigSettings.RodProvocationSettings settings;
-    private final PigSettings.GlobalHostilitySettings global;
+    private final CommonGlobalHostilitySettings global;
     private final LodSettings lodSettings;
     private final TargetEligibilityService targetEligibilityService;
     private final PigActivationPolicy activationPolicy;
@@ -75,7 +77,7 @@ final class PigAggressionController {
     PigAggressionController(
             SchedulerAdapter scheduler,
             PigSettings.RodProvocationSettings settings,
-            PigSettings.GlobalHostilitySettings global,
+            CommonGlobalHostilitySettings global,
             LodSettings lodSettings,
             WorldEnvironmentContextCache environmentCache
     ) {
@@ -322,7 +324,7 @@ final class PigAggressionController {
             Pig emitter,
             Player aggressor,
             List<Entity> nearbyEntities,
-            PigSettings.SocialAlertSettings socialAlertSettings,
+            CommonSocialAlertSettings socialAlertSettings,
             java.util.function.Predicate<Pig> naturalPigPredicate,
             HostilityCause hostilityCause
     ) {

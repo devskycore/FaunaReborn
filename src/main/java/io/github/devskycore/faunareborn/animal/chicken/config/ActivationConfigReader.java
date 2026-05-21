@@ -17,15 +17,20 @@ final class ActivationConfigReader {
         double chance = sanitizeActivationChance(
                 config.getDouble(root + ".chance", PluginConfigDefaults.ACTIVATION_CHANCE)
         );
-        boolean onlyNaturalChickens = config.getBoolean(
-                root + ".only-natural",
-                PluginConfigDefaults.ONLY_NATURAL_CHICKENS
-        );
+        boolean onlyNaturalChickens = readNaturalSpawnsOnly(config, root);
         boolean ignoreNamed = config.getBoolean(
                 root + ".ignore-named",
                 PluginConfigDefaults.IGNORE_NAMED
         );
         return new ActivationConfig(chance, onlyNaturalChickens, ignoreNamed);
+    }
+
+    private boolean readNaturalSpawnsOnly(FileConfiguration config, String root) {
+        String currentPath = root + ".natural-spawns-only";
+        if (config.isSet(currentPath)) {
+            return config.getBoolean(currentPath, PluginConfigDefaults.ONLY_NATURAL_CHICKENS);
+        }
+        return config.getBoolean(root + ".only-natural", PluginConfigDefaults.ONLY_NATURAL_CHICKENS);
     }
 
     private double sanitizeActivationChance(double configuredChance) {

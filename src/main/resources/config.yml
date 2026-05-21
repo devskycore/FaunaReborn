@@ -19,7 +19,7 @@ global-enabled: true
 # =============================================================================
 language:
   # Language code loaded from plugins/FaunaReborn/lang/.
-  # Examples: en, es, pt, it.
+  # Examples: en, es, pt, it, fr.
   file: en
 
 # =============================================================================
@@ -109,7 +109,11 @@ damage-scaling:
 # =============================================================================
 activation:
   chance: 1.0 # Activation chance from 0.0 to 1.0 (1.0 = 100%).
-  only-natural: true
+  # If true, only animals from the normal world lifecycle can become hostile.
+  # Counts as natural lifecycle: normal world spawns, breeding, and egg-hatched animals.
+  # Excluded: mob spawners and spawn eggs.
+  # Legacy alias: activation.only-natural is still supported for existing configs.
+  natural-spawns-only: true
   ignore-named: true
 
 # =============================================================================

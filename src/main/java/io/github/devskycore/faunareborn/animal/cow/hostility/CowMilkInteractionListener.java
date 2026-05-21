@@ -1,4 +1,6 @@
 package io.github.devskycore.faunareborn.animal.cow.hostility;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonGlobalHostilitySettings;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonSocialAlertSettings;
 
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
 import io.github.devskycore.faunareborn.animal.common.hostility.AbstractCookProvocationListenerSupport;
@@ -39,9 +41,9 @@ final class CowMilkInteractionListener extends AbstractCookProvocationListenerSu
     private static final Material COOKED_MEAT = Material.COOKED_BEEF;
 
     private final CowSettings.MilkProvocationSettings settings;
-    private final CowSettings.SocialAlertSettings socialAlertSettings;
+    private final CommonSocialAlertSettings socialAlertSettings;
     private final CowSettings.ResourceProvocationSettings resourceProvocationSettings;
-    private final CowSettings.GlobalHostilitySettings global;
+    private final CommonGlobalHostilitySettings global;
     private final CowMilkAggressionController aggressionController;
     private final CowTerritorialPickupService territorialPickupService;
     private final NamespacedKey nonNaturalCowKey;
@@ -50,8 +52,8 @@ final class CowMilkInteractionListener extends AbstractCookProvocationListenerSu
     CowMilkInteractionListener(
             FaunaRebornPlugin plugin,
             CowSettings.MilkProvocationSettings settings,
-            CowSettings.SocialAlertSettings socialAlertSettings,
-            CowSettings.GlobalHostilitySettings global,
+            CommonSocialAlertSettings socialAlertSettings,
+            CommonGlobalHostilitySettings global,
             CowMilkAggressionController aggressionController,
             CowSettings.ResourceProvocationSettings resourceProvocationSettings
     ) {

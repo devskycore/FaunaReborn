@@ -1,4 +1,6 @@
 package io.github.devskycore.faunareborn.animal.cow.hostility;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonGlobalHostilitySettings;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonSocialAlertSettings;
 
 import io.github.devskycore.faunareborn.animal.cow.CowSettings;
 import io.github.devskycore.faunareborn.animal.common.settings.SharedVisualEffectsSettings;
@@ -53,7 +55,7 @@ final class CowMilkAggressionController {
     private final boolean folia;
     private final Object stateLock = new Object();
     private final CowSettings.MilkProvocationSettings settings;
-    private final CowSettings.GlobalHostilitySettings global;
+    private final CommonGlobalHostilitySettings global;
     private final LodSettings lodSettings;
     private final TargetEligibilityService targetEligibilityService;
     private final CowActivationPolicy activationPolicy;
@@ -74,7 +76,7 @@ final class CowMilkAggressionController {
     CowMilkAggressionController(
             SchedulerAdapter scheduler,
             CowSettings.MilkProvocationSettings settings,
-            CowSettings.GlobalHostilitySettings global,
+            CommonGlobalHostilitySettings global,
             LodSettings lodSettings,
             WorldEnvironmentContextCache environmentCache
     ) {
@@ -321,7 +323,7 @@ final class CowMilkAggressionController {
             Cow emitter,
             Player aggressor,
             List<Entity> nearbyEntities,
-            CowSettings.SocialAlertSettings socialAlertSettings,
+            CommonSocialAlertSettings socialAlertSettings,
             java.util.function.Predicate<Cow> naturalCowPredicate,
             HostilityCause hostilityCause
     ) {

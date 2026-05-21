@@ -1,4 +1,5 @@
 package io.github.devskycore.faunareborn.animal.cow.hostility;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonGlobalHostilitySettings;
 
 import io.github.devskycore.faunareborn.animal.cow.CowSettings;
 import io.github.devskycore.faunareborn.config.common.WorldFilter;
@@ -22,7 +23,7 @@ final class CowActivationPolicy {
 
     CowActivationPolicy(
             CowSettings.MilkProvocationSettings settings,
-            CowSettings.GlobalHostilitySettings global,
+            CommonGlobalHostilitySettings global,
             TargetEligibilityService targetEligibilityService
     ) {
         this.activationChance = global.activationChance();

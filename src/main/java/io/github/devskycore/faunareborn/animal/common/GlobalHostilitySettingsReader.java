@@ -39,10 +39,7 @@ public final class GlobalHostilitySettingsReader {
         String visualRoot = "visual-effects";
 
         double activationChance = readActivationChance(globalConfig);
-        boolean onlyNatural = globalConfig.getBoolean(
-                "activation.only-natural",
-                PluginConfigDefaults.ONLY_NATURAL_CHICKENS
-        );
+        boolean onlyNatural = readNaturalSpawnsOnly(globalConfig);
         boolean ignoreNamed = globalConfig.getBoolean("activation.ignore-named", PluginConfigDefaults.IGNORE_NAMED);
 
         int maxActivePerChunk = numbers.intRange(
@@ -154,6 +151,14 @@ public final class GlobalHostilitySettingsReader {
             return 1.0D;
         }
         return configuredChance;
+    }
+
+    private boolean readNaturalSpawnsOnly(FileConfiguration globalConfig) {
+        String currentPath = "activation.natural-spawns-only";
+        if (globalConfig.isSet(currentPath)) {
+            return globalConfig.getBoolean(currentPath, PluginConfigDefaults.ONLY_NATURAL_CHICKENS);
+        }
+        return globalConfig.getBoolean("activation.only-natural", PluginConfigDefaults.ONLY_NATURAL_CHICKENS);
     }
 
     private double readNightDamageMultiplier(FileConfiguration config) {

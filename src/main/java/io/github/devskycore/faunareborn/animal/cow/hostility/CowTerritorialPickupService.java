@@ -1,4 +1,5 @@
 package io.github.devskycore.faunareborn.animal.cow.hostility;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonSocialAlertSettings;
 
 import io.github.devskycore.faunareborn.animal.cow.CowSettings;
 import io.github.devskycore.faunareborn.combat.deathmessage.HostilityCause;
@@ -16,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 final class CowTerritorialPickupService {
 
     private final CowSettings.ResourceProvocationSettings settings;
-    private final CowSettings.SocialAlertSettings socialAlertSettings;
+    private final CommonSocialAlertSettings socialAlertSettings;
     private final CowMilkAggressionController aggressionController;
     private final NaturalCowResolver naturalCowResolver;
     private final boolean requireLineOfSight;
@@ -24,7 +25,7 @@ final class CowTerritorialPickupService {
 
     CowTerritorialPickupService(
             CowSettings.ResourceProvocationSettings settings,
-            CowSettings.SocialAlertSettings socialAlertSettings,
+            CommonSocialAlertSettings socialAlertSettings,
             CowMilkAggressionController aggressionController,
             NaturalCowResolver naturalCowResolver,
             boolean requireLineOfSight

@@ -1,24 +1,20 @@
 package io.github.devskycore.faunareborn.animal.pig;
 
 import io.github.devskycore.faunareborn.animal.common.settings.BaseResourceProvocationSettings;
-import io.github.devskycore.faunareborn.animal.common.settings.BaseGlobalHostilitySettings;
 import io.github.devskycore.faunareborn.animal.common.settings.BaseProvocationSettings;
-import io.github.devskycore.faunareborn.animal.common.settings.BaseSocialAlertSettings;
-import io.github.devskycore.faunareborn.animal.common.settings.SharedVisualEffectsSettings;
-import io.github.devskycore.faunareborn.config.common.WorldFilter;
-import io.github.devskycore.faunareborn.config.common.TargetingSettings;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonGlobalHostilitySettings;
+import io.github.devskycore.faunareborn.animal.common.settings.CommonSocialAlertSettings;
 import io.github.devskycore.faunareborn.config.entity.EntitySettings;
 import io.github.devskycore.faunareborn.system.lod.LodSettings;
 
-import java.util.Map;
 import io.github.devskycore.faunareborn.system.environment.EnvironmentAggressionSettings;
 
 public record PigSettings(
         boolean enabled,
         RodProvocationSettings rodProvocation,
         ResourceProvocationSettings resourceProvocation,
-        SocialAlertSettings socialAlert,
-        GlobalHostilitySettings globalHostility,
+        CommonSocialAlertSettings socialAlert,
+        CommonGlobalHostilitySettings globalHostility,
         EnvironmentAggressionSettings environmentAggression,
         LodSettings lod
 ) implements EntitySettings {
@@ -70,70 +66,6 @@ public record PigSettings(
 
         public int rodTriggerCooldownTicks() {
             return triggerCooldownTicks();
-        }
-    }
-
-    public static final class GlobalHostilitySettings extends BaseGlobalHostilitySettings {
-        public GlobalHostilitySettings(
-                double activationChance,
-                boolean onlyNatural,
-                boolean ignoreNamed,
-                WorldFilter worldFilter,
-                int maxActiveHostilePerChunk,
-                int maxActiveHostilePerWorld,
-                int maxProcessedPerTick,
-                double peacefulDamageMultiplier,
-                double easyDamageMultiplier,
-                double normalDamageMultiplier,
-                double hardDamageMultiplier,
-                Map<String, Double> worldDamageMultipliers,
-                boolean nightDamageEnabled,
-                double nightDamageMultiplier,
-                SharedVisualEffectsSettings visualEffects,
-                TargetingSettings targeting
-        ) {
-            super(
-                    activationChance,
-                    onlyNatural,
-                    ignoreNamed,
-                    worldFilter,
-                    maxActiveHostilePerChunk,
-                    maxActiveHostilePerWorld,
-                    maxProcessedPerTick,
-                    peacefulDamageMultiplier,
-                    easyDamageMultiplier,
-                    normalDamageMultiplier,
-                    hardDamageMultiplier,
-                    worldDamageMultipliers,
-                    nightDamageEnabled,
-                    nightDamageMultiplier,
-                    visualEffects,
-                    targeting
-            );
-        }
-    }
-
-    public static final class SocialAlertSettings extends BaseSocialAlertSettings {
-        public SocialAlertSettings(
-                boolean enabled,
-                boolean onDamage,
-                boolean onNearbyDeath,
-                boolean responderAdultsOnly,
-                double radius,
-                int cooldownTicks,
-                int joinCooldownTicks,
-                int maxResponders
-        ) {
-            super(
-                    enabled,
-                    onDamage,
-                    onNearbyDeath,
-                    responderAdultsOnly,
-                    radius,
-                    cooldownTicks,
-                    joinCooldownTicks,
-                    maxResponders
-            );
         }
     }
 
