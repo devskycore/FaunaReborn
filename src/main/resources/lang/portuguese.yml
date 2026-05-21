@@ -120,7 +120,7 @@ gui:
     status-label: "Status"
     selected: "SELECIONADO"
     # Keep placeholders like {languages} unchanged.
-    available: "DISPONÃVEL"
+    available: "DISPONÍVEL"
     click-to-select: "Clique para selecionar"
     applied: "Aplicado"
     back-main: "VOLTAR"
