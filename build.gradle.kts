@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "io.github.devskycore"
-version = "1.1.3"
+version = "1.2.0"
 description = "FaunaReborn plugin"
 
 repositories {
