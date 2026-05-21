@@ -1,4 +1,4 @@
-﻿# =============================================================================
+# =============================================================================
 # Guida Rapida (Lingua)
 # =============================================================================
 # - Mantieni invariati i placeholder come {language}, {totalPages}, {elapsedMillis}.
@@ -14,7 +14,7 @@ commands:
   common:
     prefix: "FaunaReborn"
     no-permission: "Non hai il permesso per usare questo comando."
-    player-only: "Questo comando puÃ² essere eseguito solo da un giocatore."
+    player-only: "Questo comando può essere eseguito solo da un giocatore."
     unknown-subcommand: "Sottocomando sconosciuto. Usa /fauna help."
     state:
       enabled: "abilitato"
@@ -33,7 +33,7 @@ commands:
       description: "Scopri cosa fa FaunaReborn."
     entities:
       usage: "/fauna entities"
-      description: "Elenca le entitÃ  supportate e il loro stato attuale."
+      description: "Elenca le entità supportate e il loro stato attuale."
     reload:
       usage: "/fauna reload"
       description: "Ricarica configurazione e moduli."
@@ -62,9 +62,9 @@ commands:
     title: "FaunaReborn"
     tagline: "La natura reagisce."
     line1: "Trasforma animali passivi in minacce intelligenti e configurabili."
-    line2: "Include impostazioni per entitÃ , controlli runtime, elaborazione ottimizzata e sistemi di comportamento avanzati."
+    line2: "Include impostazioni per entità, controlli runtime, elaborazione ottimizzata e sistemi di comportamento avanzati."
   entities:
-    header: "EntitÃ  Supportate"
+    header: "Entità Supportate"
   version:
     header: "Versione FaunaReborn"
     unknown-author: "Sconosciuto"
@@ -76,10 +76,10 @@ commands:
     status-label: "Stato"
     status-running: "In esecuzione"
   reload:
-    already-in-progress: "La ricarica di FaunaReborn Ã¨ giÃ  in corso."
+    already-in-progress: "La ricarica di FaunaReborn è già in corso."
     started: "Ricarica di FaunaReborn avviata..."
     completed: "Ricarica di FaunaReborn completata in {elapsedMillis} ms."
-    failed: "Ricarica di FaunaReborn non riuscita. La configurazione precedente Ã¨ ancora attiva."
+    failed: "Ricarica di FaunaReborn non riuscita. La configurazione precedente è ancora attiva."
   lang:
     usage: "Uso: /fauna lang <lingua>"
     available: "Lingue disponibili: {languages}"
@@ -124,10 +124,10 @@ gui:
     back-description: "Torna al pannello di controllo"
     back-click: "Clicca per tornare indietro"
     changed: "Lingua cambiata in {file}."
-    already-selected: "La lingua del plugin Ã¨ giÃ  impostata su {file}."
+    already-selected: "La lingua del plugin è già impostata su {file}."
   toggle:
-    click-to-enable: "Clicca per attivare l'ostilitÃ "
-    click-to-disable: "Clicca per disattivare l'ostilitÃ "
+    click-to-enable: "Clicca per attivare l'ostilità"
+    click-to-disable: "Clicca per disattivare l'ostilità"
     applying-update: "Applicazione aggiornamento runtime..."
     done: "Fatto"
   reload:
@@ -154,7 +154,7 @@ gui:
 # =============================================================================
 death:
   common:
-    died: " Ã¨ morto "
+    died: " è morto "
     dot: "."
   species:
     pig:
@@ -185,7 +185,7 @@ death:
       action: "fatto infuriare"
       furnace-suffix: " con una fornace."
       smoker-suffix: " con un affumicatore."
-      campfire-suffix: " con un falÃ²."
+      campfire-suffix: " con un falò."
     herd-damage:
       prefix: "dopo aver "
       action: "colpito"
@@ -235,7 +235,7 @@ logs:
     failed: "Impossibile preparare l'avvio del plugin."
   reload:
     hot-reload-complete: "Hot reload completata in {elapsedMillis} ms."
-    failed-to-parse-yaml: "Impossibile analizzare uno o piÃ¹ file YAML di configurazione."
+    failed-to-parse-yaml: "Impossibile analizzare uno o più file YAML di configurazione."
     apply-failed: "Errore durante l'applicazione del runtime ricaricato. Ripristino runtime precedente."
     rollback-failed: "Ripristino non riuscito. Potrebbe essere necessario un intervento manuale."
     validation-failed: "Validazione configurazione non riuscita."
