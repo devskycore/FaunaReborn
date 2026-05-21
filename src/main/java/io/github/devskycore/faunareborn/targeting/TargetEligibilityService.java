@@ -17,16 +17,21 @@ public final class TargetEligibilityService {
 
     private final TargetingSettings settings;
     private final PlayerProtectionService protectionService;
-    private final PlayerVisibilityService visibilityService = new PlayerVisibilityService();
+    private final PlayerVisibilityService visibilityService;
     private final Map<UUID, CachedEligibility> cache = new Object2ObjectOpenHashMap<>();
 
     public TargetEligibilityService(TargetingSettings settings) {
-        this(settings, new MetadataProtectionService());
+        this(settings, new ExternalPlayerStateService());
     }
 
     public TargetEligibilityService(TargetingSettings settings, PlayerProtectionService protectionService) {
         this.settings = settings;
         this.protectionService = protectionService;
+        this.visibilityService = new PlayerVisibilityService(
+                protectionService instanceof ExternalPlayerStateService externalPlayerStateService
+                        ? externalPlayerStateService
+                        : new ExternalPlayerStateService()
+        );
     }
 
     public void clearExpired(long currentTick) {
