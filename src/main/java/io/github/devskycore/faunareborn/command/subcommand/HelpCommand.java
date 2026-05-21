@@ -5,11 +5,16 @@ import io.github.devskycore.faunareborn.command.permission.PermissionService;
 import io.github.devskycore.faunareborn.command.message.CommandMessages;
 import io.github.devskycore.faunareborn.lang.LanguageManager;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 public final class HelpCommand implements FaunaSubcommand {
 
@@ -21,6 +26,8 @@ public final class HelpCommand implements FaunaSubcommand {
             false
     );
     private static final int PAGE_SIZE = 4;
+    private static final String ADMIN_MODE = "admin";
+    private static final String PERMISSIONS_MODE = "permissions";
 
     private final PermissionService permissions;
     private final CommandMessages commandMessages;
@@ -49,60 +56,70 @@ public final class HelpCommand implements FaunaSubcommand {
         }
 
         boolean includeAdmin = permissions.canViewAdminHelp(sender);
-        List<FaunaSubcommand> visible = registry.visibleCommands(sender, includeAdmin);
+        HelpRequest request = parseRequest(args);
+        if (!request.valid()) {
+            sender.sendMessage(commandMessages.prefix()
+                    .append(Component.text(language.text("commands.help.usage", "Usage: /fauna help [page]"), NamedTextColor.RED)));
+            return;
+        }
+        if (request.adminOnly() && !includeAdmin) {
+            commandMessages.sendNoPermission(sender);
+            return;
+        }
+
+        List<FaunaSubcommand> visible = filterVisibleCommands(sender, includeAdmin, request);
         if (visible.isEmpty()) {
             sender.sendMessage(commandMessages.prefix()
                     .append(Component.text(language.text("commands.help.none-available", "No commands are available to you."), NamedTextColor.RED)));
             return;
         }
 
-        int requestedPage = 1;
-        if (args.length > 0) {
-            requestedPage = parsePage(args[0]);
-            if (requestedPage < 1) {
-                sender.sendMessage(commandMessages.prefix()
-                        .append(Component.text(language.text("commands.help.usage", "Usage: /fauna help [page]"), NamedTextColor.RED)));
-                return;
-            }
-        }
+        int requestedPage = request.paginated() ? request.page() : 1;
 
-        int totalPages = Math.max(1, (int) Math.ceil((double) visible.size() / PAGE_SIZE));
-        if (requestedPage > totalPages) {
+        int totalPages = request.paginated() ? Math.max(1, (int) Math.ceil((double) visible.size() / PAGE_SIZE)) : 1;
+        if (request.paginated() && requestedPage > totalPages) {
             sender.sendMessage(commandMessages.prefix()
                     .append(Component.text(
                             language.text("commands.help.page-out-of-range", "Page out of range. Available pages: 1-{totalPages}.")
                                     .replace("{totalPages}", String.valueOf(totalPages)),
                             NamedTextColor.RED
                     )));
+            sender.sendMessage(commandMessages.prefix()
+                    .append(Component.text(language.textAny("Use ", "commands.help.out-of-range-use"), NamedTextColor.GRAY))
+                    .append(Component.text(request.commandForPage(1), NamedTextColor.AQUA))
+                    .append(Component.text(language.textAny(" or ", "commands.help.out-of-range-or"), NamedTextColor.GRAY))
+                    .append(Component.text(request.commandForPage(totalPages), NamedTextColor.AQUA)));
             return;
         }
 
-        int from = (requestedPage - 1) * PAGE_SIZE;
-        int to = Math.min(from + PAGE_SIZE, visible.size());
+        int from = request.paginated() ? (requestedPage - 1) * PAGE_SIZE : 0;
+        int to = request.paginated() ? Math.min(from + PAGE_SIZE, visible.size()) : visible.size();
         List<FaunaSubcommand> pageItems = visible.subList(from, to);
 
-        sender.sendMessage(commandMessages.prefix()
-                .append(Component.text(
-                        language.text("commands.help.header", "Commands ({page}/{totalPages})")
-                                .replace("{page}", String.valueOf(requestedPage))
-                                .replace("{totalPages}", String.valueOf(totalPages)),
-                        NamedTextColor.GREEN
-                )));
+        sender.sendMessage(commandMessages.prefix().append(helpHeader(requestedPage, totalPages, request)));
         for (FaunaSubcommand subcommand : pageItems) {
             String commandName = subcommand.info().name();
             String usage = language.text("commands.meta." + commandName + ".usage", subcommand.info().usage());
             String description = language.text("commands.meta." + commandName + ".description", subcommand.info().description());
-            sender.sendMessage(Component.text(" - ", NamedTextColor.DARK_GRAY)
-                    .append(Component.text(usage, NamedTextColor.AQUA))
-                    .append(Component.text("  " + description, NamedTextColor.GRAY)));
-        }
-        if (requestedPage < totalPages) {
-            sender.sendMessage(commandMessages.prefix()
-                    .append(Component.text(
-                            language.text("commands.help.next-page-tip", "Tip: /fauna help {nextPage}")
-                                    .replace("{nextPage}", String.valueOf(requestedPage + 1)),
+            String suggestedCommand = clickableCommandFromUsage(usage);
+            Component line = Component.text(" - ", NamedTextColor.DARK_GRAY)
+                    .append(formatUsage(usage))
+                    .append(Component.text("  " + description, NamedTextColor.GRAY))
+                    .clickEvent(ClickEvent.suggestCommand(suggestedCommand))
+                    .hoverEvent(HoverEvent.showText(Component.text(
+                            language.textAny("Click to use: {command}", "commands.help.click-to-use", "commands.help.click-to-suggest")
+                                    .replace("{command}", suggestedCommand),
                             NamedTextColor.GRAY
                     )));
+            if (request.permissionsMode()) {
+                line = line.append(Component.text("  [", NamedTextColor.DARK_GRAY))
+                        .append(Component.text(subcommand.info().permission(), NamedTextColor.YELLOW))
+                        .append(Component.text("]", NamedTextColor.DARK_GRAY));
+            }
+            sender.sendMessage(line);
+        }
+        if (request.paginated()) {
+            sender.sendMessage(navigationRow(requestedPage, totalPages, request));
         }
     }
 
@@ -110,16 +127,43 @@ public final class HelpCommand implements FaunaSubcommand {
     public List<String> suggest(CommandSender sender, String[] args) {
         if (args.length == 1) {
             if (registry == null) {
-                return List.of("1");
+                return List.of("1", ADMIN_MODE, PERMISSIONS_MODE);
             }
             boolean includeAdmin = permissions.canViewAdminHelp(sender);
-            int totalCommands = registry.visibleCommands(sender, includeAdmin).size();
-            int totalPages = Math.max(1, (int) Math.ceil((double) totalCommands / PAGE_SIZE));
-            List<String> pages = new ArrayList<>();
-            for (int i = 1; i <= totalPages; i++) {
-                pages.add(String.valueOf(i));
+            String token = args[0].toLowerCase(Locale.ROOT);
+            List<String> suggestions = new ArrayList<>();
+            suggestions.addAll(pageSuggestions(registry.visibleCommands(sender, includeAdmin).size(), token));
+            if (ADMIN_MODE.startsWith(token) && includeAdmin) {
+                suggestions.add(ADMIN_MODE);
             }
-            return pages;
+            if (PERMISSIONS_MODE.startsWith(token)) {
+                suggestions.add(PERMISSIONS_MODE);
+            }
+            for (FaunaSubcommand subcommand : registry.visibleCommands(sender, includeAdmin)) {
+                String name = subcommand.info().name();
+                if (name.startsWith(token)) {
+                    suggestions.add(name);
+                }
+            }
+            suggestions.sort(Comparator.naturalOrder());
+            return suggestions;
+        }
+        if (args.length == 2 && registry != null) {
+            String mode = args[0].toLowerCase(Locale.ROOT);
+            String token = args[1].toLowerCase(Locale.ROOT);
+            boolean includeAdmin = permissions.canViewAdminHelp(sender);
+            if (ADMIN_MODE.equals(mode) || PERMISSIONS_MODE.equals(mode)) {
+                List<FaunaSubcommand> commands = registry.visibleCommands(sender, includeAdmin);
+                if (ADMIN_MODE.equals(mode)) {
+                    commands = commands.stream().filter(c -> c.info().administrative()).toList();
+                }
+                return pageSuggestions(commands.size(), token);
+            }
+            HelpRequest request = parseRequest(args);
+            if (request.valid() && request.paginated()) {
+                List<FaunaSubcommand> filtered = filterVisibleCommands(sender, includeAdmin, request);
+                return pageSuggestions(filtered.size(), token);
+            }
         }
         return List.of();
     }
@@ -129,6 +173,217 @@ public final class HelpCommand implements FaunaSubcommand {
             return Integer.parseInt(raw);
         } catch (NumberFormatException ignored) {
             return -1;
+        }
+    }
+
+    private List<String> pageSuggestions(int totalCommands, String token) {
+        int totalPages = Math.max(1, (int) Math.ceil((double) totalCommands / PAGE_SIZE));
+        List<String> pages = new ArrayList<>();
+        for (int i = 1; i <= totalPages; i++) {
+            String page = String.valueOf(i);
+            if (page.startsWith(token)) {
+                pages.add(page);
+            }
+        }
+        return pages;
+    }
+
+    private List<FaunaSubcommand> filterVisibleCommands(CommandSender sender, boolean includeAdmin, HelpRequest request) {
+        List<FaunaSubcommand> visible = registry.visibleCommands(sender, includeAdmin);
+        if (request.adminOnly()) {
+            visible = visible.stream().filter(command -> command.info().administrative()).toList();
+        }
+        if (request.query() != null) {
+            String query = request.query().toLowerCase(Locale.ROOT);
+            List<FaunaSubcommand> exactMatches = visible.stream()
+                    .filter(command -> command.info().name().equalsIgnoreCase(query))
+                    .toList();
+            if (!exactMatches.isEmpty()) {
+                return exactMatches;
+            }
+            visible = visible.stream()
+                    .filter(command -> command.info().name().toLowerCase(Locale.ROOT).contains(query))
+                    .toList();
+        }
+        return visible;
+    }
+
+    private HelpRequest parseRequest(String[] args) {
+        if (args.length == 0) {
+            return new HelpRequest(1, false, false, null, true);
+        }
+        if (args.length > 2) {
+            return invalidRequest();
+        }
+
+        String first = args[0].toLowerCase(Locale.ROOT);
+        if (ADMIN_MODE.equals(first)) {
+            int page = args.length > 1 ? parsePage(args[1]) : 1;
+            return page < 1 ? invalidRequest() : new HelpRequest(page, true, false, null, true);
+        }
+        if (PERMISSIONS_MODE.equals(first)) {
+            int page = args.length > 1 ? parsePage(args[1]) : 1;
+            return page < 1 ? invalidRequest() : new HelpRequest(page, false, true, null, true);
+        }
+
+        int page = parsePage(first);
+        if (page >= 1) {
+            return new HelpRequest(page, false, false, null, true);
+        }
+
+        int queryPage = 1;
+        if (args.length > 1) {
+            return invalidRequest();
+        }
+        return new HelpRequest(queryPage, false, false, first, true);
+    }
+
+    private HelpRequest invalidRequest() {
+        return new HelpRequest(-1, false, false, null, false);
+    }
+
+    private Component helpHeader(int currentPage, int totalPages, HelpRequest request) {
+        if (!request.paginated()) {
+            String searchHeaderTemplate = language.textAny("Command: {query}", "commands.help.header-search");
+            String searchHeader = normalizeSearchHeaderTemplate(searchHeaderTemplate)
+                    .replace("{query}", request.query());
+            return Component.text(searchHeader, NamedTextColor.GREEN).decorate(TextDecoration.BOLD);
+        }
+        String title = language.textAny("Commands", "commands.help.header-title-default", "commands.help.header-default", "commands.help.header");
+        if (request.adminOnly()) {
+            title = language.textAny("Commands: Admin", "commands.help.header-title-admin", "commands.help.header-admin");
+        } else if (request.permissionsMode()) {
+            title = language.textAny("Commands: Permissions", "commands.help.header-title-permissions", "commands.help.header-permissions");
+        }
+        title = normalizePageHeaderTemplate(title)
+                .replace("{page}", String.valueOf(currentPage))
+                .replace("{totalPages}", String.valueOf(totalPages))
+                .trim();
+        return Component.text(title, NamedTextColor.GREEN)
+                .decorate(TextDecoration.BOLD)
+                .append(Component.text(" ", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
+                .append(Component.text("(", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
+                .append(Component.text(String.valueOf(currentPage), NamedTextColor.GREEN).decoration(TextDecoration.BOLD, false))
+                .append(Component.text("/", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
+                .append(Component.text(String.valueOf(totalPages), NamedTextColor.WHITE).decoration(TextDecoration.BOLD, false))
+                .append(Component.text(")", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false));
+    }
+
+    private Component formatUsage(String usage) {
+        Component result = Component.empty();
+        StringBuilder token = new StringBuilder();
+        for (char c : usage.toCharArray()) {
+            if (c == ' ') {
+                if (!token.isEmpty()) {
+                    result = result.append(usageToken(token.toString()));
+                    token.setLength(0);
+                }
+                result = result.append(Component.text(" ", NamedTextColor.GRAY));
+                continue;
+            }
+            token.append(c);
+        }
+        if (!token.isEmpty()) {
+            result = result.append(usageToken(token.toString()));
+        }
+        return result;
+    }
+
+    private Component usageToken(String token) {
+        if (token.startsWith("[") && token.endsWith("]")) {
+            return Component.text(token, NamedTextColor.WHITE);
+        }
+        if (token.startsWith("<") && token.endsWith(">")) {
+            return Component.text(token, NamedTextColor.YELLOW);
+        }
+        return Component.text(token, NamedTextColor.AQUA);
+    }
+
+    private String clickableCommandFromUsage(String usage) {
+        String[] tokens = usage.trim().split("\\s+");
+        List<String> baseTokens = new ArrayList<>();
+        for (String token : tokens) {
+            if (token.startsWith("[") || token.startsWith("<")) {
+                break;
+            }
+            baseTokens.add(token);
+        }
+        if (baseTokens.isEmpty()) {
+            return usage.trim();
+        }
+        return String.join(" ", baseTokens);
+    }
+
+    private Component navigationRow(int currentPage, int totalPages, HelpRequest request) {
+        String prevLabel = language.textAny("< PREV", "commands.help.nav-prev-label");
+        String nextLabel = language.textAny("NEXT >", "commands.help.nav-next-label");
+        Component row = Component.text("", NamedTextColor.GRAY);
+        if (currentPage > 1) {
+            int prev = currentPage - 1;
+            row = row.append(Component.text(prevLabel, NamedTextColor.YELLOW)
+                    .decorate(TextDecoration.BOLD)
+                    .clickEvent(ClickEvent.runCommand(request.commandForPage(prev)))
+                    .hoverEvent(HoverEvent.showText(Component.text(
+                            language.text("commands.help.nav-go-to-page", "Go to page {page}")
+                                    .replace("{page}", String.valueOf(prev)),
+                            NamedTextColor.GRAY
+                    ))));
+        } else {
+            row = row.append(Component.text(prevLabel, NamedTextColor.DARK_GRAY).decorate(TextDecoration.BOLD));
+        }
+        row = row.append(Component.text("   ", NamedTextColor.GRAY))
+                .append(Component.text("|", NamedTextColor.DARK_GRAY))
+                .append(Component.text("   ", NamedTextColor.GRAY));
+        if (currentPage < totalPages) {
+            int next = currentPage + 1;
+            row = row.append(Component.text(nextLabel, NamedTextColor.YELLOW)
+                    .decorate(TextDecoration.BOLD)
+                    .clickEvent(ClickEvent.runCommand(request.commandForPage(next)))
+                    .hoverEvent(HoverEvent.showText(Component.text(
+                            language.text("commands.help.nav-go-to-page", "Go to page {page}")
+                                    .replace("{page}", String.valueOf(next)),
+                            NamedTextColor.GRAY
+                    ))));
+        } else {
+            row = row.append(Component.text(nextLabel, NamedTextColor.DARK_GRAY).decorate(TextDecoration.BOLD));
+        }
+        return row;
+    }
+
+    private String normalizeSearchHeaderTemplate(String template) {
+        String normalized = template.replace(" ({page}/{totalPages})", "");
+        normalized = normalized.replace("({page}/{totalPages})", "");
+        return normalized.trim();
+    }
+
+    private String normalizePageHeaderTemplate(String template) {
+        int open = template.lastIndexOf('(');
+        int close = template.lastIndexOf(')');
+        if (open >= 0 && close > open) {
+            String inside = template.substring(open + 1, close);
+            if (inside.contains("{page}") && inside.contains("{totalPages}")) {
+                return template.substring(0, open).trim();
+            }
+        }
+        return template;
+    }
+
+    private record HelpRequest(int page, boolean adminOnly, boolean permissionsMode, String query, boolean valid) {
+        boolean paginated() {
+            return query == null;
+        }
+
+        String commandForPage(int targetPage) {
+            if (adminOnly) {
+                return "/fauna help " + ADMIN_MODE + " " + targetPage;
+            }
+            if (permissionsMode) {
+                return "/fauna help " + PERMISSIONS_MODE + " " + targetPage;
+            }
+            if (query != null) {
+                return "/fauna help " + query + " " + targetPage;
+            }
+            return "/fauna help " + targetPage;
         }
     }
 }
