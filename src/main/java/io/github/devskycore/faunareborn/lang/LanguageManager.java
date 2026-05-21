@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
@@ -224,16 +225,36 @@ public final class LanguageManager {
         }
 
         YamlConfiguration existing = loadLanguageFile(target, fileName);
+        Set<String> bundledKeys = collectValueKeys(bundled);
+        Set<String> existingKeys = collectValueKeys(existing);
         boolean changed = false;
-        for (String key : bundled.getKeys(true)) {
-            if (bundled.isConfigurationSection(key)) {
+        int addedKeys = 0;
+        int updatedKeys = 0;
+        int removedKeys = 0;
+
+        for (String key : bundledKeys) {
+            Object bundledValue = bundled.get(key);
+            Object existingValue = existing.get(key);
+            if (!existing.contains(key)) {
+                existing.set(key, bundledValue);
+                changed = true;
+                addedKeys++;
                 continue;
             }
-            if (existing.contains(key)) {
+            if (!Objects.equals(existingValue, bundledValue)) {
+                existing.set(key, bundledValue);
+                changed = true;
+                updatedKeys++;
+            }
+        }
+
+        for (String key : existingKeys) {
+            if (bundledKeys.contains(key)) {
                 continue;
             }
-            existing.set(key, bundled.get(key));
+            existing.set(key, null);
             changed = true;
+            removedKeys++;
         }
 
         if (!changed) {
@@ -242,9 +263,25 @@ public final class LanguageManager {
 
         try {
             existing.save(target);
+            plugin.getLogger().info(
+                    "Migrated language file '" + fileName + "' (added: " + addedKeys
+                            + ", updated: " + updatedKeys
+                            + ", removed obsolete: " + removedKeys + ")."
+            );
         } catch (IOException exception) {
-            plugin.getLogger().warning("Could not update language file '" + fileName + "' with missing keys: " + exception.getMessage());
+            plugin.getLogger().warning("Could not migrate language file '" + fileName + "': " + exception.getMessage());
         }
+    }
+
+    private Set<String> collectValueKeys(YamlConfiguration configuration) {
+        Set<String> keys = new HashSet<>();
+        for (String key : configuration.getKeys(true)) {
+            if (configuration.isConfigurationSection(key)) {
+                continue;
+            }
+            keys.add(key);
+        }
+        return keys;
     }
 
     private YamlConfiguration loadBundledLanguage(String path) {
