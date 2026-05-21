@@ -5,6 +5,9 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.util.ArrayList;
@@ -24,17 +27,20 @@ public final class LanguageManager {
     private static final String SPANISH_LANGUAGE_CODE = "es";
     private static final String PORTUGUESE_LANGUAGE_CODE = "pt";
     private static final String ITALIAN_LANGUAGE_CODE = "it";
+    private static final String FRENCH_LANGUAGE_CODE = "fr";
     private static final String DEFAULT_LANGUAGE_FILE = "english.yml";
     private static final String SPANISH_LANGUAGE_FILE = "spanish.yml";
     private static final String PORTUGUESE_LANGUAGE_FILE = "portuguese.yml";
     private static final String ITALIAN_LANGUAGE_FILE = "italian.yml";
+    private static final String FRENCH_LANGUAGE_FILE = "french.yml";
     private static final String LANGUAGE_CONFIG_PATH = "language.file";
     private static final Pattern COMBINING_MARKS = Pattern.compile("\\p{M}+");
     private static final Map<String, String> KNOWN_LANGUAGE_FILES = Map.of(
             DEFAULT_LANGUAGE_CODE, DEFAULT_LANGUAGE_FILE,
             SPANISH_LANGUAGE_CODE, SPANISH_LANGUAGE_FILE,
             PORTUGUESE_LANGUAGE_CODE, PORTUGUESE_LANGUAGE_FILE,
-            ITALIAN_LANGUAGE_CODE, ITALIAN_LANGUAGE_FILE
+            ITALIAN_LANGUAGE_CODE, ITALIAN_LANGUAGE_FILE,
+            FRENCH_LANGUAGE_CODE, FRENCH_LANGUAGE_FILE
     );
 
     private final FaunaRebornPlugin plugin;
@@ -60,6 +66,12 @@ public final class LanguageManager {
         saveResourceIfAbsent("lang/" + SPANISH_LANGUAGE_FILE);
         saveResourceIfAbsent("lang/" + PORTUGUESE_LANGUAGE_FILE);
         saveResourceIfAbsent("lang/" + ITALIAN_LANGUAGE_FILE);
+        saveResourceIfAbsent("lang/" + FRENCH_LANGUAGE_FILE);
+        syncLanguageFileWithBundledDefaults(DEFAULT_LANGUAGE_FILE);
+        syncLanguageFileWithBundledDefaults(SPANISH_LANGUAGE_FILE);
+        syncLanguageFileWithBundledDefaults(PORTUGUESE_LANGUAGE_FILE);
+        syncLanguageFileWithBundledDefaults(ITALIAN_LANGUAGE_FILE);
+        syncLanguageFileWithBundledDefaults(FRENCH_LANGUAGE_FILE);
         File englishFile = new File(languageDirectory, DEFAULT_LANGUAGE_FILE);
         defaultLanguage = YamlConfiguration.loadConfiguration(englishFile);
 
@@ -149,6 +161,44 @@ public final class LanguageManager {
         return formatted;
     }
 
+    public String textAny(String fallback, String... paths) {
+        if (paths == null || paths.length == 0) {
+            return fallback;
+        }
+        for (String path : paths) {
+            if (path == null || path.isBlank()) {
+                continue;
+            }
+            String value = textOrNull(path);
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return fallback;
+    }
+
+    public String textOrNull(String path) {
+        if (path == null || path.isBlank()) {
+            return null;
+        }
+        FileConfiguration currentActive = activeLanguage;
+        if (currentActive != null) {
+            String activeValue = currentActive.getString(path);
+            if (activeValue != null && !activeValue.isBlank()) {
+                return activeValue;
+            }
+        }
+
+        FileConfiguration currentDefault = defaultLanguage;
+        if (currentDefault != null) {
+            String defaultValue = currentDefault.getString(path);
+            if (defaultValue != null && !defaultValue.isBlank()) {
+                return defaultValue;
+            }
+        }
+        return null;
+    }
+
     private void saveResourceIfAbsent(String path) {
         File target = new File(plugin.getDataFolder(), path);
         if (!target.exists()) {
@@ -157,6 +207,54 @@ public final class LanguageManager {
             } catch (IllegalArgumentException ignored) {
                 // Ignore when the packaged resource does not exist yet.
             }
+        }
+    }
+
+    private void syncLanguageFileWithBundledDefaults(String fileName) {
+        String path = "lang/" + fileName;
+        File target = new File(plugin.getDataFolder(), path);
+        if (!target.exists()) {
+            return;
+        }
+
+        YamlConfiguration bundled = loadBundledLanguage(path);
+        if (bundled == null) {
+            return;
+        }
+
+        YamlConfiguration existing = YamlConfiguration.loadConfiguration(target);
+        boolean changed = false;
+        for (String key : bundled.getKeys(true)) {
+            if (bundled.isConfigurationSection(key)) {
+                continue;
+            }
+            if (existing.contains(key)) {
+                continue;
+            }
+            existing.set(key, bundled.get(key));
+            changed = true;
+        }
+
+        if (!changed) {
+            return;
+        }
+
+        try {
+            existing.save(target);
+        } catch (IOException exception) {
+            plugin.getLogger().warning("Could not update language file '" + fileName + "' with missing keys: " + exception.getMessage());
+        }
+    }
+
+    private YamlConfiguration loadBundledLanguage(String path) {
+        try (InputStream input = plugin.getResource(path)) {
+            if (input == null) {
+                return null;
+            }
+            return YamlConfiguration.loadConfiguration(new InputStreamReader(input, StandardCharsets.UTF_8));
+        } catch (IOException exception) {
+            plugin.getLogger().warning("Could not read bundled language resource '" + path + "': " + exception.getMessage());
+            return null;
         }
     }
 
@@ -219,6 +317,7 @@ public final class LanguageManager {
             case "spanish" -> SPANISH_LANGUAGE_CODE;
             case "portuguese" -> PORTUGUESE_LANGUAGE_CODE;
             case "italian" -> ITALIAN_LANGUAGE_CODE;
+            case "french" -> FRENCH_LANGUAGE_CODE;
             default -> base;
         };
     }
@@ -229,6 +328,7 @@ public final class LanguageManager {
         registerAliases(aliases, SPANISH_LANGUAGE_CODE, "es", "spanish", "espanol", "español", "es_es", "es-es");
         registerAliases(aliases, PORTUGUESE_LANGUAGE_CODE, "pt", "portuguese", "portugues", "português", "pt_br", "pt-br", "pt_pt", "pt-pt");
         registerAliases(aliases, ITALIAN_LANGUAGE_CODE, "it", "italian", "italiano", "it_it", "it-it");
+        registerAliases(aliases, FRENCH_LANGUAGE_CODE, "fr", "french", "francais", "français", "fr_fr", "fr-fr");
         return Map.copyOf(aliases);
     }
 

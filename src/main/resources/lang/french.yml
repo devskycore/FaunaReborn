@@ -1,0 +1,248 @@
+﻿# =============================================================================
+# Guide Rapide (Langue)
+# =============================================================================
+# - Gardez inchangÃ©s les placeholders comme {language}, {totalPages}, {elapsedMillis}.
+# - Gardez inchangÃ©s les commandes et la syntaxe slash (exemple : /fauna help [page]).
+# - Gardez une indentation de 2 espaces sous chaque clÃ© parente.
+# - Gardez les noms des clÃ©s exactement comme fournis par le plugin.
+# - Traduisez uniquement les valeurs entre guillemets.
+
+# =============================================================================
+# Commandes
+# =============================================================================
+commands:
+  common:
+    # Keep this short for chat and GUI readability.
+    prefix: "FaunaReborn"
+    no-permission: "Vous n'avez pas la permission d'utiliser cette commande."
+    player-only: "Cette commande ne peut Ãªtre exÃ©cutÃ©e que par un joueur."
+    unknown-subcommand: "Sous-commande inconnue. Utilisez /fauna help."
+    state:
+      enabled: "activÃ©"
+      disabled: "dÃ©sactivÃ©"
+      enabled-title: "ActivÃ©"
+      disabled-title: "DÃ©sactivÃ©"
+  meta:
+    help:
+      usage: "/fauna help [page]"
+      description: "Affiche les commandes disponibles."
+    version:
+      usage: "/fauna version"
+      description: "Affiche les dÃ©tails de version du plugin et du runtime."
+    about:
+      usage: "/fauna about"
+      description: "DÃ©couvrez ce que fait FaunaReborn."
+    entities:
+      usage: "/fauna entities"
+      description: "Liste les entitÃ©s prises en charge et leur Ã©tat actuel."
+    reload:
+      usage: "/fauna reload"
+      description: "Recharge la configuration et les modules."
+    gui:
+      usage: "/fauna gui"
+      description: "Ouvre l'interface d'administration de FaunaReborn."
+    lang:
+      usage: "/fauna lang <langue>"
+      description: "Change la langue active du plugin."
+  help:
+    none-available: "Aucune commande n'est disponible pour vous."
+    usage: "Utilisation : /fauna help [page]"
+    page-out-of-range: "Page hors limites. Pages disponibles : 1-{totalPages}."
+    header: "Commandes ({page}/{totalPages})"
+    out-of-range-use: "Utilisez "
+    out-of-range-or: " ou "
+    header-title-default: "COMMANDES"
+    header-title-admin: "COMMANDES: ADMIN"
+    header-title-permissions: "COMMANDES: PERMISSIONS"
+    header-search: "Commande: {query}"
+    nav-prev-label: "< PRECEDENT"
+    nav-next-label: "SUIVANT >"
+    nav-go-to-page: "Aller a la page {page}"
+    click-to-use: "Cliquer pour utiliser: {command}"
+  about:
+    title: "FaunaReborn"
+    tagline: "La nature riposte."
+    line1: "Transforme les animaux passifs en menaces intelligentes et configurables."
+    line2: "Inclut des paramÃ¨tres par entitÃ©, des contrÃ´les en temps rÃ©el, un traitement optimisÃ© et des systÃ¨mes de comportement avancÃ©s."
+  entities:
+    header: "EntitÃ©s prises en charge"
+  version:
+    header: "Version de FaunaReborn"
+    unknown-author: "Inconnu"
+    name-label: "Nom"
+    version-label: "Version"
+    authors-label: "Auteurs"
+    minecraft-label: "Minecraft"
+    server-label: "Serveur"
+    status-label: "Statut"
+    status-running: "En cours d'exÃ©cution"
+  reload:
+    already-in-progress: "Le rechargement de FaunaReborn est dÃ©jÃ  en cours."
+    started: "Rechargement de FaunaReborn dÃ©marrÃ©..."
+    completed: "Rechargement de FaunaReborn terminÃ© en {elapsedMillis} ms."
+    failed: "Le rechargement de FaunaReborn a Ã©chouÃ©. La configuration prÃ©cÃ©dente est toujours active."
+  lang:
+    usage: "Utilisation : /fauna lang <langue>"
+    # Keep placeholders like {languages} unchanged.
+    available: "Langues disponibles : {languages}"
+    invalid: "Langue '{language}' introuvable. Disponibles : {languages}"
+    # Keep placeholders like {language} unchanged.
+    changed: "Langue changÃ©e en {language}."
+
+# =============================================================================
+# GUI
+# =============================================================================
+gui:
+  title:
+    main: "FaunaReborn"
+    panel: "ParamÃ¨tres"
+  common:
+    settings: "ParamÃ¨tres"
+    status: "Statut"
+    enabled: "ACTIVÃ‰"
+    disabled: "DÃ‰SACTIVÃ‰"
+    locked: "VERROUILLÃ‰"
+    busy: "TRAITEMENT"
+    wait-reload: "Veuillez patienter pendant le rechargement."
+    no-permission: "Vous n'avez pas la permission pour cette action."
+  entities:
+    chicken: "POULET"
+    cow: "VACHE"
+    pig: "COCHON"
+  language:
+    title-main: "LANGUE"
+    title-tail: "SÃ©lection"
+    button-main: "LANGUE"
+    button-tail: "Menu"
+    option-tail: "Langue"
+    current-prefix: "Actuelle"
+    click-to-open: "Cliquez pour changer de langue"
+    status-label: "Statut"
+    selected: "SÃ‰LECTIONNÃ‰E"
+    # Keep placeholders like {languages} unchanged.
+    available: "DISPONIBLE"
+    click-to-select: "Cliquez pour sÃ©lectionner"
+    applied: "AppliquÃ©e"
+    back-main: "RETOUR"
+    back-tail: "Menu Principal"
+    back-description: "Retourner au panneau de contrÃ´le"
+    back-click: "Cliquez pour revenir"
+    # Keep placeholders like {language} unchanged.
+    changed: "Langue changÃ©e en {file}."
+    already-selected: "La langue du plugin est dÃ©jÃ  dÃ©finie sur {file}."
+  toggle:
+    click-to-enable: "Cliquez pour activer l'hostilitÃ©"
+    click-to-disable: "Cliquez pour dÃ©sactiver l'hostilitÃ©"
+    applying-update: "Application de la mise Ã  jour en temps rÃ©el..."
+    done: "TerminÃ©"
+  reload:
+    title-main: "RECHARGER"
+    title-tail: "Fichiers"
+    applies-manual: "Applique les modifications manuelles"
+    click-to-reload: "Cliquez pour recharger les fichiers"
+    syncing-files: "Synchronisation des derniÃ¨res modifications de fichiers..."
+    please-wait-tick: "Veuillez attendre 1 tick"
+  close:
+    title-main: "FERMER"
+    title-tail: "Menu"
+    exit-panel: "Quitter ce panneau de contrÃ´le"
+    click-to-close: "Cliquez pour fermer le menu"
+  feedback:
+    failed-update-state: "Ã‰chec de la mise Ã  jour de l'Ã©tat du module pour "
+    failed-runtime-update: "Ã‰chec de la mise Ã  jour en temps rÃ©el pour "
+    failed-runtime-update-suffix: ". Utilisez reload."
+    toggle-set-to: " dÃ©fini sur "
+    dot: "."
+
+# =============================================================================
+# Death Messages
+# =============================================================================
+death:
+  common:
+    died: " est mort "
+    dot: "."
+  species:
+    pig:
+      singular: "COCHON"
+      plural: "COCHONS"
+    cow:
+      singular: "VACHE"
+      plural: "VACHES"
+    chicken:
+      singular: "POULET"
+      plural: "POULETS"
+  cause:
+    rod:
+      prefix: "aprÃ¨s avoir "
+      hook-action: "hameÃ§onnÃ©"
+      middle: " le mauvais "
+    milking:
+      prefix: "aprÃ¨s avoir "
+      action: "trait"
+      middle: " la mauvaise "
+    territorial:
+      prefix: "aprÃ¨s avoir "
+      action: "pÃ©nÃ©trÃ©"
+      middle: " sur le territoire de "
+      suffix: "."
+    cooking:
+      prefix: "pour avoir "
+      action: "mis en colÃ¨re"
+      furnace-suffix: " avec un four."
+      smoker-suffix: " avec un fumoir."
+      campfire-suffix: " avec un feu de camp."
+    herd-damage:
+      prefix: "aprÃ¨s avoir "
+      action: "frappÃ©"
+      middle: " le mauvais troupeau de "
+    herd-nearby:
+      prefix: "en essayant de fuir des "
+      action: "enragÃ©s"
+    baby:
+      prefix: "aprÃ¨s avoir "
+      action: "menacÃ©"
+      middle: " un bÃ©bÃ© "
+  direct:
+    pig:
+      prefix: "aprÃ¨s avoir Ã©tÃ© "
+      action: "lacÃ©rÃ©"
+      middle: " par un "
+    cow:
+      prefix: "aprÃ¨s avoir Ã©tÃ© "
+      action: "piÃ©tinÃ©"
+      middle: " par une "
+    chicken:
+      prefix: "aprÃ¨s avoir Ã©tÃ© "
+      action: "picorÃ© Ã  mort"
+      middle: " par un "
+
+# =============================================================================
+# Banner
+# =============================================================================
+banner:
+  title: "FAUNAREBORN"
+  version-line: "Version > {version}"
+  mc-line: "MC > {minecraftVersion}"
+
+# =============================================================================
+# Lifecycle
+# =============================================================================
+lifecycle:
+  enabled-in: "Plugin activÃ© en "
+  disabled-in: "Plugin dÃ©sactivÃ© en "
+
+# =============================================================================
+# Logs
+# =============================================================================
+logs:
+  startup:
+    folia-detected: "Runtime Folia dÃ©tectÃ©. Activation des chemins de scheduler Folia."
+    failed: "Ã‰chec de la prÃ©paration du dÃ©marrage du plugin."
+  update:
+    available: "Une nouvelle version est disponible : {latest} (actuelle : {current}) -> {url}"
+  reload:
+    hot-reload-complete: "Rechargement terminÃ© en {elapsedMillis} ms."
+    failed-to-parse-yaml: "Ã‰chec de l'analyse d'un ou plusieurs fichiers YAML de configuration."
+    apply-failed: "Ã‰chec lors de l'application du runtime rechargÃ©. Restauration du runtime prÃ©cÃ©dent."
+    rollback-failed: "La restauration a Ã©chouÃ©. Une intervention manuelle peut Ãªtre nÃ©cessaire."
+    validation-failed: "La validation de la configuration a Ã©chouÃ©."
