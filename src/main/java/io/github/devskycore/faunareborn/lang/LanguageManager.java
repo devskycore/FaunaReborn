@@ -7,8 +7,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -35,6 +35,7 @@ public final class LanguageManager {
     private static final String FRENCH_LANGUAGE_FILE = "french.yml";
     private static final String LANGUAGE_CONFIG_PATH = "language.file";
     private static final Pattern COMBINING_MARKS = Pattern.compile("\\p{M}+");
+    private static final Pattern UNSUPPORTED_YAML_CONTROL_CHARS = Pattern.compile("[\\x00-\\x08\\x0B\\x0C\\x0E-\\x1F\\x7F-\\x9F]");
     private static final Map<String, String> KNOWN_LANGUAGE_FILES = Map.of(
             DEFAULT_LANGUAGE_CODE, DEFAULT_LANGUAGE_FILE,
             SPANISH_LANGUAGE_CODE, SPANISH_LANGUAGE_FILE,
@@ -73,7 +74,7 @@ public final class LanguageManager {
         syncLanguageFileWithBundledDefaults(ITALIAN_LANGUAGE_FILE);
         syncLanguageFileWithBundledDefaults(FRENCH_LANGUAGE_FILE);
         File englishFile = new File(languageDirectory, DEFAULT_LANGUAGE_FILE);
-        defaultLanguage = YamlConfiguration.loadConfiguration(englishFile);
+        defaultLanguage = loadLanguageFile(englishFile, DEFAULT_LANGUAGE_FILE);
 
         String configuredValue = plugin.getConfig().getString(LANGUAGE_CONFIG_PATH, DEFAULT_LANGUAGE_CODE);
         String normalizedFile = resolveLanguageFile(configuredValue);
@@ -84,7 +85,7 @@ public final class LanguageManager {
             selectedLanguageFile = new File(languageDirectory, DEFAULT_LANGUAGE_FILE);
         }
 
-        activeLanguage = YamlConfiguration.loadConfiguration(selectedLanguageFile);
+        activeLanguage = loadLanguageFile(selectedLanguageFile, selectedLanguageFile.getName());
         missingKeyWarnings.clear();
     }
 
@@ -222,7 +223,7 @@ public final class LanguageManager {
             return;
         }
 
-        YamlConfiguration existing = YamlConfiguration.loadConfiguration(target);
+        YamlConfiguration existing = loadLanguageFile(target, fileName);
         boolean changed = false;
         for (String key : bundled.getKeys(true)) {
             if (bundled.isConfigurationSection(key)) {
@@ -251,11 +252,40 @@ public final class LanguageManager {
             if (input == null) {
                 return null;
             }
-            return YamlConfiguration.loadConfiguration(new InputStreamReader(input, StandardCharsets.UTF_8));
+            String raw = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+            YamlConfiguration yaml = new YamlConfiguration();
+            yaml.loadFromString(sanitizeYamlText(raw, path));
+            return yaml;
         } catch (IOException exception) {
             plugin.getLogger().warning("Could not read bundled language resource '" + path + "': " + exception.getMessage());
             return null;
+        } catch (Exception exception) {
+            plugin.getLogger().warning("Could not parse bundled language resource '" + path + "': " + exception.getMessage());
+            return null;
         }
+    }
+
+    private YamlConfiguration loadLanguageFile(File file, String displayName) {
+        try {
+            String raw = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+            YamlConfiguration yaml = new YamlConfiguration();
+            yaml.loadFromString(sanitizeYamlText(raw, displayName));
+            return yaml;
+        } catch (Exception exception) {
+            plugin.getLogger().warning("Could not parse language file '" + displayName + "': " + exception.getMessage());
+            return new YamlConfiguration();
+        }
+    }
+
+    private String sanitizeYamlText(String value, String sourceName) {
+        if (value == null || value.isEmpty()) {
+            return "";
+        }
+        String sanitized = UNSUPPORTED_YAML_CONTROL_CHARS.matcher(value).replaceAll("");
+        if (!sanitized.equals(value)) {
+            plugin.getLogger().warning("Removed unsupported control characters while reading language source '" + sourceName + "'.");
+        }
+        return sanitized;
     }
 
     private String normalizeLanguageCode(String value) {
