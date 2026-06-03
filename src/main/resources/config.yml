@@ -18,8 +18,10 @@ global-enabled: true
 # Language
 # =============================================================================
 language:
-  # Language code loaded from plugins/FaunaReborn/lang/.
-  # Examples: en, es, pt, it, fr.
+  # Locale token loaded from plugins/FaunaReborn/lang/.
+  # Built-in files: english.yml (en), spanish.yml (es), portuguese.yml (pt), italian.yml (it), french.yml (fr).
+  # Accepted examples: en, es, pt-br, english, espanol, portugues, italiano, francais.
+  # Custom locale files are supported by filename base (example: german.yml -> "german").
   file: en
 
 # =============================================================================
@@ -115,6 +117,9 @@ activation:
   # Legacy alias: activation.only-natural is still supported for existing configs.
   natural-spawns-only: true
   ignore-named: true
+  # After a chicken grows from baby to adult, it remains eligible for hostility
+  # for this many seconds even without a baby nearby.
+  adult-without-baby-grace-seconds: 1200.0
 
 # =============================================================================
 # Performance Caps

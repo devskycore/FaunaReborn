@@ -13,6 +13,18 @@
 chicken-hostility:
   enabled: true
 
+activation:
+  # Activation chance from 0.0 to 1.0 (1.0 = 100%).
+  chance: 1.0
+  # If true, only natural lifecycle chickens can become hostile.
+  # Natural lifecycle includes NATURAL, EGG, DISPENSE_EGG and BREEDING spawns.
+  # Excluded: mob spawners and spawn eggs.
+  natural-spawns-only: true
+  ignore-named: true
+  # After a chicken grows from baby to adult, allow this many seconds of hostility
+  # eligibility even without a baby nearby.
+  adult-without-baby-grace-seconds: 1200.0
+
   # Damage dealt to the player by each hostile chicken hit.
   attack-damage: 3.2
   # Global cooldown (seconds) before a player can become a new focus target again.

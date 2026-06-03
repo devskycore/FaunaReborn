@@ -18,6 +18,7 @@ public final class CommandCompatibilityRegistrar {
 
     private static final String COMMAND_NAME = "fauna";
     private static final String COMMAND_DESCRIPTION = "Main command for FaunaReborn.";
+    private static final String COMMAND_USAGE = "/fauna help [page|admin|permissions|query]";
     private static final List<String> COMMAND_ALIASES = List.of("faunareborn", "fr");
 
     private CommandCompatibilityRegistrar() {
@@ -43,7 +44,7 @@ public final class CommandCompatibilityRegistrar {
             pluginCommand.setTabCompleter(faunaCommand);
             pluginCommand.setAliases(COMMAND_ALIASES);
             pluginCommand.setDescription(COMMAND_DESCRIPTION);
-            pluginCommand.setUsage("/fauna help");
+            pluginCommand.setUsage(COMMAND_USAGE);
             pluginCommand.setPermission("fauna.command.help");
             return true;
         } catch (UnsupportedOperationException ignored) {
@@ -134,7 +135,7 @@ public final class CommandCompatibilityRegistrar {
                     pluginCommand.setTabCompleter(faunaCommand);
                     pluginCommand.setAliases(COMMAND_ALIASES);
                     pluginCommand.setDescription(COMMAND_DESCRIPTION);
-                    pluginCommand.setUsage("/fauna help");
+                    pluginCommand.setUsage(COMMAND_USAGE);
                     pluginCommand.setPermission("fauna.command.help");
                 }
                 return;
@@ -151,7 +152,7 @@ public final class CommandCompatibilityRegistrar {
         private final FaunaCommand faunaCommand;
 
         private LegacyFaunaCommand(FaunaCommand faunaCommand) {
-            super(COMMAND_NAME, COMMAND_DESCRIPTION, "/fauna help", COMMAND_ALIASES);
+            super(COMMAND_NAME, COMMAND_DESCRIPTION, COMMAND_USAGE, COMMAND_ALIASES);
             this.faunaCommand = faunaCommand;
             setPermission("fauna.command.help");
         }

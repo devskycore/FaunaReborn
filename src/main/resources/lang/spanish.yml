@@ -2,7 +2,7 @@
 # Quick Guide (Lang)
 # =============================================================================
 # - Keep placeholders like {language}, {totalPages}, {elapsedMillis} unchanged.
-# - Keep commands and slash syntax unchanged (example: /fauna help [página]).
+# - Keep commands and slash syntax unchanged (example: /fauna help [página|admin|permissions|query]).
 # - Keep 2-space indentation under each parent key.
 # - Keep key names exactly as provided by the plugin.
 # - Translate only values inside quotes.
@@ -17,6 +17,9 @@ commands:
     no-permission: "No tienes permiso para usar este comando."
     player-only: "Este comando solo puede ser ejecutado por un jugador."
     unknown-subcommand: "Subcomando desconocido. Usa /fauna help."
+    did-you-mean: "Quizá querías usar /fauna {command}."
+    possible-subcommands: "Estos subcomandos se parecen: {commands}"
+    try-help: "Prueba: "
     state:
       enabled: "activado"
       disabled: "desactivado"
@@ -24,29 +27,29 @@ commands:
       disabled-title: "Desactivado"
   meta:
     help:
-      usage: "/fauna help [página]"
-      description: "Muestra los comandos disponibles."
+      usage: "/fauna help [página|admin|permissions|query]"
+      description: "Navega ayuda o busca comandos."
     version:
       usage: "/fauna version"
-      description: "Muestra detalles de versión del plugin."
+      description: "Muestra detalles de versión."
     about:
       usage: "/fauna about"
-      description: "Explica qué hace FaunaReborn."
+      description: "Resumen del plugin."
     entities:
       usage: "/fauna entities"
-      description: "Lista entidades soportadas y su estado actual."
+      description: "Resumen de entidades."
     reload:
       usage: "/fauna reload"
-      description: "Recarga configuraciones y módulos."
+      description: "Actualiza configuración y módulos."
     gui:
       usage: "/fauna gui"
-      description: "Abre la GUI administrativa de FaunaReborn."
+      description: "Abre el panel admin."
     lang:
-      usage: "/fauna lang <idioma>"
-      description: "Cambia el idioma activo del plugin."
+      usage: "/fauna lang [idioma]"
+      description: "Abre selector o cambia idioma."
   help:
     none-available: "No hay comandos disponibles para ti."
-    usage: "Usa: /fauna help [página]"
+    usage: "Uso: /fauna help [página|admin|permissions|query]"
     page-out-of-range: "Página no encontrada. Páginas disponibles: 1-{totalPages}."
     header: "Comandos ({page}/{totalPages})"
     out-of-range-use: "Usa "
@@ -55,18 +58,25 @@ commands:
     header-title-admin: "COMANDOS: ADMIN"
     header-title-permissions: "COMANDOS: PERMISOS"
     header-search: "Comando: {query}"
-    nav-prev-label: "< ANTERIOR"
-    nav-next-label: "SIGUIENTE >"
-    nav-go-to-page: "Ir a la pagina {page}"
-    click-to-use: "Click para usar: {command}"
+    nav-prev-label: "← ANTERIOR"
+    nav-next-label: "SIGUIENTE →"
+    nav-go-to-page: "Ir a la página {page}"
+    click-to-run: "Ejecutar: {command}"
+    click-to-suggest: "Sugerir: {command}"
+    click-to-use: "Clic para usar: {command}"
   about:
+    header-label: "ACERCA DE"
     title: "FaunaReborn"
+    tagline-label: "Lema"
+    summary-label: "Resumen"
+    details-label: "Detalles"
     tagline: "La naturaleza contraataca."
     line1: "Convierte animales pasivos en amenazas inteligentes y configurables."
     line2: "Incluye ajustes por entidad, controles en tiempo real, procesamiento optimizado y sistemas de comportamiento avanzados."
   entities:
-    header: "Entidades soportadas"
+    header: "ENTIDADES SOPORTADAS"
   version:
+    header-label: "VERSIÓN"
     header: "Versión de FaunaReborn"
     unknown-author: "Desconocido"
     name-label: "Nombre"
@@ -77,15 +87,20 @@ commands:
     status-label: "Estado"
     status-running: "En ejecución"
   reload:
-    already-in-progress: "La recarga de FaunaReborn ya está en progreso."
-    started: "Recarga de FaunaReborn iniciada..."
-    completed: "Recarga de FaunaReborn completada en {elapsedMillis} ms."
-    failed: "La recarga de FaunaReborn falló. La configuración anterior sigue activa."
+    already-in-progress: "la recarga ya está en curso."
+    started: "recarga iniciada..."
+    completed: "Recarga completada en {elapsedMillis} ms."
+    label: "Recarga"
+    complete-word: "completa"
+    in-word: "en"
+    failed: "La recarga falló. La configuración anterior sigue activa."
   lang:
-    usage: "Uso: /fauna lang <idioma>"
+    usage: "Uso: /fauna lang [idioma]"
     # Keep placeholders like {languages} unchanged.
     available: "Idiomas disponibles: {languages}"
     invalid: "El idioma '{language}' no existe. Disponibles: {languages}"
+    did-you-mean: "Quizá querías usar /fauna lang {language}."
+    possible-languages: "Estos idiomas se parecen: "
     # Keep placeholders like {language} unchanged.
     changed: "Idioma cambiado a {language}."
 

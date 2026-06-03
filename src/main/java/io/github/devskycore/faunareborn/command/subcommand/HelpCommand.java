@@ -9,25 +9,41 @@ import net.kyori.adventure.text.event.ClickEvent;
 import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Sound;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 
 public final class HelpCommand implements FaunaSubcommand {
 
     private static final CommandInfo INFO = new CommandInfo(
             "help",
-            "/fauna help [page]",
-            "Show available commands.",
+            "/fauna help [page|admin|permissions|query]",
+            "Show help pages, admin commands, or command search results.",
             PermissionConstants.COMMAND_HELP,
-            false
+            false,
+            List.of("h", "?")
     );
     private static final int PAGE_SIZE = 4;
     private static final String ADMIN_MODE = "admin";
     private static final String PERMISSIONS_MODE = "permissions";
+    private static final String NAVIGATION_TOKEN = "__nav";
+    private static final Set<String> SAFE_RUN_COMMANDS = Set.of("about", "entities", "version");
+    private static final Map<String, Integer> HELP_ORDER = Map.of(
+            "reload", 0,
+            "gui", 1,
+            "about", 2,
+            "version", 3,
+            "entities", 4,
+            "help", 5,
+            "lang", 6
+    );
 
     private final PermissionService permissions;
     private final CommandMessages commandMessages;
@@ -59,13 +75,14 @@ public final class HelpCommand implements FaunaSubcommand {
         HelpRequest request = parseRequest(args);
         if (!request.valid()) {
             sender.sendMessage(commandMessages.prefix()
-                    .append(Component.text(language.text("commands.help.usage", "Usage: /fauna help [page]"), NamedTextColor.RED)));
+                    .append(Component.text(language.text("commands.help.usage", "Usage: /fauna help [page|admin|permissions|query]"), NamedTextColor.RED)));
             return;
         }
         if (request.adminOnly() && !includeAdmin) {
             commandMessages.sendNoPermission(sender);
             return;
         }
+        playNavigationFeedbackIfNeeded(sender, request);
 
         List<FaunaSubcommand> visible = filterVisibleCommands(sender, includeAdmin, request);
         if (visible.isEmpty()) {
@@ -96,21 +113,25 @@ public final class HelpCommand implements FaunaSubcommand {
         int to = request.paginated() ? Math.min(from + PAGE_SIZE, visible.size()) : visible.size();
         List<FaunaSubcommand> pageItems = visible.subList(from, to);
 
-        sender.sendMessage(commandMessages.prefix().append(helpHeader(requestedPage, totalPages, request)));
+        sender.sendMessage(helpHeader(requestedPage, totalPages, request));
+        sender.sendMessage(Component.empty());
         for (FaunaSubcommand subcommand : pageItems) {
             String commandName = subcommand.info().name();
             String usage = language.text("commands.meta." + commandName + ".usage", subcommand.info().usage());
             String description = language.text("commands.meta." + commandName + ".description", subcommand.info().description());
             String suggestedCommand = clickableCommandFromUsage(usage);
-            Component line = Component.text(" - ", NamedTextColor.DARK_GRAY)
+            boolean runOnClick = isRunOnClickCommand(commandName);
+            String hoverText = language.textAny(
+                    runOnClick ? "Click to run: {command}" : "Click to suggest: {command}",
+                    runOnClick ? "commands.help.click-to-run" : "commands.help.click-to-suggest",
+                    "commands.help.click-to-use"
+            ).replace("{command}", suggestedCommand);
+            Component line = Component.text("\u27A4 ", NamedTextColor.DARK_AQUA)
                     .append(formatUsage(usage))
-                    .append(Component.text("  " + description, NamedTextColor.GRAY))
-                    .clickEvent(ClickEvent.suggestCommand(suggestedCommand))
-                    .hoverEvent(HoverEvent.showText(Component.text(
-                            language.textAny("Click to use: {command}", "commands.help.click-to-use", "commands.help.click-to-suggest")
-                                    .replace("{command}", suggestedCommand),
-                            NamedTextColor.GRAY
-                    )));
+                    .append(Component.text(" - ", NamedTextColor.DARK_GRAY))
+                    .append(Component.text(description, NamedTextColor.GRAY))
+                    .clickEvent(runOnClick ? ClickEvent.runCommand(suggestedCommand) : ClickEvent.suggestCommand(suggestedCommand))
+                    .hoverEvent(HoverEvent.showText(coloredHoverText(hoverText, runOnClick)));
             if (request.permissionsMode()) {
                 line = line.append(Component.text("  [", NamedTextColor.DARK_GRAY))
                         .append(Component.text(subcommand.info().permission(), NamedTextColor.YELLOW))
@@ -118,8 +139,9 @@ public final class HelpCommand implements FaunaSubcommand {
             }
             sender.sendMessage(line);
         }
+        sender.sendMessage(Component.empty());
         if (request.paginated()) {
-            sender.sendMessage(navigationRow(requestedPage, totalPages, request));
+            sender.sendMessage(navigationRow(sender, requestedPage, totalPages, request));
         }
     }
 
@@ -199,55 +221,70 @@ public final class HelpCommand implements FaunaSubcommand {
                     .filter(command -> command.info().name().equalsIgnoreCase(query))
                     .toList();
             if (!exactMatches.isEmpty()) {
-                return exactMatches;
+                return orderForHelpDisplay(exactMatches);
             }
             visible = visible.stream()
                     .filter(command -> command.info().name().toLowerCase(Locale.ROOT).contains(query))
                     .toList();
         }
-        return visible;
+        return orderForHelpDisplay(visible);
     }
 
     private HelpRequest parseRequest(String[] args) {
         if (args.length == 0) {
-            return new HelpRequest(1, false, false, null, true);
+            return new HelpRequest(1, false, false, null, true, false);
         }
-        if (args.length > 2) {
+        if (args.length > 3) {
+            return invalidRequest();
+        }
+
+        boolean fromNavigation = hasNavigationToken(args);
+        int effectiveLength = fromNavigation ? args.length - 1 : args.length;
+        if (effectiveLength <= 0) {
             return invalidRequest();
         }
 
         String first = args[0].toLowerCase(Locale.ROOT);
         if (ADMIN_MODE.equals(first)) {
-            int page = args.length > 1 ? parsePage(args[1]) : 1;
-            return page < 1 ? invalidRequest() : new HelpRequest(page, true, false, null, true);
+            int page = effectiveLength > 1 ? parsePage(args[1]) : 1;
+            return page < 1 ? invalidRequest() : new HelpRequest(page, true, false, null, true, fromNavigation);
         }
         if (PERMISSIONS_MODE.equals(first)) {
-            int page = args.length > 1 ? parsePage(args[1]) : 1;
-            return page < 1 ? invalidRequest() : new HelpRequest(page, false, true, null, true);
+            int page = effectiveLength > 1 ? parsePage(args[1]) : 1;
+            return page < 1 ? invalidRequest() : new HelpRequest(page, false, true, null, true, fromNavigation);
         }
 
         int page = parsePage(first);
         if (page >= 1) {
-            return new HelpRequest(page, false, false, null, true);
+            if (effectiveLength > 1) {
+                return invalidRequest();
+            }
+            return new HelpRequest(page, false, false, null, true, fromNavigation);
         }
 
-        int queryPage = 1;
-        if (args.length > 1) {
+        if (effectiveLength > 1) {
             return invalidRequest();
         }
-        return new HelpRequest(queryPage, false, false, first, true);
+        return new HelpRequest(1, false, false, first, true, fromNavigation);
     }
 
     private HelpRequest invalidRequest() {
-        return new HelpRequest(-1, false, false, null, false);
+        return new HelpRequest(-1, false, false, null, false, false);
     }
 
     private Component helpHeader(int currentPage, int totalPages, HelpRequest request) {
+        String pluginName = language.text("commands.common.prefix", "FaunaReborn");
         if (!request.paginated()) {
             String searchHeaderTemplate = language.textAny("Command: {query}", "commands.help.header-search");
             String searchHeader = normalizeSearchHeaderTemplate(searchHeaderTemplate)
                     .replace("{query}", request.query());
-            return Component.text(searchHeader, NamedTextColor.GREEN).decorate(TextDecoration.BOLD);
+            return Component.text(pluginName, NamedTextColor.WHITE)
+                    .decorate(TextDecoration.BOLD)
+                    .append(Component.text(" ", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
+                    .append(Component.text("\u00B7", NamedTextColor.DARK_GRAY).decoration(TextDecoration.BOLD, false))
+                    .append(Component.text(" ", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
+                    .append(Component.text(searchHeader, NamedTextColor.GREEN))
+                    .decoration(TextDecoration.ITALIC, false);
         }
         String title = language.textAny("Commands", "commands.help.header-title-default", "commands.help.header-default", "commands.help.header");
         if (request.adminOnly()) {
@@ -259,14 +296,19 @@ public final class HelpCommand implements FaunaSubcommand {
                 .replace("{page}", String.valueOf(currentPage))
                 .replace("{totalPages}", String.valueOf(totalPages))
                 .trim();
-        return Component.text(title, NamedTextColor.GREEN)
+        return Component.text(pluginName, NamedTextColor.WHITE)
                 .decorate(TextDecoration.BOLD)
+                .append(Component.text(" ", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
+                .append(Component.text("\u00B7", NamedTextColor.DARK_GRAY).decoration(TextDecoration.BOLD, false))
+                .append(Component.text(" ", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
+                .append(Component.text(title, NamedTextColor.GREEN))
                 .append(Component.text(" ", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
                 .append(Component.text("(", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
                 .append(Component.text(String.valueOf(currentPage), NamedTextColor.GREEN).decoration(TextDecoration.BOLD, false))
                 .append(Component.text("/", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
                 .append(Component.text(String.valueOf(totalPages), NamedTextColor.WHITE).decoration(TextDecoration.BOLD, false))
-                .append(Component.text(")", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false));
+                .append(Component.text(")", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
+                .decoration(TextDecoration.ITALIC, false);
     }
 
     private Component formatUsage(String usage) {
@@ -314,15 +356,18 @@ public final class HelpCommand implements FaunaSubcommand {
         return String.join(" ", baseTokens);
     }
 
-    private Component navigationRow(int currentPage, int totalPages, HelpRequest request) {
-        String prevLabel = language.textAny("< PREV", "commands.help.nav-prev-label");
-        String nextLabel = language.textAny("NEXT >", "commands.help.nav-next-label");
-        Component row = Component.text("", NamedTextColor.GRAY);
+    private Component navigationRow(CommandSender sender, int currentPage, int totalPages, HelpRequest request) {
+        if (!(sender instanceof Player)) {
+            return consoleNavigationRow(currentPage, totalPages, request);
+        }
+        String prevLabel = language.textAny("\u2190 PREV", "commands.help.nav-prev-label");
+        String nextLabel = language.textAny("NEXT \u2192", "commands.help.nav-next-label");
+        Component row = Component.empty();
         if (currentPage > 1) {
             int prev = currentPage - 1;
             row = row.append(Component.text(prevLabel, NamedTextColor.YELLOW)
                     .decorate(TextDecoration.BOLD)
-                    .clickEvent(ClickEvent.runCommand(request.commandForPage(prev)))
+                    .clickEvent(ClickEvent.runCommand(request.commandForPage(prev, true)))
                     .hoverEvent(HoverEvent.showText(Component.text(
                             language.text("commands.help.nav-go-to-page", "Go to page {page}")
                                     .replace("{page}", String.valueOf(prev)),
@@ -331,14 +376,12 @@ public final class HelpCommand implements FaunaSubcommand {
         } else {
             row = row.append(Component.text(prevLabel, NamedTextColor.DARK_GRAY).decorate(TextDecoration.BOLD));
         }
-        row = row.append(Component.text("   ", NamedTextColor.GRAY))
-                .append(Component.text("|", NamedTextColor.DARK_GRAY))
-                .append(Component.text("   ", NamedTextColor.GRAY));
+        row = row.append(Component.text("     |     ", NamedTextColor.GRAY));
         if (currentPage < totalPages) {
             int next = currentPage + 1;
             row = row.append(Component.text(nextLabel, NamedTextColor.YELLOW)
                     .decorate(TextDecoration.BOLD)
-                    .clickEvent(ClickEvent.runCommand(request.commandForPage(next)))
+                    .clickEvent(ClickEvent.runCommand(request.commandForPage(next, true)))
                     .hoverEvent(HoverEvent.showText(Component.text(
                             language.text("commands.help.nav-go-to-page", "Go to page {page}")
                                     .replace("{page}", String.valueOf(next)),
@@ -348,6 +391,51 @@ public final class HelpCommand implements FaunaSubcommand {
             row = row.append(Component.text(nextLabel, NamedTextColor.DARK_GRAY).decorate(TextDecoration.BOLD));
         }
         return row;
+    }
+
+    private Component consoleNavigationRow(int currentPage, int totalPages, HelpRequest request) {
+        Component row = Component.empty();
+        boolean hasPrev = currentPage > 1;
+        boolean hasNext = currentPage < totalPages;
+        String prevLabel = language.textAny("PREV", "commands.help.nav-prev-label");
+        String nextLabel = language.textAny("NEXT", "commands.help.nav-next-label");
+
+        if (hasPrev) {
+            row = row.append(Component.text(prevLabel + ": ", NamedTextColor.GRAY))
+                    .append(Component.text(request.commandForPage(currentPage - 1), NamedTextColor.AQUA));
+        }
+        if (hasPrev && hasNext) {
+            row = row.append(Component.text(" | ", NamedTextColor.GRAY));
+        }
+        if (hasNext) {
+            row = row.append(Component.text(nextLabel + ": ", NamedTextColor.GRAY))
+                    .append(Component.text(request.commandForPage(currentPage + 1), NamedTextColor.AQUA));
+        }
+        return row;
+    }
+
+    private boolean isRunOnClickCommand(String commandName) {
+        return SAFE_RUN_COMMANDS.contains(commandName.toLowerCase(Locale.ROOT));
+    }
+
+    private Component coloredHoverText(String hoverText, boolean runOnClick) {
+        int separatorIndex = hoverText.indexOf(':');
+        if (separatorIndex <= 0) {
+            return Component.text(hoverText, NamedTextColor.GRAY);
+        }
+        NamedTextColor actionColor = runOnClick ? NamedTextColor.GREEN : NamedTextColor.YELLOW;
+        String actionLabel = hoverText.substring(0, separatorIndex);
+        String remainder = hoverText.substring(separatorIndex);
+        return Component.text(actionLabel, actionColor)
+                .append(Component.text(remainder, NamedTextColor.GRAY));
+    }
+
+    private List<FaunaSubcommand> orderForHelpDisplay(List<FaunaSubcommand> commands) {
+        return commands.stream()
+                .sorted(Comparator
+                        .comparingInt((FaunaSubcommand command) -> HELP_ORDER.getOrDefault(command.info().name(), Integer.MAX_VALUE))
+                        .thenComparing(command -> command.info().name()))
+                .toList();
     }
 
     private String normalizeSearchHeaderTemplate(String template) {
@@ -368,22 +456,41 @@ public final class HelpCommand implements FaunaSubcommand {
         return template;
     }
 
-    private record HelpRequest(int page, boolean adminOnly, boolean permissionsMode, String query, boolean valid) {
+    private boolean hasNavigationToken(String[] args) {
+        if (args.length == 0) {
+            return false;
+        }
+        return NAVIGATION_TOKEN.equalsIgnoreCase(args[args.length - 1]);
+    }
+
+    private void playNavigationFeedbackIfNeeded(CommandSender sender, HelpRequest request) {
+        if (!request.fromNavigation() || !(sender instanceof Player player)) {
+            return;
+        }
+        player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 0.55f, 1.15f);
+    }
+
+    private record HelpRequest(int page, boolean adminOnly, boolean permissionsMode, String query, boolean valid, boolean fromNavigation) {
         boolean paginated() {
             return query == null;
         }
 
         String commandForPage(int targetPage) {
+            return commandForPage(targetPage, false);
+        }
+
+        String commandForPage(int targetPage, boolean navigationClick) {
+            String suffix = navigationClick ? " " + NAVIGATION_TOKEN : "";
             if (adminOnly) {
-                return "/fauna help " + ADMIN_MODE + " " + targetPage;
+                return "/fauna help " + ADMIN_MODE + " " + targetPage + suffix;
             }
             if (permissionsMode) {
-                return "/fauna help " + PERMISSIONS_MODE + " " + targetPage;
+                return "/fauna help " + PERMISSIONS_MODE + " " + targetPage + suffix;
             }
             if (query != null) {
-                return "/fauna help " + query + " " + targetPage;
+                return "/fauna help " + query + " " + targetPage + suffix;
             }
-            return "/fauna help " + targetPage;
+            return "/fauna help " + targetPage + suffix;
         }
     }
 }

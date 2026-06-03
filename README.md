@@ -54,7 +54,8 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 
 ### Internationalization (i18n)
 - Built-in i18n system with configurable language selection via `config.yml` (`language.file`).
-- Ships with ready-to-use language files in `lang/` (`english.yml`, `spanish.yml`, `portuguese.yml`, `italian.yml`, `french.yml`).
+- Built-in locale files: `english.yml` (`en`), `spanish.yml` (`es`), `portuguese.yml` (`pt`), `italian.yml` (`it`), `french.yml` (`fr`).
+- `/fauna lang` accepts locale codes and common aliases (for example: `english`, `espanol`, `pt-br`, `francais`), plus custom locale file names.
 - Commands, GUI labels, and runtime feedback/messages are localized.
 
 ## Commands
@@ -64,18 +65,28 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 | Command | Description | Permission |
 |---|---|---|
 | `/fauna` | Opens the help menu. | `fauna.command.help` |
-| `/fauna help [page]` | Shows command help filtered by sender permissions. | `fauna.command.help` |
+| `/fauna help [page]` | Shows paginated command help filtered by sender permissions. | `fauna.command.help` |
+| `/fauna help admin [page]` | Shows admin-only command page(s) if sender can view admin help. | `fauna.command.help` + `fauna.command.help.admin` (or `fauna.admin` / `fauna.*`) |
+| `/fauna help permissions [page]` | Shows visible commands with permission nodes. | `fauna.command.help` |
+| `/fauna help <query>` | Searches visible commands by name. | `fauna.command.help` |
 | `/fauna version` | Shows plugin/runtime version information. | `fauna.command.version` |
 | `/fauna about` | Shows a short professional plugin summary. | `fauna.command.about` |
 | `/fauna entities` | Lists supported entities and enabled/disabled state. | `fauna.command.entities` |
 | `/fauna reload` | Reloads plugin configuration and modules. | `fauna.command.reload` (or `fauna.admin` / `fauna.*`) |
 | `/fauna gui` | Opens the FaunaReborn management GUI. | `fauna.command.gui` (or `fauna.admin` / `fauna.*`) |
 | `/fauna lang` | Opens the language selection menu (players) or prints usage in console. | `fauna.command.lang` (or `fauna.admin` / `fauna.*`) |
-| `/fauna lang <language>` | Changes plugin language at runtime (for example `en`, `es`, `pt`, `it`, `fr`). | `fauna.command.lang` (or `fauna.admin` / `fauna.*`) |
+| `/fauna lang <language>` | Changes plugin language at runtime (codes, aliases, and file-based custom locales). | `fauna.command.lang` (or `fauna.admin` / `fauna.*`) |
+| `/fauna language <language>` | Alias of `/fauna lang <language>`. | `fauna.command.lang` (or `fauna.admin` / `fauna.*`) |
 
 ### Aliases
-- `/faunareborn`
-- `/fr`
+- Root command: `/faunareborn`, `/fr`
+- Help: `/fauna h`, `/fauna ?`
+- Version: `/fauna ver`, `/fauna v`
+- About: `/fauna info`
+- Entities: `/fauna ent`, `/fauna entity`
+- Reload: `/fauna rl`
+- GUI: `/fauna menu`
+- Language: `/fauna language`
 
 ## Permissions
 
@@ -92,7 +103,7 @@ FaunaReborn is built for servers that want more tension, replayability and survi
 | `fauna.command.entities` | Allows viewing supported FaunaReborn entities. | `true` |
 | `fauna.command.reload` | Allows reloading configuration and modules. | `op` |
 | `fauna.command.gui` | Allows opening the admin GUI. | `op` |
-| `fauna.command.lang` | Allows changing plugin language at runtime. | `op` |
+| `fauna.command.lang` | Allows opening the language selector and changing plugin language at runtime. | `op` |
 
 ## Requirements
 
@@ -111,7 +122,7 @@ FaunaReborn is built against Paper API `1.21.11`, but runtime behavior depends o
 | `1.21`, `1.21.1`, `1.21.3` | Experimental | Compatibility path exists, but not considered production-stable yet. |
 | `1.21.4` to `1.21.7` | Supported | Uses compatibility fallback for world difficulty changes (polling hook). |
 | `1.21.8`, `1.21.9`, `1.21.10`, `1.21.11` | Fully supported | Stable operation, no known class compatibility issues. |
-| `1.26.1.2` | Supported | Compatible and supported. |
+| `26.1`, `26.1.1`, `26.1.2` | Supported | Compatible and supported. |
 
 Notes:
 - On `1.21.4` to `1.21.7`, you may see a one-time startup warning indicating the compatibility fallback hook is active.
@@ -137,7 +148,7 @@ Notes:
 ## Quick Configuration Notes
 
 - `global-enabled`: master switch.
-- `language.file`: selects the language by code (for example `en`, `es`, `pt`, `it`, or `fr`).
+- `language.file`: accepts locale codes, common aliases, or locale file names (for example `en`, `english`, `espanol`, `pt-br`, `french`, or `german` for `german.yml`).
 - `world-filter`: global activation mode and world list.
 - `lod`: distance-based LOD tiers with hysteresis and per-tier tick cadence.
 - `targeting.scoring`: weighted target priority behavior.

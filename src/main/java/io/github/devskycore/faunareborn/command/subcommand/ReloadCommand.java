@@ -5,6 +5,8 @@ import io.github.devskycore.faunareborn.command.permission.PermissionConstants;
 import io.github.devskycore.faunareborn.command.permission.PermissionService;
 import org.bukkit.command.CommandSender;
 
+import java.util.List;
+
 public final class ReloadCommand implements FaunaSubcommand {
 
     private static final CommandInfo INFO = new CommandInfo(
@@ -12,7 +14,8 @@ public final class ReloadCommand implements FaunaSubcommand {
             "/fauna reload",
             "Reload configuration and modules.",
             PermissionConstants.COMMAND_RELOAD,
-            true
+            true,
+            List.of("rl")
     );
 
     private final FaunaReloadService reloadService;

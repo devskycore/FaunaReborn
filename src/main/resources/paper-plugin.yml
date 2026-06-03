@@ -15,7 +15,7 @@ commands:
     description: Main command for FaunaReborn.
     aliases: [ faunareborn, fr ]
     permission: fauna.command.help
-    usage: "/fauna help"
+    usage: "/fauna help [page|admin|permissions|query]"
 
 permissions:
   fauna.*:
@@ -69,5 +69,5 @@ permissions:
     default: op
 
   fauna.command.lang:
-    description: Allows changing FaunaReborn language at runtime.
+    description: Allows opening the language selector and changing language at runtime.
     default: op

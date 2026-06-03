@@ -42,6 +42,7 @@ public final class PluginConfigDefaults {
     public static final double ACTIVATION_CHANCE = 1.0D;
     public static final boolean ONLY_NATURAL_CHICKENS = true;
     public static final boolean IGNORE_NAMED = true;
+    public static final double ADULT_WITHOUT_BABY_GRACE_SECONDS = 1200.0D;
     public static final double DETECTION_RADIUS = 8.0D;
     public static final double MAX_DETECTION_RADIUS = 64.0D;
     public static final double ATTACK_RANGE = 1.5D;

@@ -21,6 +21,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Chicken;
@@ -48,6 +49,7 @@ import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
 import java.util.UUID;
@@ -59,6 +61,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 final class ChickenHostilityTask implements Listener {
 
+    private static final byte TRUE_BYTE = 1;
     private static final long TICK_RATE = 1L;
     private static final long ALERT_DURATION_TICKS = 0L;
     private static final long ELIGIBILITY_CACHE_TICKS = 10L;
@@ -99,7 +102,10 @@ final class ChickenHostilityTask implements Listener {
     private final int attackCooldownTicks;
     private final int threatTimeoutTicks;
     private final int retargetGraceTicks;
+    private final int adultWithoutBabyGraceTicks;
     private final double processingRadius;
+    private final NamespacedKey babyStageSeenKey;
+    private final NamespacedKey adultWithoutBabyGraceUntilMsKey;
 
     private TaskHandle task;
     private long currentTick;
@@ -115,6 +121,9 @@ final class ChickenHostilityTask implements Listener {
         this.threatTimeoutTicks = combat.threatTimeoutTicks();
         this.retargetGraceTicks = combat.retargetGraceTicks();
         this.processingRadius = Math.max(combat.detectionRadius(), ChickenHostilityConstants.PLAYER_PROXIMITY_RADIUS);
+        this.adultWithoutBabyGraceTicks = settings.activation().adultWithoutBabyGraceTicks();
+        this.babyStageSeenKey = new NamespacedKey(plugin, "chicken_seen_baby_stage");
+        this.adultWithoutBabyGraceUntilMsKey = new NamespacedKey(plugin, "chicken_adult_without_baby_grace_until_ms");
         this.lodSettings = settings.lod();
 
         this.worldNightStateCache = new WorldNightStateCache(plugin, settings.environmentAggression());
@@ -348,6 +357,7 @@ final class ChickenHostilityTask implements Listener {
         }
 
         List<Entity> nearby = chicken.getNearbyEntities(processingRadius, processingRadius, processingRadius);
+        refreshAdultWithoutBabyGrace(chicken);
 
         if (activationPolicy.isActivationBlocked(chicken, nearby)) {
             if (brain != null) {
@@ -429,13 +439,14 @@ final class ChickenHostilityTask implements Listener {
         }
 
         boolean hasBabyNearby = hasBabyNearby(chicken, nearby);
-        brain.eligible = isAdult && hasBabyNearby;
+        boolean graceActive = hasActiveAdultWithoutBabyGrace(chicken);
+        brain.eligible = isAdult && (hasBabyNearby || graceActive);
         brain.nextEligibilityRefreshTick = currentTick + ELIGIBILITY_CACHE_TICKS;
 
         if (requireAdult && !isAdult) {
             return true;
         }
-        return !hasBabyNearby;
+        return !(hasBabyNearby || graceActive);
     }
 
     private void handleIdle(Chicken chicken, ChickenHostilityBrain brain, List<Entity> nearby) {
@@ -466,7 +477,42 @@ final class ChickenHostilityTask implements Listener {
     }
 
     private boolean isEligiblePassive(Chicken chicken, List<Entity> nearby) {
-        return chicken.isAdult() && hasBabyNearby(chicken, nearby);
+        return chicken.isAdult() && (hasBabyNearby(chicken, nearby) || hasActiveAdultWithoutBabyGrace(chicken));
+    }
+
+    private void refreshAdultWithoutBabyGrace(Chicken chicken) {
+        if (adultWithoutBabyGraceTicks <= 0) {
+            return;
+        }
+        if (!chicken.isAdult()) {
+            chicken.getPersistentDataContainer().set(babyStageSeenKey, PersistentDataType.BYTE, TRUE_BYTE);
+            return;
+        }
+
+        Byte seenBabyStage = chicken.getPersistentDataContainer().get(babyStageSeenKey, PersistentDataType.BYTE);
+        if (seenBabyStage == null || seenBabyStage != TRUE_BYTE) {
+            return;
+        }
+        long graceDurationMillis = adultWithoutBabyGraceTicks * 50L;
+        long now = System.currentTimeMillis();
+        long graceUntil = Long.MAX_VALUE - now <= graceDurationMillis ? Long.MAX_VALUE : now + graceDurationMillis;
+        chicken.getPersistentDataContainer().set(adultWithoutBabyGraceUntilMsKey, PersistentDataType.LONG, graceUntil);
+        chicken.getPersistentDataContainer().remove(babyStageSeenKey);
+    }
+
+    private boolean hasActiveAdultWithoutBabyGrace(Chicken chicken) {
+        if (adultWithoutBabyGraceTicks <= 0) {
+            return false;
+        }
+        Long graceUntil = chicken.getPersistentDataContainer().get(adultWithoutBabyGraceUntilMsKey, PersistentDataType.LONG);
+        if (graceUntil == null) {
+            return false;
+        }
+        if (System.currentTimeMillis() <= graceUntil) {
+            return true;
+        }
+        chicken.getPersistentDataContainer().remove(adultWithoutBabyGraceUntilMsKey);
+        return false;
     }
 
     private void handleAlert(Chicken chicken, ChickenHostilityBrain brain) {
@@ -795,6 +841,7 @@ final class ChickenHostilityTask implements Listener {
                         if (activationPolicy.isWorldDisallowed(chicken.getWorld())) {
                             return;
                         }
+                        activationPolicy.ensureSpawnOriginPersisted(chicken);
                         int chickenId = chicken.getEntityId();
                         enqueueStateMutation(() -> trackChicken(chicken, chickenId, false));
                     });
@@ -808,6 +855,7 @@ final class ChickenHostilityTask implements Listener {
                 continue;
             }
             for (Chicken chicken : world.getEntitiesByClass(Chicken.class)) {
+                activationPolicy.ensureSpawnOriginPersisted(chicken);
                 trackChicken(chicken, chicken.getEntityId(), false);
             }
         }
@@ -823,7 +871,7 @@ final class ChickenHostilityTask implements Listener {
     private void onCreatureSpawn(CreatureSpawnEvent event) {
         if (event.getEntity() instanceof Chicken chicken) {
             CreatureSpawnEvent.SpawnReason spawnReason = event.getSpawnReason();
-            activationPolicy.markNonNaturalChicken(chicken, spawnReason);
+            activationPolicy.recordChickenSpawnOrigin(chicken, spawnReason);
             int chickenId = chicken.getEntityId();
             enqueueStateMutation(() -> trackChicken(chicken, chickenId, true));
         }
@@ -1070,6 +1118,7 @@ final class ChickenHostilityTask implements Listener {
         if (chickens.isEmpty()) return;
         List<Integer> chickenIds = new java.util.ArrayList<>(chickens.size());
         for (Chicken chicken : chickens) {
+            activationPolicy.ensureSpawnOriginPersisted(chicken);
             chickenIds.add(chicken.getEntityId());
         }
         enqueueStateMutation(() -> {

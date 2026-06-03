@@ -20,11 +20,17 @@ import java.util.concurrent.ThreadLocalRandom;
 final class ActivationPolicy {
 
     private static final byte TRUE_BYTE = 1;
+    private static final byte SPAWN_ORIGIN_NATURAL = 1;
+    private static final byte SPAWN_ORIGIN_EGG = 2;
+    private static final byte SPAWN_ORIGIN_BREEDING = 3;
+    private static final byte SPAWN_ORIGIN_NON_NATURAL = 4;
 
     private final double activationChance;
     private final boolean onlyNaturalChickens;
     private final boolean ignoreNamed;
     private final WorldFilter worldFilter;
+    private final NamespacedKey spawnOriginKey;
+    // Legacy marker kept for backward compatibility with existing saved entities.
     private final NamespacedKey nonNaturalChickenKey;
     private final TargetEligibilityService targetEligibilityService;
     private final Int2ObjectOpenHashMap<ActivationState> activationStates = new Int2ObjectOpenHashMap<>();
@@ -39,6 +45,7 @@ final class ActivationPolicy {
         this.onlyNaturalChickens = activation.onlyNaturalChickens();
         this.ignoreNamed = activation.ignoreNamed();
         this.worldFilter = worldFilter;
+        this.spawnOriginKey = new NamespacedKey(plugin, "chicken_spawn_origin");
         this.nonNaturalChickenKey = new NamespacedKey(plugin, "non_natural_chicken");
         this.targetEligibilityService = targetEligibilityService;
     }
@@ -59,11 +66,28 @@ final class ActivationPolicy {
         activationStates.putIfAbsent(chickenId, new ActivationState());
     }
 
-    void markNonNaturalChicken(Chicken chicken, CreatureSpawnEvent.SpawnReason spawnReason) {
-        if (isNaturalSpawnReason(spawnReason)) {
+    void recordChickenSpawnOrigin(Chicken chicken, CreatureSpawnEvent.SpawnReason spawnReason) {
+        persistSpawnOrigin(chicken, originFromSpawnReason(spawnReason));
+    }
+
+    void ensureSpawnOriginPersisted(Chicken chicken) {
+        Byte persistedOrigin = chicken.getPersistentDataContainer().get(spawnOriginKey, PersistentDataType.BYTE);
+        if (isValidPersistedOrigin(persistedOrigin)) {
+            if (persistedOrigin != SPAWN_ORIGIN_NON_NATURAL) {
+                chicken.getPersistentDataContainer().remove(nonNaturalChickenKey);
+            } else {
+                chicken.getPersistentDataContainer().set(nonNaturalChickenKey, PersistentDataType.BYTE, TRUE_BYTE);
+            }
             return;
         }
-        chicken.getPersistentDataContainer().set(nonNaturalChickenKey, PersistentDataType.BYTE, TRUE_BYTE);
+
+        Byte legacyNonNatural = chicken.getPersistentDataContainer().get(nonNaturalChickenKey, PersistentDataType.BYTE);
+        if (legacyNonNatural != null && legacyNonNatural == TRUE_BYTE) {
+            persistSpawnOrigin(chicken, SPAWN_ORIGIN_NON_NATURAL);
+            return;
+        }
+
+        persistSpawnOrigin(chicken, originFromSpawnReason(chicken.getEntitySpawnReason()));
     }
 
     boolean isWorldDisallowed(World world) {
@@ -136,23 +160,53 @@ final class ActivationPolicy {
     }
 
     private boolean isNaturalChicken(Chicken chicken) {
-        Byte marker = chicken.getPersistentDataContainer().get(nonNaturalChickenKey, PersistentDataType.BYTE);
-        if (marker != null && marker == TRUE_BYTE) {
-            return false;
-        }
-        CreatureSpawnEvent.SpawnReason entitySpawnReason = chicken.getEntitySpawnReason();
-        return isNaturalSpawnReason(entitySpawnReason);
+        return resolvePersistedSpawnOrigin(chicken) != SPAWN_ORIGIN_NON_NATURAL;
     }
 
-    private boolean isNaturalSpawnReason(CreatureSpawnEvent.SpawnReason spawnReason) {
-        if (spawnReason == null) {
-            return true;
+    private byte resolvePersistedSpawnOrigin(Chicken chicken) {
+        Byte persistedOrigin = chicken.getPersistentDataContainer().get(spawnOriginKey, PersistentDataType.BYTE);
+        if (isValidPersistedOrigin(persistedOrigin)) {
+            return persistedOrigin;
         }
 
+        Byte legacyNonNatural = chicken.getPersistentDataContainer().get(nonNaturalChickenKey, PersistentDataType.BYTE);
+        if (legacyNonNatural != null && legacyNonNatural == TRUE_BYTE) {
+            return SPAWN_ORIGIN_NON_NATURAL;
+        }
+
+        return originFromSpawnReason(chicken.getEntitySpawnReason());
+    }
+
+    private byte originFromSpawnReason(CreatureSpawnEvent.SpawnReason spawnReason) {
+        if (spawnReason == null) {
+            return SPAWN_ORIGIN_NATURAL;
+        }
+        if (spawnReason == CreatureSpawnEvent.SpawnReason.SPAWNER_EGG) {
+            return SPAWN_ORIGIN_NON_NATURAL;
+        }
+        if (spawnReason.name().contains("SPAWNER")) {
+            return SPAWN_ORIGIN_NON_NATURAL;
+        }
         return switch (spawnReason) {
-            case SPAWNER, SPAWNER_EGG -> false;
-            default -> true;
+            case EGG, DISPENSE_EGG -> SPAWN_ORIGIN_EGG;
+            case BREEDING, OCELOT_BABY -> SPAWN_ORIGIN_BREEDING;
+            default -> SPAWN_ORIGIN_NATURAL;
         };
+    }
+
+    private void persistSpawnOrigin(Chicken chicken, byte origin) {
+        chicken.getPersistentDataContainer().set(spawnOriginKey, PersistentDataType.BYTE, origin);
+        if (origin == SPAWN_ORIGIN_NON_NATURAL) {
+            chicken.getPersistentDataContainer().set(nonNaturalChickenKey, PersistentDataType.BYTE, TRUE_BYTE);
+            return;
+        }
+        chicken.getPersistentDataContainer().remove(nonNaturalChickenKey);
+    }
+
+    private boolean isValidPersistedOrigin(Byte persistedOrigin) {
+        return persistedOrigin != null
+                && persistedOrigin >= SPAWN_ORIGIN_NATURAL
+                && persistedOrigin <= SPAWN_ORIGIN_NON_NATURAL;
     }
 
     private boolean rollActivationChance() {

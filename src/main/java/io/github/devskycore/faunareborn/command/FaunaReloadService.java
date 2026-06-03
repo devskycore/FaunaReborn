@@ -9,6 +9,9 @@ import io.github.devskycore.faunareborn.module.FaunaFeatureRegistry;
 import io.github.devskycore.faunareborn.module.ModuleManager;
 import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapter;
 import io.github.devskycore.faunareborn.system.scheduler.SchedulerAdapters;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -46,10 +49,7 @@ public final class FaunaReloadService {
 
     public void reload(CommandSender sender, Runnable completion) {
         if (!inProgress.compareAndSet(false, true)) {
-            sender.sendMessage(plugin.languageManager().text(
-                    "commands.reload.already-in-progress",
-                    "FaunaReborn reload is already in progress."
-            ));
+            sendReloadAlreadyInProgress(sender);
             if (completion != null) {
                 completion.run();
             }
@@ -57,10 +57,7 @@ public final class FaunaReloadService {
         }
 
         final long startedAt = System.nanoTime();
-        sender.sendMessage(plugin.languageManager().text(
-                "commands.reload.started",
-                "FaunaReborn reload started..."
-        ));
+        sendReloadStarted(sender);
 
         ensureConfigFilesExist();
 
@@ -70,10 +67,7 @@ public final class FaunaReloadService {
                     try {
                         if (throwable != null) {
                             logReloadFailure("Configuration validation failed.", throwable);
-                            sender.sendMessage(plugin.languageManager().text(
-                                    "commands.reload.failed",
-                                    "FaunaReborn reload failed. Previous configuration is still active."
-                            ));
+                            sendReloadFailed(sender);
                             return;
                         }
 
@@ -81,21 +75,14 @@ public final class FaunaReloadService {
                         long elapsedMillis = elapsedMillis(startedAt);
                         if (applied) {
                             plugin.languageManager().reload();
-                            sender.sendMessage(plugin.languageManager().text(
-                                    "commands.reload.completed",
-                                    "FaunaReborn reload completed in {elapsedMillis} ms.",
-                                    java.util.Map.of("elapsedMillis", String.valueOf(elapsedMillis))
-                            ));
+                            sendReloadCompleted(sender, elapsedMillis);
                             plugin.getLogger().info(plugin.languageManager().text(
                                     "logs.reload.hot-reload-complete",
                                     "Hot reload completed in {elapsedMillis} ms.",
                                     java.util.Map.of("elapsedMillis", String.valueOf(elapsedMillis))
                             ));
                         } else {
-                            sender.sendMessage(plugin.languageManager().text(
-                                    "commands.reload.failed",
-                                    "FaunaReborn reload failed. Previous configuration is still active."
-                            ));
+                            sendReloadFailed(sender);
                         }
                     } finally {
                         inProgress.set(false);
@@ -216,5 +203,67 @@ public final class FaunaReloadService {
 
     private long elapsedMillis(long startedAt) {
         return (System.nanoTime() - startedAt) / 1_000_000L;
+    }
+
+    private void sendReloadAlreadyInProgress(CommandSender sender) {
+        sender.sendMessage(
+                Component.empty()
+                        .append(Component.text("\u27F3 ", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD))
+                        .append(Component.text(
+                                plugin.languageManager().text("commands.common.prefix", "FaunaReborn"),
+                                NamedTextColor.WHITE
+                        ))
+                        .append(Component.text(": ", NamedTextColor.GRAY))
+                        .append(Component.text(
+                                plugin.languageManager().text("commands.reload.already-in-progress", "reload already in progress."),
+                                NamedTextColor.RED
+                        ))
+                        .decoration(TextDecoration.ITALIC, false)
+        );
+    }
+
+    private void sendReloadStarted(CommandSender sender) {
+        sender.sendMessage(
+                Component.empty()
+                        .append(Component.text("\u27F3 ", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD))
+                        .append(Component.text(
+                                plugin.languageManager().text("commands.common.prefix", "FaunaReborn"),
+                                NamedTextColor.WHITE
+                        ))
+                        .append(Component.text(": ", NamedTextColor.GRAY))
+                        .append(Component.text(
+                                plugin.languageManager().text("commands.reload.started", "reload started..."),
+                                NamedTextColor.YELLOW
+                        ))
+                        .decoration(TextDecoration.ITALIC, false)
+        );
+    }
+
+    private void sendReloadCompleted(CommandSender sender, long elapsedMillis) {
+        String reloadLabel = plugin.languageManager().text("commands.reload.label", "Reload");
+        String completeWord = plugin.languageManager().text("commands.reload.complete-word", "complete");
+        String inWord = plugin.languageManager().text("commands.reload.in-word", "in");
+        sender.sendMessage(
+                Component.empty()
+                        .append(Component.text("\u2714 ", NamedTextColor.GREEN).decorate(TextDecoration.BOLD))
+                        .append(Component.text(reloadLabel + " ", NamedTextColor.GRAY))
+                        .append(Component.text(completeWord + " ", NamedTextColor.GREEN))
+                        .append(Component.text(inWord + " ", NamedTextColor.GRAY))
+                        .append(Component.text(elapsedMillis + " ms", NamedTextColor.WHITE))
+                        .append(Component.text(".", NamedTextColor.GRAY))
+                        .decoration(TextDecoration.ITALIC, false)
+        );
+    }
+
+    private void sendReloadFailed(CommandSender sender) {
+        sender.sendMessage(
+                Component.empty()
+                        .append(Component.text("\u2716 ", NamedTextColor.RED).decorate(TextDecoration.BOLD))
+                        .append(Component.text(
+                                plugin.languageManager().text("commands.reload.failed", "Reload failed. Previous config is still active."),
+                                NamedTextColor.RED
+                        ))
+                        .decoration(TextDecoration.ITALIC, false)
+        );
     }
 }

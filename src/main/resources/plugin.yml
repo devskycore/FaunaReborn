@@ -12,4 +12,4 @@ commands:
     description: Main command for FaunaReborn.
     aliases: [ faunareborn, fr ]
     permission: fauna.command.help
-    usage: "/fauna help"
+    usage: "/fauna help [page|admin|permissions|query]"

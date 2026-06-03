@@ -5,6 +5,10 @@ public record CommandInfo(
         String usage,
         String description,
         String permission,
-        boolean administrative
+        boolean administrative,
+        java.util.List<String> aliases
 ) {
+    public CommandInfo(String name, String usage, String description, String permission, boolean administrative) {
+        this(name, usage, description, permission, administrative, java.util.List.of());
+    }
 }

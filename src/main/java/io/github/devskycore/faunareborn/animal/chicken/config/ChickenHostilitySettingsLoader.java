@@ -55,7 +55,7 @@ public final class ChickenHostilitySettingsLoader {
         CombatConfigValues combat = combatReader.read(entityConfig);
         ThreatAndCooldownConfigValues threatAndCooldown = threatAndCooldownReader.read(entityConfig);
         ProcessingLimitsConfigValues processingLimits = processingLimitsReader.read(entityConfig);
-        ActivationConfig activation = activationReader.read(entityConfig);
+        ActivationConfig activation = activationReader.read(entityConfig, globalConfig);
         MovementConfigValues movement = movementReader.read(entityConfig);
         WorldFilter worldFilter = worldFilterReader.readWorldFilter(entityConfig);
         NightBehaviorConfigValues nightBehavior = nightBehaviorReader.read(entityConfig);

@@ -7,6 +7,8 @@ import io.github.devskycore.faunareborn.gui.FaunaMainGui;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.List;
+
 public final class GuiCommand implements FaunaSubcommand {
 
     private static final CommandInfo INFO = new CommandInfo(
@@ -14,7 +16,8 @@ public final class GuiCommand implements FaunaSubcommand {
             "/fauna gui",
             "Open the FaunaReborn admin GUI.",
             PermissionConstants.COMMAND_GUI,
-            true
+            true,
+            List.of("menu")
     );
 
     private final FaunaMainGui mainGui;

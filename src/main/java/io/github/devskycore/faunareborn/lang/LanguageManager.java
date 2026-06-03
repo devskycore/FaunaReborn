@@ -69,11 +69,7 @@ public final class LanguageManager {
         saveResourceIfAbsent("lang/" + PORTUGUESE_LANGUAGE_FILE);
         saveResourceIfAbsent("lang/" + ITALIAN_LANGUAGE_FILE);
         saveResourceIfAbsent("lang/" + FRENCH_LANGUAGE_FILE);
-        syncLanguageFileWithBundledDefaults(DEFAULT_LANGUAGE_FILE);
-        syncLanguageFileWithBundledDefaults(SPANISH_LANGUAGE_FILE);
-        syncLanguageFileWithBundledDefaults(PORTUGUESE_LANGUAGE_FILE);
-        syncLanguageFileWithBundledDefaults(ITALIAN_LANGUAGE_FILE);
-        syncLanguageFileWithBundledDefaults(FRENCH_LANGUAGE_FILE);
+        syncLanguageFiles(languageDirectory);
         File englishFile = new File(languageDirectory, DEFAULT_LANGUAGE_FILE);
         defaultLanguage = loadLanguageFile(englishFile, DEFAULT_LANGUAGE_FILE);
 
@@ -212,61 +208,53 @@ public final class LanguageManager {
         }
     }
 
-    private void syncLanguageFileWithBundledDefaults(String fileName) {
-        String path = "lang/" + fileName;
-        File target = new File(plugin.getDataFolder(), path);
+    private void syncLanguageFiles(File languageDirectory) {
+        File[] languageFiles = languageDirectory.listFiles((dir, name) -> name.toLowerCase(Locale.ROOT).endsWith(".yml"));
+        if (languageFiles == null) {
+            return;
+        }
+        for (File languageFile : languageFiles) {
+            syncLanguageFileWithBundledDefaults(languageFile);
+        }
+    }
+
+    private void syncLanguageFileWithBundledDefaults(File target) {
         if (!target.exists()) {
             return;
         }
 
-        YamlConfiguration bundled = loadBundledLanguage(path);
+        String fileName = target.getName();
+        String bundledPath = KNOWN_LANGUAGE_FILES.containsValue(fileName)
+                ? "lang/" + fileName
+                : "lang/" + DEFAULT_LANGUAGE_FILE;
+        YamlConfiguration bundled = loadBundledLanguage(bundledPath);
         if (bundled == null) {
             return;
         }
 
         YamlConfiguration existing = loadLanguageFile(target, fileName);
         Set<String> bundledKeys = collectValueKeys(bundled);
-        Set<String> existingKeys = collectValueKeys(existing);
         boolean changed = false;
         int addedKeys = 0;
-        int updatedKeys = 0;
-        int removedKeys = 0;
 
         for (String key : bundledKeys) {
-            Object bundledValue = bundled.get(key);
-            Object existingValue = existing.get(key);
-            if (!existing.contains(key)) {
-                existing.set(key, bundledValue);
-                changed = true;
-                addedKeys++;
+            if (existing.contains(key)) {
                 continue;
             }
-            if (!Objects.equals(existingValue, bundledValue)) {
-                existing.set(key, bundledValue);
-                changed = true;
-                updatedKeys++;
-            }
-        }
-
-        for (String key : existingKeys) {
-            if (bundledKeys.contains(key)) {
-                continue;
-            }
-            existing.set(key, null);
+            existing.set(key, bundled.get(key));
             changed = true;
-            removedKeys++;
+            addedKeys++;
         }
 
         if (!changed) {
             return;
         }
 
+        createBackupIfMissing(target);
         try {
             existing.save(target);
             plugin.getLogger().info(
-                    "Migrated language file '" + fileName + "' (added: " + addedKeys
-                            + ", updated: " + updatedKeys
-                            + ", removed obsolete: " + removedKeys + ")."
+                    "Updated language file '" + fileName + "' with " + addedKeys + " missing keys."
             );
         } catch (IOException exception) {
             plugin.getLogger().warning("Could not migrate language file '" + fileName + "': " + exception.getMessage());
@@ -323,6 +311,18 @@ public final class LanguageManager {
             plugin.getLogger().warning("Removed unsupported control characters while reading language source '" + sourceName + "'.");
         }
         return sanitized;
+    }
+
+    private void createBackupIfMissing(File targetFile) {
+        File backup = new File(targetFile.getParentFile(), targetFile.getName() + ".bak-" + plugin.getPluginMeta().getVersion());
+        if (backup.exists()) {
+            return;
+        }
+        try {
+            Files.copy(targetFile.toPath(), backup.toPath());
+        } catch (IOException exception) {
+            plugin.getLogger().warning("Could not create backup for language file '" + targetFile.getName() + "': " + exception.getMessage());
+        }
     }
 
     private String normalizeLanguageCode(String value) {

@@ -6,6 +6,7 @@ import io.github.devskycore.faunareborn.gui.PluginGuiConfigService;
 import io.github.devskycore.faunareborn.lang.LanguageManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
 
 import java.util.List;
@@ -17,7 +18,8 @@ public final class EntitiesCommand implements FaunaSubcommand {
             "/fauna entities",
             "List supported entities and current state.",
             PermissionConstants.COMMAND_ENTITIES,
-            false
+            false,
+            List.of("ent", "entity")
     );
 
     private final PluginGuiConfigService configService;
@@ -36,16 +38,26 @@ public final class EntitiesCommand implements FaunaSubcommand {
     @Override
     public void execute(CommandSender sender, String[] args) {
         List<EntityModuleToggle> toggles = configService.moduleToggles();
-        sender.sendMessage(Component.text(language.text("commands.entities.header", "Supported Entities"), NamedTextColor.GREEN));
+        String pluginName = language.text("commands.common.prefix", "FaunaReborn");
+        String title = language.text("commands.entities.header", "Supported Entities");
+        sender.sendMessage(Component.text(pluginName, NamedTextColor.WHITE)
+                .decorate(TextDecoration.BOLD)
+                .append(Component.text(" ", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
+                .append(Component.text("\u00B7", NamedTextColor.DARK_GRAY).decoration(TextDecoration.BOLD, false))
+                .append(Component.text(" ", NamedTextColor.GRAY).decoration(TextDecoration.BOLD, false))
+                .append(Component.text(title, NamedTextColor.GREEN))
+                .decoration(TextDecoration.ITALIC, false));
+        sender.sendMessage(Component.empty());
         for (EntityModuleToggle toggle : toggles) {
             boolean enabled = configService.isEnabled(toggle);
             String status = enabled
                     ? language.text("commands.common.state.enabled-title", "Enabled")
                     : language.text("commands.common.state.disabled-title", "Disabled");
-            sender.sendMessage(Component.text(" - ", NamedTextColor.DARK_GRAY)
-                    .append(Component.text(toggle.label(), NamedTextColor.WHITE))
-                    .append(Component.text(": ", NamedTextColor.DARK_GRAY))
+            sender.sendMessage(Component.text("\u27A4 ", NamedTextColor.DARK_AQUA)
+                    .append(Component.text(toggle.label(), NamedTextColor.AQUA))
+                    .append(Component.text(" - ", NamedTextColor.DARK_GRAY))
                     .append(Component.text(status, enabled ? NamedTextColor.GREEN : NamedTextColor.RED)));
         }
+        sender.sendMessage(Component.empty());
     }
 }

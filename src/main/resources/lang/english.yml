@@ -2,7 +2,7 @@
 # Quick Guide (Lang)
 # =============================================================================
 # - Keep placeholders like {language}, {totalPages}, {elapsedMillis} unchanged.
-# - Keep commands and slash syntax unchanged (example: /fauna help [page]).
+# - Keep commands and slash syntax unchanged (example: /fauna help [page|admin|permissions|query]).
 # - Keep 2-space indentation under each parent key.
 # - Keep key names exactly as provided by the plugin.
 # - Translate only values inside quotes.
@@ -17,6 +17,9 @@ commands:
     no-permission: "You do not have permission to use this command."
     player-only: "This command can only be executed by a player."
     unknown-subcommand: "Unknown subcommand. Use /fauna help."
+    did-you-mean: "Maybe you meant /fauna {command}?"
+    possible-subcommands: "These subcommands look close: {commands}"
+    try-help: "Try: "
     state:
       enabled: "enabled"
       disabled: "disabled"
@@ -24,29 +27,29 @@ commands:
       disabled-title: "Disabled"
   meta:
     help:
-      usage: "/fauna help [page]"
-      description: "Show available commands."
+      usage: "/fauna help [page|admin|permissions|query]"
+      description: "Browse help pages or search commands."
     version:
       usage: "/fauna version"
-      description: "Show plugin and runtime version details."
+      description: "Show version details."
     about:
       usage: "/fauna about"
-      description: "Learn what FaunaReborn does."
+      description: "Plugin overview."
     entities:
       usage: "/fauna entities"
-      description: "List supported entities and current state."
+      description: "Entities overview."
     reload:
       usage: "/fauna reload"
-      description: "Reload configuration and modules."
+      description: "Update config and modules."
     gui:
       usage: "/fauna gui"
-      description: "Open the FaunaReborn admin GUI."
+      description: "Open the admin panel."
     lang:
-      usage: "/fauna lang <language>"
-      description: "Change active plugin language."
+      usage: "/fauna lang [language]"
+      description: "Open selector or change language."
   help:
     none-available: "No commands are available to you."
-    usage: "Usage: /fauna help [page]"
+    usage: "Usage: /fauna help [page|admin|permissions|query]"
     page-out-of-range: "Page out of range. Available pages: 1-{totalPages}."
     out-of-range-use: "Use "
     out-of-range-or: " or "
@@ -55,18 +58,25 @@ commands:
     header-title-admin: "COMMANDS: ADMIN"
     header-title-permissions: "COMMANDS: PERMISSIONS"
     header-search: "Command: {query}"
-    nav-prev-label: "< PREV"
-    nav-next-label: "NEXT >"
+    nav-prev-label: "← PREV"
+    nav-next-label: "NEXT →"
     nav-go-to-page: "Go to page {page}"
+    click-to-run: "Run: {command}"
+    click-to-suggest: "Suggest: {command}"
     click-to-use: "Click to use: {command}"
   about:
+    header-label: "ABOUT"
     title: "FaunaReborn"
+    tagline-label: "Tagline"
+    summary-label: "Summary"
+    details-label: "Details"
     tagline: "Nature fights back."
     line1: "Turns passive animals into intelligent, configurable threats."
     line2: "Includes per-entity settings, runtime controls, optimized processing, and advanced behavior systems."
   entities:
-    header: "Supported Entities"
+    header: "SUPPORTED ENTITIES"
   version:
+    header-label: "VERSION"
     header: "FaunaReborn Version"
     unknown-author: "Unknown"
     name-label: "Name"
@@ -77,15 +87,20 @@ commands:
     status-label: "Status"
     status-running: "Running"
   reload:
-    already-in-progress: "FaunaReborn reload is already in progress."
-    started: "FaunaReborn reload started..."
-    completed: "FaunaReborn reload completed in {elapsedMillis} ms."
-    failed: "FaunaReborn reload failed. Previous configuration is still active."
+    already-in-progress: "reload already in progress."
+    started: "reload started..."
+    completed: "Reload completed in {elapsedMillis} ms."
+    label: "Reload"
+    complete-word: "complete"
+    in-word: "in"
+    failed: "Reload failed. Previous config is still active."
   lang:
-    usage: "Usage: /fauna lang <language>"
+    usage: "Usage: /fauna lang [language]"
     # Keep placeholders like {languages} unchanged.
     available: "Available languages: {languages}"
     invalid: "Language '{language}' not found. Available: {languages}"
+    did-you-mean: "Maybe you meant /fauna lang {language}?"
+    possible-languages: "These languages look close: "
     # Keep placeholders like {language} unchanged.
     changed: "Language changed to {language}."
 

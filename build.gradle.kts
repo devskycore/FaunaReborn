@@ -2,8 +2,8 @@ plugins {
     id("java-library")
 }
 
-group = "io.github.devskycore"
-version = "1.2.0"
+group = providers.gradleProperty("group").get()
+version = providers.gradleProperty("version").get()
 description = "FaunaReborn plugin"
 
 repositories {
