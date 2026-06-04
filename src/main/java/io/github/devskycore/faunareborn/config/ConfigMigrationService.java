@@ -1,5 +1,6 @@
 package io.github.devskycore.faunareborn.config;
 
+import io.github.devskycore.faunareborn.config.entity.EntityType;
 import io.github.devskycore.faunareborn.core.FaunaRebornPlugin;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -21,6 +22,7 @@ public final class ConfigMigrationService {
     private static final String CONFIG_VERSION_PATH = "config-version";
     private static final String LEGACY_ONLY_NATURAL_PATH = "activation.only-natural";
     private static final String NATURAL_SPAWNS_ONLY_PATH = "activation.natural-spawns-only";
+    private static final String CHICKEN_ENTITY_RESOURCE_PATH = "entities/chicken.yml";
 
     private static final Map<String, String> LANGUAGE_RESOURCE_FILES = Map.of(
             "english.yml", "lang/english.yml",
@@ -38,6 +40,7 @@ public final class ConfigMigrationService {
 
     public void migrateIfNeeded() {
         ensureConfigDefaultsAndMigrate();
+        ensureEntityFilesAndMigrate();
         ensureLanguageFilesAndMergeMissingKeys();
     }
 
@@ -70,6 +73,34 @@ public final class ConfigMigrationService {
         }
         existing.set(NATURAL_SPAWNS_ONLY_PATH, existing.getBoolean(LEGACY_ONLY_NATURAL_PATH));
         return true;
+    }
+
+    private void ensureEntityFilesAndMigrate() {
+        File entitiesDirectory = new File(plugin.getDataFolder(), "entities");
+        if (!entitiesDirectory.exists() && !entitiesDirectory.mkdirs()) {
+            throw new IllegalStateException("Could not create entities directory: " + entitiesDirectory.getAbsolutePath());
+        }
+
+        for (EntityType entityType : EntityType.values()) {
+            String resourcePath = entityType.resourcePath();
+            File targetFile = new File(plugin.getDataFolder(), resourcePath);
+
+            if (!targetFile.exists()) {
+                plugin.saveResource(resourcePath, false);
+                plugin.getLogger().info("Created missing entity config: " + entityType.id() + ".yml");
+                continue;
+            }
+
+            YamlConfiguration defaults = loadBundledYaml(resourcePath);
+            YamlConfiguration existing = YamlConfiguration.loadConfiguration(targetFile);
+            boolean migratedNaturalSpawnsOnly = CHICKEN_ENTITY_RESOURCE_PATH.equals(resourcePath)
+                    && migrateNaturalSpawnsOnlyAlias(existing);
+            int addedKeys = mergeMissingKeys(existing, defaults);
+            if (migratedNaturalSpawnsOnly || addedKeys > 0) {
+                saveWithBackup(targetFile, existing);
+                plugin.getLogger().info("Updated " + entityType.id() + ".yml with " + addedKeys + " newly introduced default keys.");
+            }
+        }
     }
 
     private void ensureLanguageFilesAndMergeMissingKeys() {

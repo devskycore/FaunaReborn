@@ -4,7 +4,7 @@ plugins {
 
 group = providers.gradleProperty("group").get()
 version = providers.gradleProperty("version").get()
-description = "FaunaReborn plugin"
+description = providers.gradleProperty("description").orElse("FaunaReborn plugin").get()
 
 repositories {
     maven("https://repo.papermc.io/repository/maven-public/")

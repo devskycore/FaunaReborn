@@ -19,6 +19,7 @@ activation:
   # If true, only natural lifecycle chickens can become hostile.
   # Natural lifecycle includes NATURAL, EGG, DISPENSE_EGG and BREEDING spawns.
   # Excluded: mob spawners and spawn eggs.
+  # Legacy alias: activation.only-natural is still supported for existing configs.
   natural-spawns-only: true
   ignore-named: true
   # After a chicken grows from baby to adult, allow this many seconds of hostility

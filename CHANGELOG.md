@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] - 2026-06-04
+
+### Fixed
+- Completed the chicken hostility natural-origin fix so natural vs non-natural classification now survives reloads and server restarts consistently.
+- Preserved correct hostility eligibility for chickens born from eggs or breeding after they grow into adults.
+- Hardened spawn-origin handling to keep spawn eggs and mob spawners excluded from natural lifecycle classification.
+- Added legacy migration coverage for `activation.only-natural` to `activation.natural-spawns-only` in `entities/chicken.yml`, matching existing global-config compatibility.
+
 ## [1.3.0] - 2026-06-03
 
 ### Added

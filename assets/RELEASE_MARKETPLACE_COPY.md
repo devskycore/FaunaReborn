@@ -1,43 +1,38 @@
-# FaunaReborn Release / Marketplace Copy Draft
+# FaunaReborn Release / Marketplace Copy
+
+## Canonical Release Title
+FaunaReborn 1.3.1 - Chicken Hostility Persistence Fix
 
 ## Release Notes Copy
 
-### Commands + Locale UX Sync
-This release aligns all public-facing command and locale documentation with the plugin's live behavior.
+### Chicken Hostility Persistence Fix
+This patch completes the chicken hostility natural-origin fix so natural vs non-natural classification stays correct across reloads, server restarts, and lifecycle transitions.
 
-- Documented every active command path for `/fauna help`:
-  - `/fauna help [page]`
-  - `/fauna help admin [page]`
-  - `/fauna help permissions [page]`
-  - `/fauna help <query>`
-- Documented all active command aliases:
-  - Root: `/faunareborn`, `/fr`
-  - Subcommands: `h`, `?`, `ver`, `v`, `info`, `ent`, `entity`, `rl`, `menu`, `language`
-- Clarified `/fauna lang` behavior:
-  - Players with permission open the language selector via `/fauna lang`
-  - Console usage prints command usage and available locales
-  - Runtime switching supports locale codes, common aliases, and custom locale file names
-- Clarified supported built-in locales:
-  - `en`, `es`, `pt`, `it`, `fr` (mapped to `english.yml`, `spanish.yml`, `portuguese.yml`, `italian.yml`, `french.yml`)
-- Clarified custom locale behavior:
-  - Any additional `plugins/FaunaReborn/lang/*.yml` file can be selected by its filename base
+- Spawn-origin classification is now persisted and restored consistently for chickens.
+- Chickens born from eggs or breeding keep the correct natural-lifecycle classification after growing into adults.
+- Spawn eggs and mob spawners remain excluded from natural-lifecycle hostility checks.
+- Legacy configuration alias migration now also covers `entities/chicken.yml`:
+  - `activation.only-natural`
+  - `activation.natural-spawns-only`
 
-### Help UX Notes
-- Help docs now match real in-game behavior: pagination, admin filtering, permissions mode, and query search.
-- Alias behavior and clickable command guidance are now documented consistently across plugin metadata and README.
+### Compatibility Notes
+- Existing installations keep working with legacy activation keys while migrating forward safely.
+- Hot reload and normal startup now align on the same chicken-origin compatibility path.
 
 ## Marketplace Long Description Add-on
 
-FaunaReborn includes a production-ready command and locale workflow built for server administrators:
+FaunaReborn 1.3.1 strengthens one of the most important gameplay consistency paths in the plugin:
 
-- Complete `/fauna help` navigation with paginated, admin-only, permissions, and search modes.
-- Runtime language switching with `/fauna lang` and selector GUI integration.
-- Built-in locales (`en`, `es`, `pt`, `it`, `fr`) plus support for custom locale files.
-- Full alias coverage for fast command access (`/fr`, `/fauna ?`, `/fauna ver`, `/fauna language`, and more).
+- Chicken hostility now preserves natural vs non-natural spawn origin across restarts and reloads.
+- Egg-born and breeding-born chickens remain correctly eligible when they mature into adults.
+- Spawn eggs and mob spawner chickens stay excluded from natural-lifecycle hostility logic.
+- Legacy config users are migrated safely from `activation.only-natural` to `activation.natural-spawns-only`, including entity-level chicken config coverage.
 
-## Marketplace Short Description Options
+## Marketplace Short Description
 
-1. "Hostile-fauna AI plugin for Paper/Folia with advanced `/fauna` admin UX, runtime locale switching, and built-in plus custom locale support."
-2. "Turn passive mobs hostile with premium AI, command-first admin control, and live multi-locale support for Paper/Folia servers."
-3. "Configurable hostile-animal encounters for Paper/Folia with advanced help UX, GUI controls, and runtime language switching."
+Hostile-fauna AI plugin for Paper/Folia with hardened chicken hostility persistence, safe legacy config migration, and consistent natural-spawn classification.
 
+## Alternate Short Descriptions
+
+1. "Turn passive mobs hostile with premium AI for Paper/Folia, now with safer chicken-origin persistence across reloads and restarts."
+2. "Configurable hostile-animal encounters for Paper/Folia with hardened chicken lifecycle classification and legacy config compatibility."
